@@ -214,9 +214,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	}
 
 	setTitle();
-
 	gtk_main();
-
 }
 
 Frame::~Frame() {
@@ -342,16 +340,7 @@ void Frame::load(const std::string &p, int index) {
 					pi = size();
 				}
 				vp.push_back(s);
-
-				/* Note stat() function works bad with utf8 non standard ascii symbols in filename,
-				 * may be need encoding, so use g_stat()
-				 */
-				GStatBuf b;
-				if(g_stat(s.c_str(), &b)!=0){
-					println("error");
-					b.st_size=0;
-				}
-				totalFileSize += b.st_size;
+				totalFileSize += getFileSize(s);
 			}
 		}
 	}
@@ -879,11 +868,14 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		if(t==TOOLBAR_INDEX::REMOVE){
 			if (showConfirmation("Do you really want to delete current image?")
 					== GTK_RESPONSE_YES) {
+				//not need full reload
+
+				//before g_remove change totalFileSize
+				totalFileSize-=getFileSize(vp[pi]);
 				g_remove(vp[pi].c_str());
 
 
 				//TODO stop threads & rerun threads
-				//not need full reload
 				int sz=size();
 				GdkPixbuf*p=vThumbnails[pi];
 				if(p){

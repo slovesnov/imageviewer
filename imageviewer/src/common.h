@@ -214,5 +214,17 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height, int rleft,int rto
 }
 //END from bridge modified
 
+int getFileSize(std::string const&path){
+	/* Note stat() function works bad with utf8 non standard ascii symbols in filename,
+	 * may be need encoding, so use g_stat()
+	 */
+	GStatBuf b;
+	if(g_stat(path.c_str(), &b)!=0){
+		println("error");
+		return 0;
+	}
+	return b.st_size;
+
+}
 
 #endif /* COMMON_H_ */
