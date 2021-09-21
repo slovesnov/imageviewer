@@ -10,14 +10,13 @@
 
 /* TODO
  *
- * total/agv size is changed after delete (may be in recountListParameters())
- * may be one vector for paht,size,thumbnail
- *
  * scroll mouse list multiplier
  * ascending/descending button on delete (disable/enable problems)
  */
 
 #include "Frame.h"
+#include "Image.h"
+#include "help.h"
 
 //signature https://developer.gnome.org/gio/stable/GApplication.html#GApplication-open
 static void application_open(GtkApplication *application, GFile **files, gint n_files,
@@ -62,5 +61,9 @@ int main(int argc, char *argv[]) {
 	g_signal_connect(app, "open", G_CALLBACK (application_open), GP(argv[0])); //this function is called when application has arguments
 	g_application_run(G_APPLICATION(app), argc, argv);
 	g_object_unref(app);
+
+	//TODO
+//	printl(Image::c1,Image::c2)
+
 	return 0;
 }
