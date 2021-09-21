@@ -721,7 +721,7 @@ void Frame::stopThreads() {
 
 	//	clock_t begin=clock();
 	for (auto p:pThread) {
-		if(p){
+		if(p){//1st time p==0
 			g_thread_join(p);
 		}
 	}
