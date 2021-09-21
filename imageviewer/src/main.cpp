@@ -10,6 +10,10 @@
 
 /* TODO
  *
+ * save/load mode on exit, order?
+ * image access like in SvgParameters
+ * finish load after delete,stop threads before
+ *
  * scroll mouse list multiplier
  * ascending/descending button on delete (disable/enable problems)
  */

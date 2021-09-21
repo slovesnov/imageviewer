@@ -265,8 +265,8 @@ void Frame::setTitle() {
 			 */
 			t += format("%d-%d/%d", listTopLeftIndex + 1,
 					LIST_ASCENDING_ORDER ?
-							std::min(listTopLeftIndex + listxy, sz) :
-							std::max(listTopLeftIndex + 2 - listxy, 1), sz)
+							MIN(listTopLeftIndex + listxy, sz) :
+							MAX(listTopLeftIndex + 2 - listxy, 1), sz)
 					+ separator
 					+ format("total %.2lfMb avg ", ts);
 			double avg=ts / sz;//mb
@@ -481,8 +481,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		adjust(destx,0);
 		adjust(desty,0);
 
-		aw = std::min(w, width);
-		ah = std::min(h, height);
+		aw = MIN(w, width);
+		ah = MIN(h, height);
 
 		if (windowSizeChanged) {
 			adjustPos();
@@ -676,10 +676,13 @@ void Frame::thumbnailThread(int n) {
 	int w,h,v;
 	GdkPixbuf*d,*p;
 
-	//clock_t start= clock();
-	//std::string s;
-	//bool stopped=false;
+//#define SHOW_THREAD_TIME
 
+#ifdef SHOW_THREAD_TIME
+	clock_t start= clock();
+	std::string s;
+	bool stopped=false;
+#endif
 	while (1) {
 		g_mutex_lock(&mutex);
 		//Note. v = threadNumber+= LIST_ASCENDING_ORDER?1:-1; NOT WORKING LIKE BELOW CODE
@@ -696,7 +699,9 @@ void Frame::thumbnailThread(int n) {
 		}
 
 		if(g_atomic_int_get (&endThreads)){
-			//stopped=true;
+#ifdef SHOW_THREAD_TIME
+			stopped = true;
+#endif
 			break;
 		}
 
@@ -705,14 +710,16 @@ void Frame::thumbnailThread(int n) {
 		g_object_unref(p);
 
 		g_mutex_lock(&mutex);
-		vp[v].thumbnail=d;//order is important so use index
+		vp[v].thumbnail=d;
 		g_mutex_unlock(&mutex);
 		gdk_threads_add_idle(show_thumbnail_thread, GP(v));
 
 		//s+=" "+std::to_string(v);
 	}
 
-	//println("t%d%s %.2lf",n,stopped?" user stop":"",((double) (clock() - start)) / CLOCKS_PER_SEC)
+#ifdef SHOW_THREAD_TIME
+	println("t%d%s %.2lf",n,stopped?" user stop":"",((double) (clock() - start)) / CLOCKS_PER_SEC)
+#endif
 }
 
 void Frame::stopThreads() {
@@ -950,17 +957,17 @@ h, F1 - show help";
 
 void Frame::recountListParameters() {
 	const int sz=size();
-	listx=std::max(1,lastWidth/ICON_WIDTH);
-	listy=std::max(1,lastHeight/ICON_HEIGHT);
-	//std::min(listx,sz) center horizontally if images less than listx
-	listdx=(lastWidth-std::min(listx,sz)*ICON_WIDTH)/2;
-	//std::min(listx,sz) center vertically if images less than listx*listy
+	listx=MAX(1,lastWidth/ICON_WIDTH);
+	listy=MAX(1,lastHeight/ICON_HEIGHT);
+	//MIN(listx,sz) center horizontally if images less than listx
+	listdx=(lastWidth-MIN(listx,sz)*ICON_WIDTH)/2;
+	//MIN(listx,sz) center vertically if images less than listx*listy
 	int i;
 	i=sz/listx;
 	if(sz%listx!=0){
 		i++;
 	}
-	listdy=(lastHeight-std::min(listy, i)*ICON_HEIGHT)/2;
+	listdy=(lastHeight-MIN(listy, i)*ICON_HEIGHT)/2;
 	listxy=listx*listy;
 	//printl(sz,listx,listy)
 }
