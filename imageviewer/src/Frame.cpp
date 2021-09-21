@@ -15,8 +15,12 @@
 
 Frame *frame;
 std::string Frame::workPath;
-
 VString Frame::sLowerExtension;
+
+//const MODE INITIAL_MODE=MODE::LIST;
+const MODE INITIAL_MODE=MODE::FIT;
+
+
 const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
 		"sep", "oct", "nov", "dec" };
 //const char *MONTH[] = { "January", "February", "March", "April", "May", "June",
@@ -203,8 +207,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 
 	pix = pixs = 0;
 	lastScroll = 0;
-	setMode(MODE::FIT);
-	//setMode(MODE::LIST);
+	setMode(INITIAL_MODE);
 
 	if (path.empty()) {
 		setNoImage();
@@ -452,15 +455,18 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
-			GdkPixbuf*p=vp[k].thumbnail;
-			if(p){
-				getPixbufWH(p,w,h);
-				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
-			}
-			else{
-				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
-						true, true);
-			}
+//			auto o=vp[k];
+//			if(o.isLoaded()){
+//				GdkPixbuf*p=o.thumbnail;
+//				getPixbufWH(p,w,h);
+//				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
+//			}
+//			else{
+//				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
+//						true, true);
+//			}
+			drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
+					true, true);
 		}
 	}
 	else{
@@ -709,9 +715,7 @@ void Frame::thumbnailThread(int n) {
 		scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
 		g_object_unref(p);
 
-		g_mutex_lock(&mutex);
-		vp[v].thumbnail=d;
-		g_mutex_unlock(&mutex);
+		vp[v].setThumbnail(d);
 		gdk_threads_add_idle(show_thumbnail_thread, GP(v));
 
 		//s+=" "+std::to_string(v);
