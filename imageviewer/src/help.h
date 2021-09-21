@@ -19,6 +19,11 @@
 
 #include <string>
 #include <sstream>
+#include <algorithm>
+#include <gtk/gtk.h>
+#include <glib/gstdio.h>
+#include <windows.h>
+#include <vector>
 
 void printHelp(bool toFile, const std::string& s, const char*f, const int l,
 		const char*fu);
@@ -42,5 +47,58 @@ std::string forma(Arg const& arg, Args const&... args){
 	((c << ' ' << args), ...);
 	return c.str();
 }
+
+enum class FILEINFO {
+	name, extension, lowerExtension, directory
+};
+
+bool isDir(const char *url);
+bool isDir(const std::string& s);
+std::string getFileInfo(std::string filepath, FILEINFO fi);
+void copy(GdkPixbuf *source, cairo_t *dest, int destx, int desty, int width,
+		int height, int sourcex, int sourcey);
+void adjust(int &v, int min,int max = INT_MAX);
+std::string filechooser(GtkWidget *parent);
+
+
+template <typename Arg, typename... Args>
+bool oneOf(Arg const& arg, Args const&... args){
+	return ((arg== args)|| ...);
+}
+
+template<class T>
+bool oneOf(T const& v,std::vector<T> const& t ) {
+	return std::find(begin(t), end(t), v) != end(t);
+}
+
+template <typename Arg, typename... Args>
+int indexOf(Arg const& t,Args const&... args) {
+	auto l = {args...};
+    auto i=std::find(begin(l),end(l),t);
+    return i==end(l)?-1:i-begin(l);
+}
+
+template<class T>
+int indexOf(T const a[], int size, const T& item) {
+	int i;
+	for (i = 0; i < size; i++) {
+		if (item == a[i]) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int getNumberOfCores();
+void scaleFit(GdkPixbuf *src, GdkPixbuf *&dest, int destW, int destH,
+		int &w, int &h);
+void getPixbufWH(GdkPixbuf *p,int&w,int&h);
+PangoLayout* createPangoLayout(std::string text,int height,cairo_t *cr);
+void getTextExtents(std::string text,int height,int&w,int&h,cairo_t *cr);
+void drawTextToCairo(cairo_t* ct, std::string text,int height, int rleft,int rtop,int rwidth,int rheight,
+		bool centerx, bool centery);
+
+void freePixbuf(GdkPixbuf*&p);
+
 
 #endif /* HELP_H_ */

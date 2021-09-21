@@ -11,13 +11,11 @@
 #ifndef FRAME_H_
 #define FRAME_H_
 
-#include <gtk/gtk.h>
-#include <string>
-#include <vector>
 #include "help.h"
+#include "Image.h"
 
 typedef std::vector<std::string> VString;
-typedef std::vector<GdkPixbuf*> VPixbufPtr;
+
 enum class MODE {
 	NORMAL, FIT, LIST
 };
@@ -48,12 +46,11 @@ public:
 	int lastWidth, lastHeight;
 	int posh, posv;
 	GdkPixbuf *pix, *pixs;
-	VPixbufPtr vThumbnails;
 	int pw, ph, aw, ah, pws, phs;
 	double scale;
 	int pi;
 	MODE mode;
-	VString vp;
+	VImage vp;
 	//lower cased allowable pixbuf formats
 	static VString sLowerExtension;
 	std::string dir;

@@ -11,6 +11,9 @@
 #include "Image.h"
 #include "help.h"
 
+int Image::c1=0;
+int Image::c2=0;
+
 Image::Image(std::string p){
 	path=p;
 	thumbnail=NULL;
@@ -29,11 +32,10 @@ Image::Image(std::string p){
 }
 
 Image::~Image(){
-	printinfo
+	c1++;
 	if(thumbnail){
-		printinfo
-		g_object_unref(thumbnail);
-		thumbnail=0;
+		c2++;
+		freePixbuf(thumbnail);
 	}
 }
 

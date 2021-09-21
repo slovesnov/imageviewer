@@ -12,7 +12,6 @@
 
 #include "Frame.h"
 #include "help.h"
-#include "common.h"
 
 Frame *frame;
 std::string Frame::workPath;
@@ -121,6 +120,9 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
+	for (auto& p:pThread) {
+		p=0;
+	}
 	g_mutex_init(&mutex);
 
 //	for(auto f:{FILEINFO::name,FILEINFO::directory,FILEINFO::extension,FILEINFO::lowerExtension}){
@@ -229,7 +231,6 @@ Frame::~Frame() {
 			g_object_unref(buttonPixbuf[i][j]);
 		}
 	}
-
 }
 
 void Frame::openUris(char **uris) {
@@ -279,7 +280,7 @@ void Frame::setTitle() {
 			}
 		}
 		else{
-			const std::string n = getFileInfo(vp[pi], FILEINFO::name);
+			const std::string n = getFileInfo(vp[pi].path, FILEINFO::name);
 			t += n + separator + format("%dx%d", pw, ph) + separator
 					+ "scale"
 					+ (scale == 1 || mode == MODE::NORMAL ?
@@ -339,8 +340,8 @@ void Frame::load(const std::string &p, int index) {
 				if (!d && s == p) {
 					pi = size();
 				}
-				vp.push_back(s);
-				totalFileSize += getFileSize(s);
+				vp.push_back(Image(s));
+				totalFileSize += vp.back().size;
 			}
 		}
 	}
@@ -372,7 +373,7 @@ void Frame::loadImage() {
 		GError *err = NULL;
 		/* Create pixbuf */
 		free();
-		pix = gdk_pixbuf_new_from_file(vp[pi].c_str(), &err);
+		pix = gdk_pixbuf_new_from_file(vp[pi].path.c_str(), &err);
 
 		if (err) {
 			println("Error : %s", err->message);
@@ -451,7 +452,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
-			GdkPixbuf*p=vThumbnails[k];
+			GdkPixbuf*p=vp[k].thumbnail;
 			if(p){
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
@@ -529,14 +530,8 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 }
 
 void Frame::free() {
-	if (pix) {
-		g_object_unref(pix);
-		pix = 0;
-	}
-	if (pixs) {
-		g_object_unref(pixs);
-		pixs = 0;
-	}
+	freePixbuf(pix);
+	freePixbuf(pixs);
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -666,14 +661,10 @@ void Frame::loadThumbnails() {
 	threadNumber=LIST_ASCENDING_ORDER?0:size()-1;
 	g_atomic_int_set (&endThreads,0);
 
-	if(!vThumbnails.empty()){
+	if(size()!=0){
 		stopThreads();
 	}
-	vThumbnails.resize(size());
 	recountListParameters();
-	for(GdkPixbuf*&p:vThumbnails){
-		p=0;
-	}
 
 	i=0;
 	for (auto& p:pThread) {
@@ -709,13 +700,12 @@ void Frame::thumbnailThread(int n) {
 			break;
 		}
 
-		p = gdk_pixbuf_new_from_file(vp[v].c_str(), NULL);
-		scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT,
-				w, h);
+		p = gdk_pixbuf_new_from_file(vp[v].path.c_str(), NULL);
+		scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
 		g_object_unref(p);
 
 		g_mutex_lock(&mutex);
-		vThumbnails[v]=d;//order is important so use index
+		vp[v].thumbnail=d;//order is important so use index
 		g_mutex_unlock(&mutex);
 		gdk_threads_add_idle(show_thumbnail_thread, GP(v));
 
@@ -731,19 +721,13 @@ void Frame::stopThreads() {
 
 	//	clock_t begin=clock();
 	for (auto p:pThread) {
-		g_thread_join(p);
+		if(p){
+			g_thread_join(p);
+		}
 	}
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
 
 	g_atomic_int_set(&endThreads, 0);
-
-	if(!vThumbnails.empty()){
-		for(GdkPixbuf*p:vThumbnails){
-			if(p){
-				g_object_unref(p);
-			}
-		}
-	}
 }
 
 void Frame::buttonPress(GdkEventButton *event) {
@@ -871,18 +855,14 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				//not need full reload
 
 				//before g_remove change totalFileSize
-				totalFileSize-=getFileSize(vp[pi]);
-				g_remove(vp[pi].c_str());
-
+				auto&a=vp[pi];
+				totalFileSize-=a.size;
+				g_remove(a.path.c_str());
+				//TODO a.freeThumbnail(); call automatically
 
 				//TODO stop threads & rerun threads
 				int sz=size();
-				GdkPixbuf*p=vThumbnails[pi];
-				if(p){
-					g_object_unref(p);
-				}
 				vp.erase(vp.begin()+pi);
-				vThumbnails.erase(vThumbnails.begin()+pi);
 				if(sz==1){
 					setNoImage();
 				}

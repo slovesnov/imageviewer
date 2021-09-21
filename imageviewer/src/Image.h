@@ -22,6 +22,8 @@ struct Image{
 
 	Image(std::string p);
 	~Image();
+	static int c1;
+	static int c2;
 };
 
 typedef std::vector<Image> VImage;
