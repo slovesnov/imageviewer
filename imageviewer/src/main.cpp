@@ -10,8 +10,11 @@
 
 /* TODO
  *
- * save/load mode on exit, order?
+ * remove push_back use set to decrease object creation
+ * setShowThumbnail ignore if from another dir (use id)
  * finish load after delete,stop threads before
+ *
+ * save/load mode on exit, order?
  * redraw only part in showThumbnail()
  *
  * scroll mouse list multiplier
