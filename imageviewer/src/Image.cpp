@@ -53,7 +53,7 @@ Image::~Image(){
 }
 
 Image::Image(Image &&o) :
-		path(o.path), size(o.size), thumbnail(o.thumbnail), t(o.t) {
+		path(o.path), size(o.size), loadid(o.loadid),thumbnail(o.thumbnail), t(o.t) {
 	o.t = o.thumbnail = nullptr;
 }
 
@@ -62,8 +62,9 @@ Image& Image::operator=(Image &&o) {
 	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
 	path = o.path;
 	size = o.size;
-	t = o.t;
+	loadid=o.loadid;
 	thumbnail = o.thumbnail;
+	t = o.t;
 
 	o.t = o.thumbnail = nullptr;
 	return *this;
