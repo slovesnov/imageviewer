@@ -123,6 +123,8 @@ public:
 	void listTopLeftIndexChanged();
 	void setNavigationButtonsState(bool c1,bool c2);
 	void getListMinMaxIndex(int&min,int&max);
+	int getFirstListIndex();
+
 };
 
 #endif /* FRAME_H_ */

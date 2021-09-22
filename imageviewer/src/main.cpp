@@ -11,7 +11,6 @@
 /* TODO
  *
  * save/load mode on exit, order?
- * image access like in SvgParameters
  * finish load after delete,stop threads before
  * redraw only part in showThumbnail()
  *

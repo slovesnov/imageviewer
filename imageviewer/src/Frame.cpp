@@ -667,7 +667,7 @@ int Frame::showConfirmation(const std::string text) {
 void Frame::loadThumbnails() {
 	int i;
 
-	threadNumber=LIST_ASCENDING_ORDER?0:size()-1;
+	threadNumber=getFirstListIndex();
 	g_atomic_int_set (&endThreads,0);
 
 	if(size()!=0){
@@ -754,6 +754,7 @@ void Frame::stopThreads() {
 //		printl("removed",i)
 //	}
 
+/*
 	bool r=false;
 	int i;
 	for(i=0;i<size();i++){
@@ -766,6 +767,7 @@ void Frame::stopThreads() {
 	if(!r){
 		printl("nothing to remove",size())
 	}
+*/
 
 
 }
@@ -802,7 +804,7 @@ void Frame::setShowThumbnail(int i) {
 //		Sleep(10000);//usleep(3);doesn't suspend
 //		printinfo
 //	}
-	printl(i);
+//	printl(i);
 	o.thumbnail=o.t;
 	if (mode == MODE::LIST
 			&& ((LIST_ASCENDING_ORDER && i >= listTopLeftIndex
@@ -813,7 +815,7 @@ void Frame::setShowThumbnail(int i) {
 }
 
 void Frame::setListTopLeftIndexStartValue() {
-	listTopLeftIndex = LIST_ASCENDING_ORDER ? 0 : size() - 1;
+	listTopLeftIndex = getFirstListIndex();
 	listTopLeftIndexChanged();
 }
 
@@ -1076,4 +1078,8 @@ void Frame::getListMinMaxIndex(int &min, int &max) {
 		min=j+listxy-1;
 		max=sz-1;
 	}
+}
+
+int Frame::getFirstListIndex() {
+	return LIST_ASCENDING_ORDER?0:size()-1;
 }
