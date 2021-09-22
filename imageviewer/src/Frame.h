@@ -68,7 +68,7 @@ public:
 	virtual ~Frame();
 
 	void setTitle();
-	void load(const std::string &p, int index = 0); //supports dir & file
+	void load(const std::string &p, int index = 0,bool start=false); //supports dir & file
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
@@ -116,7 +116,7 @@ public:
 	void setButtonState(TOOLBAR_INDEX i,bool enable){
 		setButtonState(int(i),enable);
 	}
-	void setMode(MODE m);
+	void setMode(MODE m,bool start=false);
 	int size(){
 		return vp.size();
 	}

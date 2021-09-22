@@ -15,15 +15,22 @@
 #include <gtk/gtk.h>
 #include <vector>
 
-struct Image{
+class Image{
+	bool loaded;
+	//GMutex mutex;
+public:
 	std::string path;
 	int size;
 	GdkPixbuf*thumbnail;
 
 	Image(std::string p);
 	~Image();
-	static int c1;
-	static int c2;
+
+//	bool isLoaded();
+//	void setThumbnail(GdkPixbuf*p);
+
+//	static int c1;
+//	static int c2;
 };
 
 typedef std::vector<Image> VImage;
