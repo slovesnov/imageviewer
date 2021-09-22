@@ -18,6 +18,7 @@
 /* Note use mutex for every Image is bad idea too long g_mutex_init & g_mutex_clear
  *
  */
+#define IMAGE_COUNTERS
 
 class Image{
 public:
@@ -29,8 +30,14 @@ public:
 	Image(std::string p);
 	~Image();
 
-//	static int c1;
-//	static int c2;
+	//for correct VImage.erase()
+	Image(Image&& o);
+	Image& operator=(Image&& o);
+
+#ifdef IMAGE_COUNTERS
+	static int c1;
+	static int c2;
+#endif
 };
 
 typedef std::vector<Image> VImage;

@@ -11,12 +11,15 @@
 #include "Image.h"
 #include "help.h"
 
-//int Image::c1=0;
-//int Image::c2=0;
+#ifdef IMAGE_COUNTERS
+int Image::c1=0;
+int Image::c2=0;
+#endif
+
 
 Image::Image(std::string p){
 	path=p;
-	t=thumbnail=NULL;
+	t=thumbnail=nullptr;
 
 	/* Note stat() function works bad with utf8 non standard ascii symbols in filename,
 	 * may be need encoding, so use g_stat()
@@ -32,9 +35,34 @@ Image::Image(std::string p){
 }
 
 Image::~Image(){
-//	c1++;
+#ifdef IMAGE_COUNTERS
+		c1++;
+#endif
 	if(thumbnail){
-//		c2++;
+#ifdef IMAGE_COUNTERS
+				c2++;
+#endif
 		freePixbuf(thumbnail);
 	}
 }
+
+Image::Image(Image &&o) :
+		path(o.path), size(o.size), thumbnail(o.thumbnail), t(o.t) {
+	o.t = o.thumbnail = nullptr;
+}
+
+Image& Image::operator=(Image &&o) {
+	bool b=t==thumbnail;
+	freePixbuf(t);
+	if(!b){
+		freePixbuf(thumbnail);
+	}
+	path = o.path;
+	size = o.size;
+	t = o.t;
+	thumbnail = o.thumbnail;
+
+	o.t = o.thumbnail = nullptr;
+	return *this;
+}
+

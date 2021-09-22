@@ -16,7 +16,7 @@ Frame *frame;
 std::string Frame::workPath;
 VString Frame::sLowerExtension;
 
-#define START_MODE 0
+#define START_MODE 1
 
 #if START_MODE==0
 const MODE INITIAL_MODE=MODE::LIST;
@@ -461,6 +461,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
+//			printl(l,k)
 			if(p){
 //				GdkPixbuf*p=o.thumbnail;
 				getPixbufWH(p,w,h);
@@ -667,14 +668,11 @@ int Frame::showConfirmation(const std::string text) {
 void Frame::loadThumbnails() {
 	int i;
 
-	threadNumber=getFirstListIndex();
-	g_atomic_int_set (&endThreads,0);
-
-	if(size()!=0){
-		stopThreads();
-	}
+	stopThreads();
 	recountListParameters();
 
+	threadNumber=getFirstListIndex();//after threads stopped
+//	printinfo
 	i=0;
 	for (auto& p:pThread) {
 		p = g_thread_new("", thumbnail_thread, GP(i++));
@@ -908,7 +906,11 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				auto&a=vp[pi];
 				totalFileSize-=a.size;
 				g_remove(a.path.c_str());
-				//TODO a.freeThumbnail(); call automatically
+
+//TODO
+//				for(auto&a:vp){
+//					printl(a.path,a.size,a.t,a.thumbnail)
+//				}
 
 				//TODO stop threads & rerun threads
 				int sz=size();
@@ -923,6 +925,11 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					recountListParameters();
 					loadImage();
 				}
+
+				//TODO
+//				for(auto&a:vp){
+//					printl(a.path,a.size,a.t,a.thumbnail)
+//				}
 			}
 			return;
 		}

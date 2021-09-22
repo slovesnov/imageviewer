@@ -71,8 +71,9 @@ int main(int argc, char *argv[]) {
 	g_application_run(G_APPLICATION(app), argc, argv);
 	g_object_unref(app);
 
-	//TODO
-//	printl(Image::c1,Image::c2)
+#ifdef IMAGE_COUNTERS
+	printl(Image::c1,Image::c2)
+#endif
 
 	return 0;
 }
