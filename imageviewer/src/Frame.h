@@ -57,7 +57,7 @@ public:
 	guint32 lastScroll;
 	std::vector<GThread*>pThread;
 	GMutex mutex;
-	int threadNumber;
+	int threadNumber,loadid;
 	gint endThreads;//already have function stopThreads
 	int fontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
@@ -90,7 +90,7 @@ public:
 	void rotatePixbuf(GdkPixbuf *&p, int &w, int &h, int angle);
 
 	int showConfirmation(const std::string text);
-	void loadThumbnails();
+	void startThreads();
 	void thumbnailThread(int n);
 	void stopThreads();
 	void buttonPress(GdkEventButton *event);

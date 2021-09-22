@@ -18,16 +18,16 @@
 /* Note use mutex for every Image is bad idea too long g_mutex_init & g_mutex_clear
  *
  */
-#define IMAGE_COUNTERS
+//#define IMAGE_COUNTERS
 
 class Image{
 public:
 	std::string path;
-	int size;
-	//t - is used for thread loading
+	int size,loadid;
+	//t - is used for thread loading, see Image::~Image()
 	GdkPixbuf*thumbnail,*t;
 
-	Image(std::string p);
+	Image(std::string p,int id);
 	~Image();
 
 	//for correct VImage.erase()

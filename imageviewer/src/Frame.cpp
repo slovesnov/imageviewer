@@ -124,6 +124,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	std::string s=apppath;
 	std::size_t pos = s.rfind(G_DIR_SEPARATOR);
 	workPath=s.substr(0, pos+1);
+	loadid=-1;
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -328,6 +329,8 @@ void Frame::load(const std::string &p, int index,bool start) {
 	GDir *di;
 	const gchar *filename;
 
+	stopThreads();
+	loadid++;
 	vp.clear();
 	const bool d = isDir(p);
 	/* by default pi=0 - first image in directory
@@ -347,11 +350,13 @@ void Frame::load(const std::string &p, int index,bool start) {
 				if (!d && s == p) {
 					pi = size();
 				}
-				vp.push_back(Image(s));
+				vp.push_back(Image(s,loadid));
 				totalFileSize += vp.back().size;
 			}
 		}
 	}
+
+	recountListParameters();
 
 	if (vp.empty()) {
 		setNoImage();
@@ -362,7 +367,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 			setButtonState(i,i!=int(mode));
 		}
 
-		loadThumbnails();
+		startThreads();
 		setListTopLeftIndexStartValue();//have to reset
 	}
 
@@ -443,6 +448,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	if (mode == MODE::LIST) {
 		//because of return inside, x cycle should be inside of y cycle
 //		printl(listTopLeftIndex)
+//		bool f4=true;
 		for (k = listTopLeftIndex;
 				(LIST_ASCENDING_ORDER && k < sz)
 						|| (!LIST_ASCENDING_ORDER && k >= 0);
@@ -455,19 +461,20 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 			else{
 				l = listTopLeftIndex-k ;
-//				printl(l,k)
 			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
-//			printl(l,k)
 			if(p){
-//				GdkPixbuf*p=o.thumbnail;
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 			}
 			else{
+//				if(f4){
+//					f4=0;
+//					printl(o.t,o.thumbnail,k)
+//				}
 				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, true);
 			}
@@ -581,18 +588,17 @@ void Frame::setPosRedraw(double dx, double dy, guint32 time) {
 }
 
 bool Frame::noImage() {
-	return pi == -1;
+	return vp.empty();
 }
 
 void Frame::setNoImage() {
-	pi = -1;
+	vp.clear();
 	setTitle();
 
 	for(int i=0;i<TOOLBAR_INDEX_SIZE;i++){
 		TOOLBAR_INDEX t=TOOLBAR_INDEX(i);
 		setButtonState(i,t==TOOLBAR_INDEX::OPEN || t==TOOLBAR_INDEX::HELP);
 	}
-
 }
 
 bool Frame::isSupportedImage(const std::string &p) {
@@ -665,14 +671,28 @@ int Frame::showConfirmation(const std::string text) {
 	return r;
 }
 
-void Frame::loadThumbnails() {
+void Frame::startThreads() {
 	int i;
 
-	stopThreads();
-	recountListParameters();
+	threadNumber=getFirstListIndex();
+	while (1) {
+		if(!vp[threadNumber].thumbnail){
+			break;
+		}
 
-	threadNumber=getFirstListIndex();//after threads stopped
-//	printinfo
+		if(LIST_ASCENDING_ORDER){
+			threadNumber++;
+		}
+		else{
+			threadNumber--;
+		}
+
+		if ((LIST_ASCENDING_ORDER && threadNumber >= size()) || (!LIST_ASCENDING_ORDER && threadNumber<0)) {
+			break;
+		}
+	}
+	printl(getFirstListIndex(),threadNumber,size())
+
 	i=0;
 	for (auto& p:pThread) {
 		p = g_thread_new("", thumbnail_thread, GP(i++));
@@ -681,7 +701,7 @@ void Frame::loadThumbnails() {
 
 void Frame::thumbnailThread(int n) {
 	int w,h,v;
-	GdkPixbuf*d,*p;
+	GdkPixbuf*p;
 
 //#define SHOW_THREAD_TIME
 
@@ -715,13 +735,10 @@ void Frame::thumbnailThread(int n) {
 
 		if(!o.t){
 			p = gdk_pixbuf_new_from_file(o.path.c_str(), NULL);
-			scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
+			scaleFit(p, o.t, ICON_WIDTH, ICON_HEIGHT, w, h);
 			g_object_unref(p);
-			o.t=d;
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
-//			auto id=gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
-//			printl(id)
 		}
 		//s+=" "+std::to_string(v);
 	}
@@ -797,12 +814,10 @@ void Frame::buttonPress(GdkEventButton *event) {
 
 void Frame::setShowThumbnail(int i) {
 	auto& o=vp[i];
-//	if(i==0){
-//		printinfo
-//		Sleep(10000);//usleep(3);doesn't suspend
-//		printinfo
-//	}
-//	printl(i);
+	if(o.loadid!=loadid){
+		printl("skipped",o.loadid,loadid);
+		return;
+	}
 	o.thumbnail=o.t;
 	if (mode == MODE::LIST
 			&& ((LIST_ASCENDING_ORDER && i >= listTopLeftIndex
@@ -902,17 +917,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					== GTK_RESPONSE_YES) {
 				//not need full reload
 
+				stopThreads();
+
 				//before g_remove change totalFileSize
 				auto&a=vp[pi];
 				totalFileSize-=a.size;
 				g_remove(a.path.c_str());
 
-//TODO
-//				for(auto&a:vp){
-//					printl(a.path,a.size,a.t,a.thumbnail)
-//				}
-
-				//TODO stop threads & rerun threads
 				int sz=size();
 				vp.erase(vp.begin()+pi);
 				if(sz==1){
@@ -924,12 +935,19 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					}
 					recountListParameters();
 					loadImage();
+
+					//old indexes for setShowThumbnail() are not valid so make new loadid & set o.thumbmails
+					loadid++;
+					for(auto&o:vp){
+						if(!o.thumbnail && o.t){
+							o.thumbnail=o.t;
+						}
+						o.loadid=loadid;
+					}
+					startThreads();
 				}
 
-				//TODO
-//				for(auto&a:vp){
-//					printl(a.path,a.size,a.t,a.thumbnail)
-//				}
+
 			}
 			return;
 		}

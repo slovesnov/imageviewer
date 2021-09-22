@@ -17,8 +17,9 @@ int Image::c2=0;
 #endif
 
 
-Image::Image(std::string p){
+Image::Image(std::string p,int id){
 	path=p;
+	loadid=id;
 	t=thumbnail=nullptr;
 
 	/* Note stat() function works bad with utf8 non standard ascii symbols in filename,
@@ -35,14 +36,19 @@ Image::Image(std::string p){
 }
 
 Image::~Image(){
+	/* possible options
+	 * t=thumbnail=nullptr - image isn't loaded
+	 * t!=nullptr & thumbnail=nullptr - thread loaded image, but setShowThumbnail wasn't called
+	 * t=thumbnail!=nullptr - thread loaded image, and setShowThumbnail was called
+	 */
 #ifdef IMAGE_COUNTERS
 		c1++;
 #endif
-	if(thumbnail){
+	if(t){
 #ifdef IMAGE_COUNTERS
 				c2++;
 #endif
-		freePixbuf(thumbnail);
+		freePixbuf(t);
 	}
 }
 
@@ -52,11 +58,8 @@ Image::Image(Image &&o) :
 }
 
 Image& Image::operator=(Image &&o) {
-	bool b=t==thumbnail;
 	freePixbuf(t);
-	if(!b){
-		freePixbuf(thumbnail);
-	}
+	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
 	path = o.path;
 	size = o.size;
 	t = o.t;

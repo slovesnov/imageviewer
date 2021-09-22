@@ -10,8 +10,8 @@
 
 /* TODO
  *
- * remove push_back use set to decrease object creation
- * setShowThumbnail ignore if from another dir (use id)
+ * ?remove push_back use set to decrease object creation (watcho on counters)
+ * +setShowThumbnail ignore if from another dir (use id)
  * finish load after delete,stop threads before
  *
  * save/load mode on exit, order?
