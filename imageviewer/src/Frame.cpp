@@ -9,7 +9,6 @@
  */
 
 #include <cmath>
-
 #include "Frame.h"
 #include "help.h"
 
@@ -113,8 +112,8 @@ static void open_files(GtkWidget*, const char *data) {
 	frame->load(data);
 }
 
-static gboolean show_thumbnail_thread(gpointer data) {
-	frame->showThumbnail(GP2INT(data));
+static gboolean set_show_thumbnail_thread(gpointer data) {
+	frame->setShowThumbnail(GP2INT(data));
 	return G_SOURCE_REMOVE;
 }
 
@@ -714,16 +713,18 @@ void Frame::thumbnailThread(int n) {
 #endif
 			break;
 		}
+		auto & o=vp[v];
 
-		p = gdk_pixbuf_new_from_file(vp[v].path.c_str(), NULL);
-		scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
-		g_object_unref(p);
+		if(!o.t){
+			p = gdk_pixbuf_new_from_file(o.path.c_str(), NULL);
+			scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
+			g_object_unref(p);
+			o.t=d;
 
-		g_mutex_lock(&mutex);
-		vp[v].thumbnail=d;
-		g_mutex_unlock(&mutex);
-		gdk_threads_add_idle(show_thumbnail_thread, GP(v));
-
+			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+//			auto id=gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+//			printl(id)
+		}
 		//s+=" "+std::to_string(v);
 	}
 
@@ -745,6 +746,28 @@ void Frame::stopThreads() {
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
 
 	g_atomic_int_set(&endThreads, 0);
+
+
+//	int i=888;
+//	gboolean b=g_source_remove_by_user_data ( GP(i));
+//	if(b){
+//		printl("removed",i)
+//	}
+
+	bool r=false;
+	int i;
+	for(i=0;i<size();i++){
+		gboolean b=g_source_remove_by_user_data ( GP(i));
+		if(b){
+			r=true;
+			printl("removed",i)
+		}
+	}
+	if(!r){
+		printl("nothing to remove",size())
+	}
+
+
 }
 
 void Frame::buttonPress(GdkEventButton *event) {
@@ -772,7 +795,15 @@ void Frame::buttonPress(GdkEventButton *event) {
 	}
 }
 
-void Frame::showThumbnail(int i) {
+void Frame::setShowThumbnail(int i) {
+	auto& o=vp[i];
+//	if(i==0){
+//		printinfo
+//		Sleep(10000);//usleep(3);doesn't suspend
+//		printinfo
+//	}
+	printl(i);
+	o.thumbnail=o.t;
 	if (mode == MODE::LIST
 			&& ((LIST_ASCENDING_ORDER && i >= listTopLeftIndex
 					&& i < listTopLeftIndex + listxy)

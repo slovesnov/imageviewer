@@ -13,9 +13,15 @@
  * save/load mode on exit, order?
  * image access like in SvgParameters
  * finish load after delete,stop threads before
+ * redraw only part in showThumbnail()
  *
  * scroll mouse list multiplier
  * ascending/descending button on delete (disable/enable problems)
+ *
+ *
+ *
+ * c:\downloads\fatcow-hosting-icons-3000\32x32\alitalk.png
+ *
  */
 
 #include "Frame.h"

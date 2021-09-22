@@ -94,7 +94,7 @@ public:
 	void thumbnailThread(int n);
 	void stopThreads();
 	void buttonPress(GdkEventButton *event);
-	void showThumbnail(int i);
+	void setShowThumbnail(int i);
 	void setListTopLeftIndexStartValue();
 	void scrollList(int v);
 

@@ -15,19 +15,19 @@
 #include <gtk/gtk.h>
 #include <vector>
 
+/* Note use mutex for every Image is bad idea too long g_mutex_init & g_mutex_clear
+ *
+ */
+
 class Image{
-	bool loaded;
-	GMutex mutex;
 public:
 	std::string path;
 	int size;
-	GdkPixbuf*thumbnail;
+	//t - is used for thread loading
+	GdkPixbuf*thumbnail,*t;
 
 	Image(std::string p);
 	~Image();
-
-//	bool isLoaded();
-//	void setThumbnail(GdkPixbuf*p);
 
 //	static int c1;
 //	static int c2;
