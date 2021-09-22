@@ -17,7 +17,7 @@
 
 class Image{
 	bool loaded;
-	//GMutex mutex;
+	GMutex mutex;
 public:
 	std::string path;
 	int size;

@@ -17,9 +17,13 @@ Frame *frame;
 std::string Frame::workPath;
 VString Frame::sLowerExtension;
 
-//const MODE INITIAL_MODE=MODE::LIST;
-const MODE INITIAL_MODE=MODE::FIT;
+#define START_MODE 0
 
+#if START_MODE==0
+const MODE INITIAL_MODE=MODE::LIST;
+#else
+const MODE INITIAL_MODE=MODE::FIT;
+#endif
 
 const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
 		"sep", "oct", "nov", "dec" };
@@ -207,12 +211,13 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 
 	pix = pixs = 0;
 	lastScroll = 0;
-	setMode(INITIAL_MODE);
+
+	setMode(INITIAL_MODE,true);
 
 	if (path.empty()) {
 		setNoImage();
 	} else {
-		load(path); //after area is created
+		load(path,0,true); //after area is created
 		if(mode==MODE::LIST){//after vp is loading in load() function
 			setListTopLeftIndexStartValue();
 		}
@@ -319,7 +324,7 @@ void Frame::setTitle() {
 	gtk_window_set_title(GTK_WINDOW(window), t.c_str());
 }
 
-void Frame::load(const std::string &p, int index) {
+void Frame::load(const std::string &p, int index,bool start) {
 	std::string s;
 	GDir *di;
 	const gchar *filename;
@@ -362,7 +367,7 @@ void Frame::load(const std::string &p, int index) {
 		setListTopLeftIndexStartValue();//have to reset
 	}
 
-	if(!d && mode==MODE::LIST){
+	if(!start && !d && mode==MODE::LIST){
 		setMode(MODE::NORMAL);
 	}
 
@@ -455,18 +460,17 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
-//			auto o=vp[k];
-//			if(o.isLoaded()){
+			auto& o=vp[k];
+			GdkPixbuf*p=o.thumbnail;
+			if(p){
 //				GdkPixbuf*p=o.thumbnail;
-//				getPixbufWH(p,w,h);
-//				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
-//			}
-//			else{
-//				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
-//						true, true);
-//			}
-			drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
-					true, true);
+				getPixbufWH(p,w,h);
+				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
+			}
+			else{
+				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
+						true, true);
+			}
 		}
 	}
 	else{
@@ -715,7 +719,9 @@ void Frame::thumbnailThread(int n) {
 		scaleFit(p, d, ICON_WIDTH, ICON_HEIGHT, w, h);
 		g_object_unref(p);
 
-		vp[v].setThumbnail(d);
+		g_mutex_lock(&mutex);
+		vp[v].thumbnail=d;
+		g_mutex_unlock(&mutex);
 		gdk_threads_add_idle(show_thumbnail_thread, GP(v));
 
 		//s+=" "+std::to_string(v);
@@ -982,8 +988,8 @@ void Frame::setButtonState(int i, bool enable) {
 	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(buttonPixbuf[i][enable]));
 }
 
-void Frame::setMode(MODE m) {
-	if(mode!=m){
+void Frame::setMode(MODE m,bool start) {
+	if(mode!=m || start){
 		mode=m;
 		int i=0;
 		for(auto a:TMODE){
