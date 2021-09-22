@@ -815,7 +815,7 @@ void Frame::buttonPress(GdkEventButton *event) {
 void Frame::setShowThumbnail(int i) {
 	auto& o=vp[i];
 	if(o.loadid!=loadid){
-		printl("skipped",o.loadid,loadid);
+		printl("skipped",o.loadid,loadid,"i=",i);
 		return;
 	}
 	o.thumbnail=o.t;
