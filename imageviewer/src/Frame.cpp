@@ -446,9 +446,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 
 	if (mode == MODE::LIST) {
-		//because of return inside, x cycle should be inside of y cycle
 //		printl(listTopLeftIndex)
-//		bool f4=true;
 		for (k = listTopLeftIndex;
 				(LIST_ASCENDING_ORDER && k < sz)
 						|| (!LIST_ASCENDING_ORDER && k >= 0);
@@ -471,10 +469,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 			}
 			else{
-//				if(f4){
-//					f4=0;
-//					printl(o.t,o.thumbnail,k)
-//				}
 				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, true);
 			}

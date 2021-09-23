@@ -46,7 +46,7 @@ Image::~Image(){
 #endif
 	if(t){
 #ifdef IMAGE_COUNTERS
-				c2++;
+		c2++;
 #endif
 		freePixbuf(t);
 	}
