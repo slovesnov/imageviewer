@@ -362,7 +362,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 		setNoImage();
 	}
 	else{
-		//if was no image, need to set toolbars enabled
+		//if was no image, need to set toolbar buttons enabled
 		for(int i=0;i<TOOLBAR_INDEX_SIZE;i++){
 			setButtonState(i,i!=int(mode));
 		}
@@ -668,19 +668,8 @@ int Frame::showConfirmation(const std::string text) {
 void Frame::startThreads() {
 	int i;
 
-	threadNumber=getFirstListIndex();
-	while (1) {
-		if(!vp[threadNumber].thumbnail){
-			break;
-		}
 
-		if(LIST_ASCENDING_ORDER){
-			threadNumber++;
-		}
-		else{
-			threadNumber--;
-		}
-
+	for (threadNumber=getFirstListIndex();vp[threadNumber].thumbnail!=0; threadNumber+=LIST_ASCENDING_ORDER?1:-1) {
 		if ((LIST_ASCENDING_ORDER && threadNumber >= size()) || (!LIST_ASCENDING_ORDER && threadNumber<0)) {
 			break;
 		}
