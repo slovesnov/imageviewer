@@ -36,11 +36,7 @@ Image::Image(std::string p,int id){
 }
 
 Image::~Image(){
-	/* possible options
-	 * t=thumbnail=nullptr - image isn't loaded
-	 * t!=nullptr & thumbnail=nullptr - thread loaded image, but setShowThumbnail wasn't called
-	 * t=thumbnail!=nullptr - thread loaded image, and setShowThumbnail was called
-	 */
+	//see Image.h for documentation
 #ifdef IMAGE_COUNTERS
 		c1++;
 #endif
@@ -52,21 +48,24 @@ Image::~Image(){
 	}
 }
 
-Image::Image(Image &&o) :
-		path(o.path), size(o.size), loadid(o.loadid),thumbnail(o.thumbnail), t(o.t) {
-	o.t = o.thumbnail = nullptr;
+Image::Image(Image &&o) {
+	assign(o);
 }
 
 Image& Image::operator=(Image &&o) {
-	freePixbuf(t);
 	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
+	freePixbuf(t);
+	assign(o);
+	return *this;
+}
+
+void Image::assign(Image& o){
 	path = o.path;
 	size = o.size;
 	loadid=o.loadid;
 	thumbnail = o.thumbnail;
 	t = o.t;
-
 	o.t = o.thumbnail = nullptr;
-	return *this;
 }
+
 

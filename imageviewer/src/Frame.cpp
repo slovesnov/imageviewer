@@ -930,6 +930,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					recountListParameters();
 					loadImage();
 
+					//see Image.h for documentation why need to set new loadid & set o.thumbmails
 					//old indexes for setShowThumbnail() are not valid so make new loadid & set o.thumbmails
 					loadid++;
 					for(auto&o:vp){
