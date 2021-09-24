@@ -12,6 +12,8 @@
  *
  * ?remove push_back use set to decrease object creation (watch on counters)
  *
+ * join at the end
+ *
  * save/load mode on exit, order?
  * redraw only part in showThumbnail()
  *

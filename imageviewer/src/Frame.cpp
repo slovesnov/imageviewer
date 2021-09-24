@@ -129,7 +129,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
 	for (auto& p:pThread) {
-		p=0;
+		p=nullptr;
 	}
 	g_mutex_init(&mutex);
 
@@ -329,7 +329,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 	GDir *di;
 	const gchar *filename;
 
-	stopThreads();
+	stopThreads();//endThreads=0 after
 	loadid++;
 	vp.clear();
 	const bool d = isDir(p);
@@ -668,16 +668,18 @@ int Frame::showConfirmation(const std::string text) {
 void Frame::startThreads() {
 	int i;
 
-
-	for (threadNumber=getFirstListIndex();vp[threadNumber].thumbnail!=0; threadNumber+=LIST_ASCENDING_ORDER?1:-1) {
-		if ((LIST_ASCENDING_ORDER && threadNumber >= size()) || (!LIST_ASCENDING_ORDER && threadNumber<0)) {
+	for (i = getFirstListIndex(); vp[i].thumbnail != 0;
+			i += LIST_ASCENDING_ORDER ? 1 : -1) {
+		if ((LIST_ASCENDING_ORDER && i >= size())
+				|| (!LIST_ASCENDING_ORDER && i < 0)) {
 			break;
 		}
 	}
-	printl(getFirstListIndex(),threadNumber,size())
+	threadNumber = i;
+	printl(getFirstListIndex(), threadNumber, size())
 
-	i=0;
-	for (auto& p:pThread) {
+	i = 0;
+	for (auto &p : pThread) {
 		p = g_thread_new("", thumbnail_thread, GP(i++));
 	}
 }
@@ -736,9 +738,10 @@ void Frame::stopThreads() {
 	g_atomic_int_set(&endThreads, 1);
 
 	//	clock_t begin=clock();
-	for (auto p:pThread) {
-		if(p){//1st time p==0
+	for (auto& p:pThread) {
+		if(p){//1st time p==nullptr
 			g_thread_join(p);
+			p=nullptr;//allow call stopThreads many times
 		}
 	}
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
