@@ -18,7 +18,7 @@
  * redraw only part in showThumbnail()
  *
  * scroll mouse list multiplier
- * ascending/descending button on delete (disable/enable problems)
+ * +ascending/descending button on delete (disable/enable problems)
  *
  *
  *
