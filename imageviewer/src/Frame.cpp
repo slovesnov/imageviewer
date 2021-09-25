@@ -51,6 +51,11 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"help.png"
 };
 
+const char *ASCENDING_DESCENDING_IMAGES[] = {
+		"sort_ascending.png","sort_descending.png"
+};
+//const int SIZE_ASCENDING_DESCENDING_IMAGES=SIZEI(ASCENDING_DESCENDING_IMAGES);
+
 const TOOLBAR_INDEX ROTATE[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
 		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE };
 
@@ -125,6 +130,8 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	std::size_t pos = s.rfind(G_DIR_SEPARATOR);
 	workPath=s.substr(0, pos+1);
 	loadid=-1;
+	listAscendingOrder=true;
+	ascendingDescending=new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -157,6 +164,13 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	//auto box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	auto toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_widget_set_halign(toolbar, GTK_ALIGN_CENTER);
+
+
+	//before setButtonState
+	i=0;
+	for(auto a:ASCENDING_DESCENDING_IMAGES){
+		ascendingDescending[i++]=gdk_pixbuf_new_from_file(imageString(a).c_str(),0);
+	}
 
 	i=0;
 	for(auto a:TOOLBAR_IMAGES){
@@ -239,6 +253,7 @@ Frame::~Frame() {
 			g_object_unref(buttonPixbuf[i][j]);
 		}
 	}
+	delete[]ascendingDescending;
 }
 
 void Frame::openUris(char **uris) {
@@ -272,7 +287,7 @@ void Frame::setTitle() {
 			 * if LIST_ASCENDING_ORDER=0 a>b & a-b+1=listxy => b=a+1-listxy=listTopLeftIndex +2- listxy
 			 */
 			t += format("%d-%d/%d", listTopLeftIndex + 1,
-					LIST_ASCENDING_ORDER ?
+					listAscendingOrder ?
 							MIN(listTopLeftIndex + listxy, sz) :
 							MAX(listTopLeftIndex + 2 - listxy, 1), sz)
 					+ separator
@@ -448,10 +463,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	if (mode == MODE::LIST) {
 //		printl(listTopLeftIndex)
 		for (k = listTopLeftIndex;
-				(LIST_ASCENDING_ORDER && k < sz)
-						|| (!LIST_ASCENDING_ORDER && k >= 0);
-				k += LIST_ASCENDING_ORDER ? 1 : -1) {
-			if(LIST_ASCENDING_ORDER){
+				(listAscendingOrder && k < sz)
+						|| (!listAscendingOrder && k >= 0);
+				k += listAscendingOrder ? 1 : -1) {
+			if(listAscendingOrder){
 				l = k - listTopLeftIndex;
 				if(l>=listxy){
 					break;
@@ -508,8 +523,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 void Frame::drawImage() {
 	posh = posv = 0;
-	setTitle();
-	gtk_widget_queue_draw(area);
+	redraw();
 }
 
 gboolean Frame::keyPress(GdkEventKey *event) {
@@ -578,7 +592,7 @@ void Frame::setPosRedraw(double dx, double dy, guint32 time) {
 	posh += dx;
 	posv += dy;
 	adjustPos();
-	gtk_widget_queue_draw(area);
+	redraw(false);
 }
 
 bool Frame::noImage() {
@@ -669,14 +683,14 @@ void Frame::startThreads() {
 	int i;
 
 	for (i = getFirstListIndex(); vp[i].thumbnail != 0;
-			i += LIST_ASCENDING_ORDER ? 1 : -1) {
-		if ((LIST_ASCENDING_ORDER && i >= size())
-				|| (!LIST_ASCENDING_ORDER && i < 0)) {
+			i += listAscendingOrder ? 1 : -1) {
+		if ((listAscendingOrder && i >= size())
+				|| (!listAscendingOrder && i < 0)) {
 			break;
 		}
 	}
 	threadNumber = i;
-	printl(getFirstListIndex(), threadNumber, size())
+	//printl(getFirstListIndex(), threadNumber, size())
 
 	i = 0;
 	for (auto &p : pThread) {
@@ -698,7 +712,7 @@ void Frame::thumbnailThread(int n) {
 	while (1) {
 		g_mutex_lock(&mutex);
 		//Note. v = threadNumber+= LIST_ASCENDING_ORDER?1:-1; NOT WORKING LIKE BELOW CODE
-		if(LIST_ASCENDING_ORDER){
+		if(listAscendingOrder){
 			v=threadNumber++;
 		}
 		else{
@@ -706,7 +720,7 @@ void Frame::thumbnailThread(int n) {
 		}
 		g_mutex_unlock(&mutex);
 
-		if ((LIST_ASCENDING_ORDER && v >= size()) || (!LIST_ASCENDING_ORDER && v<0)) {
+		if ((listAscendingOrder && v >= size()) || (!listAscendingOrder && v<0)) {
 			break;
 		}
 
@@ -783,7 +797,7 @@ void Frame::buttonPress(GdkEventButton *event) {
 					int cx=event->x;
 					int cy=event->y;
 					if(cx>=listdx && cx<lastWidth-listdx && cy>=listdy && cy<lastHeight-listdy){
-						pi = ((cx-listdx)/ICON_WIDTH+(cy-listdy)/ICON_HEIGHT*listx)*(LIST_ASCENDING_ORDER?1:-1)+listTopLeftIndex;
+						pi = ((cx-listdx)/ICON_WIDTH+(cy-listdy)/ICON_HEIGHT*listx)*(listAscendingOrder?1:-1)+listTopLeftIndex;
 						setMode(MODE::FIT);
 						loadImage();
 					}
@@ -801,15 +815,15 @@ void Frame::buttonPress(GdkEventButton *event) {
 void Frame::setShowThumbnail(int i) {
 	auto& o=vp[i];
 	if(o.loadid!=loadid){
-		printl("skipped",o.loadid,loadid,"i=",i);
+		//printl("skipped",o.loadid,loadid,"i=",i);
 		return;
 	}
 	o.thumbnail=o.t;
 	if (mode == MODE::LIST
-			&& ((LIST_ASCENDING_ORDER && i >= listTopLeftIndex
+			&& ((listAscendingOrder && i >= listTopLeftIndex
 					&& i < listTopLeftIndex + listxy)
-					|| (!LIST_ASCENDING_ORDER && i <= listTopLeftIndex && i >= 0))) {
-		gtk_widget_queue_draw(area);
+					|| (!listAscendingOrder && i <= listTopLeftIndex && i >= 0))) {
+		redraw(false);
 	}
 }
 
@@ -827,13 +841,13 @@ void Frame::scrollList(int v) {
 		}
 		getListMinMaxIndex(min, max);
 		if(v==GOTO_BEGIN){
-			i=LIST_ASCENDING_ORDER?min:max;
+			i=listAscendingOrder?min:max;
 		}
 		else if(v==GOTO_END){
-			i=LIST_ASCENDING_ORDER?max:min;
+			i=listAscendingOrder?max:min;
 		}
 		else{
-			i=listTopLeftIndex+v*(LIST_ASCENDING_ORDER?1:-1)*listx;
+			i=listTopLeftIndex+v*(listAscendingOrder?1:-1)*listx;
 		}
 
 		j=listTopLeftIndex;
@@ -867,8 +881,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			setMode(m);
 			if (mode == MODE::LIST) {
 				setListTopLeftIndexStartValue();
-				setTitle();
-				gtk_widget_queue_draw(area);
+				redraw();
 			} else {
 				if (mode == MODE::FIT) {
 					setSmallImage();
@@ -897,8 +910,16 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	if(mode!=MODE::LIST){
-		if(t==TOOLBAR_INDEX::REMOVE){
+	if(t==TOOLBAR_INDEX::DELETE_ASCENDING_DESCENDING){
+		if(mode==MODE::LIST){
+			stopThreads();
+			listAscendingOrder=!listAscendingOrder;
+			listTopLeftIndex = getFirstListIndex();
+			startThreads();
+			setDADButtonState();
+			redraw();
+		}
+		else{
 			if (showConfirmation("Do you really want to delete current image?")
 					== GTK_RESPONSE_YES) {
 				//not need full reload
@@ -933,12 +954,12 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					}
 					startThreads();
 				}
-
-
 			}
-			return;
 		}
+		return;
+	}
 
+	if(mode!=MODE::LIST){
 		i=INDEX_OF(ROTATE,t);
 		if(i!=-1){
 			rotatePixbuf(pix, pw, ph, 90 * (i+1));
@@ -1028,9 +1049,7 @@ void Frame::recountListParameters() {
 }
 
 void Frame::setButtonState(int i, bool enable) {
-	auto b=button[i];
-	gtk_widget_set_sensitive (b, enable);
-	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(buttonPixbuf[i][enable]));
+	setButtonImage(i, enable, buttonPixbuf[i][enable]);
 }
 
 void Frame::setMode(MODE m,bool start) {
@@ -1041,27 +1060,25 @@ void Frame::setMode(MODE m,bool start) {
 			setButtonState(a,i++!=int(m));
 		}
 
-		const TOOLBAR_INDEX b[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
-				TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE, TOOLBAR_INDEX::REMOVE };
-		for(auto a:b){
+		for(auto a:ROTATE){
 			setButtonState(a,mode!=MODE::LIST);
 		}
 
+		setDADButtonState();
 	}
 }
 
 void Frame::listTopLeftIndexChanged() {
 	int min,max;
 	getListMinMaxIndex(min,max);
-	if(LIST_ASCENDING_ORDER){
+	if(listAscendingOrder){
 		//setNavigationButtonsState(listTopLeftIndex!=0 , listTopLeftIndex<size()-listxy );
 		setNavigationButtonsState(listTopLeftIndex>min , listTopLeftIndex<max );
 	}
 	else{
 		setNavigationButtonsState(listTopLeftIndex<max , listTopLeftIndex>min );
 	}
-	setTitle();
-	gtk_widget_queue_draw(area);
+	redraw();
 }
 
 void Frame::setNavigationButtonsState(bool c1,bool c2) {
@@ -1074,7 +1091,7 @@ void Frame::setNavigationButtonsState(bool c1,bool c2) {
 
 void Frame::getListMinMaxIndex(int &min, int &max) {
 	int j,sz=size();
-	if(LIST_ASCENDING_ORDER){
+	if(listAscendingOrder){
 		j=sz;
 		if(sz%listx!=0){
 			j+=listx-sz%listx;
@@ -1093,5 +1110,28 @@ void Frame::getListMinMaxIndex(int &min, int &max) {
 }
 
 int Frame::getFirstListIndex() {
-	return LIST_ASCENDING_ORDER?0:size()-1;
+	return listAscendingOrder?0:size()-1;
+}
+
+void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
+	auto b=button[i];
+	gtk_widget_set_sensitive (b, enable);
+	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(p));
+}
+
+void Frame::setDADButtonState() {
+	auto a=TOOLBAR_INDEX::DELETE_ASCENDING_DESCENDING;
+	if(mode==MODE::LIST){
+		setButtonImage(int(a), true, ascendingDescending[listAscendingOrder]);
+	}
+	else{
+		setButtonState(a,mode!=MODE::LIST);
+	}
+}
+
+void Frame::redraw(bool withTitle) {
+	if(withTitle){
+		setTitle();
+	}
+	gtk_widget_queue_draw(area);
 }

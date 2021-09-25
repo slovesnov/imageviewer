@@ -20,12 +20,11 @@ enum class MODE {
 	NORMAL, FIT, LIST
 };
 
-//Note DELETE defined in winnt.h
 enum class TOOLBAR_INDEX{
 	MODE_NORMAL,MODE_FIT,MODE_LIST,
 	ROTATE_ANTICLOCKWISE,ROTATE_180,ROTATE_CLOCKWISE,
 	HOME,PAGE_UP,PREVIOUS,NEXT,PAGE_DOWN,END,
-	OPEN,REMOVE,HELP
+	OPEN,DELETE_ASCENDING_DESCENDING,HELP
 	,SIZE
 };
 const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::SIZE);
@@ -38,7 +37,9 @@ const int WHEEL_MULTIPLIER = 80;
 const int SCROLL_DELAY_MILLISECONDS = 500;
 const int ICON_HEIGHT=95;//drawing area height 959,so got 10 rows
 const int ICON_WIDTH=4*ICON_HEIGHT/3;//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-const bool LIST_ASCENDING_ORDER=1;
+
+const int SIZE_DELETE_ASCENDING_DESCENDING_IMAGES=3;//=SIZEI(DELETE_ASCENDING_DESCENDING_IMAGES)
+//extern const int SIZE_DELETE_ASCENDING_DESCENDING_IMAGES;
 
 class Frame {
 public:
@@ -63,6 +64,8 @@ public:
 	int listx,listy,listdx,listdy,listxy;
 	static std::string workPath;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
+	GdkPixbuf*deleteAscendingDescending[SIZE_DELETE_ASCENDING_DESCENDING_IMAGES];
+	bool list_ascending_order;
 
 	Frame(GtkApplication *application, std::string const path = "",const char* apppath="");
 	virtual ~Frame();
