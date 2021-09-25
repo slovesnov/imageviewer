@@ -38,9 +38,6 @@ const int SCROLL_DELAY_MILLISECONDS = 500;
 const int ICON_HEIGHT=95;//drawing area height 959,so got 10 rows
 const int ICON_WIDTH=4*ICON_HEIGHT/3;//4*95/3 = 126, 1920/126=15.23 so got 15 columns
 
-const int SIZE_DELETE_ASCENDING_DESCENDING_IMAGES=3;//=SIZEI(DELETE_ASCENDING_DESCENDING_IMAGES)
-//extern const int SIZE_DELETE_ASCENDING_DESCENDING_IMAGES;
-
 class Frame {
 public:
 	GtkWidget *window, *area,*button[TOOLBAR_INDEX_SIZE];
@@ -64,8 +61,8 @@ public:
 	int listx,listy,listdx,listdy,listxy;
 	static std::string workPath;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
-	GdkPixbuf*deleteAscendingDescending[SIZE_DELETE_ASCENDING_DESCENDING_IMAGES];
-	bool list_ascending_order;
+	GdkPixbuf**ascendingDescending;
+	bool listAscendingOrder;
 
 	Frame(GtkApplication *application, std::string const path = "",const char* apppath="");
 	virtual ~Frame();
@@ -128,6 +125,9 @@ public:
 	void getListMinMaxIndex(int&min,int&max);
 	int getFirstListIndex();
 
+	void setButtonImage(int i,bool enable,GdkPixbuf*p);
+	void setDADButtonState();
+	void redraw(bool withTitle=true);
 };
 
 #endif /* FRAME_H_ */
