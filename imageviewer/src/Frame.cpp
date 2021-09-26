@@ -135,7 +135,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	workPath=getFileInfo(apppath,FILEINFO::DIRECTORY)+G_DIR_SEPARATOR;
 	applicationName=getFileInfo(apppath,FILEINFO::SHORT_NAME);
 	loadid=-1;
-	ascendingDescending=new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
+	ascendingDescending = new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
 	readConfig();
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
