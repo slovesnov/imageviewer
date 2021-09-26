@@ -10,16 +10,9 @@
 
 /* TODO
  *
- * ?remove push_back use set to decrease object creation (watch on counters)
- *
- * join at the end
- *
- * save/load mode on exit, order?
+ * ?join at the end
  * redraw only part in showThumbnail()
- *
- * scroll mouse list multiplier
- * +ascending/descending button on delete (disable/enable problems)
- *
+ * scroll mouse list multiplier, delay time
  *
  *
  * c:\downloads\fatcow-hosting-icons-3000\32x32\alitalk.png

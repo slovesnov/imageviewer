@@ -16,13 +16,19 @@ Frame *frame;
 std::string Frame::workPath;
 VString Frame::sLowerExtension;
 
-#define START_MODE 1
+/* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
+ * START_MODE=-1 is normal, other values is using for debugging
+*/
+#define START_MODE -1
 
 #if START_MODE==0
-const MODE INITIAL_MODE=MODE::LIST;
-#else
+const MODE INITIAL_MODE=MODE::NORMAL;
+#elif START_MODE==1
 const MODE INITIAL_MODE=MODE::FIT;
+#elif START_MODE==2
+const MODE INITIAL_MODE=MODE::LIST;
 #endif
+
 
 const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
 		"sep", "oct", "nov", "dec" };
@@ -130,8 +136,8 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	std::size_t pos = s.rfind(G_DIR_SEPARATOR);
 	workPath=s.substr(0, pos+1);
 	loadid=-1;
-	listAscendingOrder=true;
 	ascendingDescending=new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
+	readConfig();
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -226,8 +232,6 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	pix = pixs = 0;
 	lastScroll = 0;
 
-	setMode(INITIAL_MODE,true);
-
 	if (path.empty()) {
 		setNoImage();
 	} else {
@@ -243,7 +247,7 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 
 Frame::~Frame() {
 	int i, j;
-
+	writeConfig();
 	stopThreads();
 	free();
 	g_mutex_clear(&mutex);
@@ -386,8 +390,18 @@ void Frame::load(const std::string &p, int index,bool start) {
 		setListTopLeftIndexStartValue();//have to reset
 	}
 
-	if(!start && !d && mode==MODE::LIST){
-		setMode(MODE::NORMAL);
+	if(!d && mode==MODE::LIST){
+		if(start){
+			#if	START_MODE==-1
+				setMode(mode,true);
+			#else
+				setMode(INITIAL_MODE,true);
+			#endif
+		}
+		else{
+			setMode(MODE::NORMAL);
+		}
+
 	}
 
 	//need to redraw anyway even if no image
@@ -973,45 +987,49 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 }
 
 void Frame::showHelp() {
-	std::string t ="if drag & drop file -> view directory which includes dropped file, starts from dropped file if file is supported\n\
-if dropped file isn't supported then first supported image in directory\n\
-if drag & drop directory -> view directory which includes dropped file, starts from first supported file in directory\n\
-\n\
-(mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6, GDK_KEY_Down, GDK_KEY_KP_2) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4,GDK_KEY_Up, GDK_KEY_KP_8 ) {\n\
-	LIST MODE scroll one row\n\
-	FIT/NORMAL MODES next/previous image in directory\n\
-}\n\
-(GDK_KEY_Page_Down, GDK_KEY_KP_3) / (GDK_KEY_Page_Up, GDK_KEY_KP_9) {\n\
-	LIST MODE scroll screen\n\
-	FIT/NORMAL MODES +/-sqrt (number of images in directory)\n\
-}\n\
-(GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) {\n\
-	ALL MODES go to first/last image in directory\n\
-}\n\
-\n\
-mouse_right, O, GDK_KEY_Clear, GDK_KEY_KP_5 { \n\
-	open file/folder to select folder or file. Use \"select\" button in dialog to open file or folder, \"open\" button works only with files\n\
-}\n\
-vertical mouse scroll {\n\
-	LIST MODE scroll one row\n\
-	FIT MODE ignored\n\
-	NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window\n\
-}\n\
-horizontal mouse scroll {\n\
-	LIST, FIT MODES ignored\n\
-	NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window\n\
-}\n\
-\n\
-GDK_KEY_KP_Add (+ on extended keyboard) - switch to NORMAL MODE\n\
-GDK_KEY_KP_Subtract (- on extended keyboard) - switch to FIT MODE\n\
-l - switch to LIST MODE\n\
-\n\
-e - rotate image by 270 degrees\n\
-r - rotate image by 180 degrees\n\
-t - rotate image by 90 degrees\n\
-\n\
-GDK_KEY_Delete, GDK_KEY_KP_Decimal - remove current image with confirm dialog and goes to next image in directory\n\
-h, F1 - show help";
+	const char t[] =R"(if drag & drop file -> view directory which includes dropped file, starts from dropped file if file is supported
+if dropped file isn't supported then first supported image in directory
+if drag & drop directory -> view directory which includes dropped file, starts from first supported file in directory
+
+(mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6, GDK_KEY_Down, GDK_KEY_KP_2) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4,GDK_KEY_Up, GDK_KEY_KP_8 ) {
+	LIST MODE scroll one row
+	FIT/NORMAL MODES next/previous image in directory
+}
+(GDK_KEY_Page_Down, GDK_KEY_KP_3) / (GDK_KEY_Page_Up, GDK_KEY_KP_9) {
+	LIST MODE scroll screen
+	FIT/NORMAL MODES +/-sqrt (number of images in directory)
+}
+(GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) {
+	ALL MODES go to first/last image in directory
+}
+
+mouse_right, O, GDK_KEY_Clear, GDK_KEY_KP_5 { 
+	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
+}
+vertical mouse scroll {
+	LIST MODE scroll one row
+	FIT MODE ignored
+	NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window
+}
+horizontal mouse scroll {
+	LIST, FIT MODES ignored
+	NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window
+}
+
+GDK_KEY_KP_Add (+ on extended keyboard) - switch to NORMAL MODE
+GDK_KEY_KP_Subtract (- on extended keyboard) - switch to FIT MODE
+l - switch to LIST MODE
+
+e - rotate image by 270 degrees
+r - rotate image by 180 degrees
+t - rotate image by 90 degrees
+
+GDK_KEY_Delete, GDK_KEY_KP_Decimal {
+	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in directory
+	LIST MODE - change ascending/descending list order
+}
+
+h, F1 - show help)";
 
 	auto d=gtk_dialog_new();
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
@@ -1020,7 +1038,7 @@ h, F1 - show help";
 	gtk_window_set_title(GTK_WINDOW(d), "Help");
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
 
-	auto l=gtk_label_new(t.c_str());
+	auto l=gtk_label_new(t);
 	auto ca= gtk_dialog_get_content_area(GTK_DIALOG(d));
 
 	gtk_container_add(GTK_CONTAINER(ca),l);
@@ -1055,6 +1073,9 @@ void Frame::setButtonState(int i, bool enable) {
 void Frame::setMode(MODE m,bool start) {
 	if(mode!=m || start){
 		mode=m;
+		if(mode!=MODE::LIST){
+			lastNonListMode=mode;
+		}
 		int i=0;
 		for(auto a:TMODE){
 			setButtonState(a,i++!=int(m));
@@ -1134,4 +1155,68 @@ void Frame::redraw(bool withTitle) {
 		setTitle();
 	}
 	gtk_widget_queue_draw(area);
+}
+
+void Frame::readConfig() {
+	listAscendingOrder=true;
+	mode=MODE::NORMAL;
+
+	gchar *contents = NULL;
+	if(!g_file_get_contents (configPath().c_str(), &contents, NULL, NULL)){
+		return;
+	}
+
+	int i,j;
+	gchar **split = NULL;
+	split = g_strsplit (contents, "\n", 0);
+	if(split[0] && split[1]){
+		for(i=0;i<2;i++){
+			gchar*p=strchr(split[i],'=');
+			if(!p){
+				printl("error");
+				break;
+			}
+			j=atoi(p+1);
+			if(i==0){
+				if(j<0 || j>2){
+					printl("error");
+					break;
+				}
+				lastNonListMode=mode=MODE(j);
+			}
+			else{
+				if(j<0 || j>1){
+					printl("error");
+					break;
+				}
+				listAscendingOrder=j==1;
+			}
+
+		}
+//		printl(contents)
+//		printl(int(mode),listAscendingOrder)
+	}
+	g_strfreev (split);
+	g_free (contents);
+}
+
+void Frame::writeConfig() {
+	const std::string tag[]={
+		"mode",
+		"order"
+	};
+	std::string s;
+	int i=0;
+	for(auto c:tag){
+		s+=c+" = ";
+		if(i==0){
+			s+=std::to_string(int(lastNonListMode));
+		}
+		else{
+			s+=std::to_string(listAscendingOrder);
+		}
+		s+="\n";
+		i++;
+	}
+	g_file_set_contents (configPath().c_str(), s.c_str(), s.length(), NULL);
 }

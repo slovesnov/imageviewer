@@ -63,6 +63,7 @@ public:
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	GdkPixbuf**ascendingDescending;
 	bool listAscendingOrder;
+	MODE lastNonListMode;
 
 	Frame(GtkApplication *application, std::string const path = "",const char* apppath="");
 	virtual ~Frame();
@@ -128,6 +129,13 @@ public:
 	void setButtonImage(int i,bool enable,GdkPixbuf*p);
 	void setDADButtonState();
 	void redraw(bool withTitle=true);
+	void readConfig();
+	void writeConfig();
+
+	static std::string configPath() {
+		return workPath+"../imageviewer.cfg";
+	}
+
 };
 
 #endif /* FRAME_H_ */
