@@ -10,10 +10,8 @@
 
 /* TODO
  *
- * ?join at the end
  * redraw only part in showThumbnail()
  * scroll mouse list multiplier, delay time
- * file names
  *
  * run configurations
  * c:\downloads\fatcow-hosting-icons-3000\32x32\alitalk.png

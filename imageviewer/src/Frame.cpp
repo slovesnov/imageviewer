@@ -478,20 +478,20 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 
 	if (mode == MODE::LIST) {
-//		printl(listTopLeftIndex)
-		for (k = listTopLeftIndex;
-				(listAscendingOrder && k < sz)
-						|| (!listAscendingOrder && k >= 0);
-				k += listAscendingOrder ? 1 : -1) {
-			if(listAscendingOrder){
-				l = k - listTopLeftIndex;
-				if(l>=listxy){
-					break;
-				}
-			}
-			else{
-				l = listTopLeftIndex-k ;
-			}
+		printl(listTopLeftIndex,listAscendingOrder)
+		for (k = listTopLeftIndex,l=0;
+				((listAscendingOrder && k < sz)
+						|| (!listAscendingOrder && k >= 0)) && l<listxy;
+				k += listAscendingOrder ? 1 : -1,l ++) {
+//			if(listAscendingOrder){
+//				l = k - listTopLeftIndex;
+//			}
+//			else{
+//				l = listTopLeftIndex-k ;
+//			}
+//			if(l>=listxy){
+//				break;
+//			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
@@ -510,7 +510,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			else{
 				drawTextToCairo(cr, LOADING,fontHeight,false
 						, i,j,ICON_WIDTH,ICON_HEIGHT,
-						true, 1,BLACK_COLOR);
+						true, 2,BLACK_COLOR);
 			}
 		}
 
