@@ -59,7 +59,7 @@ public:
 	gint endThreads;//already have function stopThreads
 	int fontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
-	static std::string workPath;
+	static std::string workPath,applicationName;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	GdkPixbuf**ascendingDescending;
 	bool listAscendingOrder;
@@ -133,7 +133,7 @@ public:
 	void writeConfig();
 
 	static std::string configPath() {
-		return workPath+"../imageviewer.cfg";
+		return workPath+"../"+applicationName+".cfg";
 	}
 
 };

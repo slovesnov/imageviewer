@@ -13,7 +13,7 @@
 #include "help.h"
 
 Frame *frame;
-std::string Frame::workPath;
+std::string Frame::workPath,Frame::applicationName;
 VString Frame::sLowerExtension;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
@@ -132,9 +132,8 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	frame = this;
 
 	int i;
-	std::string s=apppath;
-	std::size_t pos = s.rfind(G_DIR_SEPARATOR);
-	workPath=s.substr(0, pos+1);
+	workPath=getFileInfo(apppath,FILEINFO::DIRECTORY)+G_DIR_SEPARATOR;
+	applicationName=getFileInfo(apppath,FILEINFO::SHORT_NAME);
 	loadid=-1;
 	ascendingDescending=new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
 	readConfig();
@@ -1166,6 +1165,7 @@ void Frame::readConfig() {
 
 	gchar *contents = NULL;
 	if(!g_file_get_contents (configPath().c_str(), &contents, NULL, NULL)){
+		printl("config file not found");
 		return;
 	}
 
@@ -1217,6 +1217,7 @@ void Frame::writeConfig() {
 	int a[]={
 			(int)lastNonListMode,listAscendingOrder
 	};
+	static_assert(SIZEI(tag)==SIZEI(a));
 	std::string s;
 	int i=0;
 	for(auto c:tag){
