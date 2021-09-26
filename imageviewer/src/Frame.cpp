@@ -390,19 +390,21 @@ void Frame::load(const std::string &p, int index,bool start) {
 		setListTopLeftIndexStartValue();//have to reset
 	}
 
-	if(!d && mode==MODE::LIST){
-		if(start){
-			#if	START_MODE==-1
-				setMode(mode,true);
-			#else
-				setMode(INITIAL_MODE,true);
-			#endif
-		}
-		else{
+	if(start){
+	#if	START_MODE==-1
+//	printinfo
+		setMode(mode,true);
+	#else
+//		printinfo
+		setMode(INITIAL_MODE,true);
+	#endif
+	}
+	else{
+		if(!d && mode==MODE::LIST){
 			setMode(MODE::NORMAL);
 		}
-
 	}
+
 
 	//need to redraw anyway even if no image
 	loadImage();
@@ -496,12 +498,47 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			if(p){
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
+
+/*
+				if (l % listx == 0) {
+					//https://www.cairographics.org/samples/text/
+					cairo_select_font_face(cr, "Arial", CAIRO_FONT_SLANT_NORMAL,
+							CAIRO_FONT_WEIGHT_BOLD);
+					cairo_set_font_size(cr, 10);
+
+					const bool bc = 0;
+					double x = i, y = j + h;
+					cairo_move_to(cr, x, y);
+					cairo_text_path(cr,
+							getFileInfo(o.path, FILEINFO::shortName).c_str());
+					if (bc) {
+						cairo_set_source_rgb(cr, 1, 1, 1);
+					} else {
+						cairo_set_source_rgb(cr, 0, 0, 0);
+					}
+					cairo_fill_preserve(cr);
+					if (bc) {
+						cairo_set_source_rgb(cr, 0, 0, 0);
+					} else {
+						cairo_set_source_rgb(cr, 1, 0, 0);
+					}
+					cairo_set_line_width(cr, 1);
+					cairo_stroke(cr);
+
+					// draw helping lines
+					cairo_set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
+					cairo_arc(cr, x, y, 5.12, 0, 2 * G_PI);
+					cairo_fill(cr);
+				}
+*/
 			}
 			else{
 				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, true);
 			}
 		}
+
+
 	}
 	else{
 		if (mode == MODE::FIT) {
@@ -1159,7 +1196,7 @@ void Frame::redraw(bool withTitle) {
 
 void Frame::readConfig() {
 	listAscendingOrder=true;
-	mode=MODE::NORMAL;
+	lastNonListMode=mode=MODE::NORMAL;
 
 	gchar *contents = NULL;
 	if(!g_file_get_contents (configPath().c_str(), &contents, NULL, NULL)){
