@@ -63,7 +63,6 @@ bool isDir(const std::string& s) {
 	return isDir(s.c_str());
 }
 
-
 std::string getFileInfo(std::string filepath, FILEINFO fi) {
 	//"c:\\slove.sno\\1\\rr" -> extension = ""
 	std::size_t pos = filepath.rfind(G_DIR_SEPARATOR);
@@ -75,6 +74,14 @@ std::string getFileInfo(std::string filepath, FILEINFO fi) {
 		return name;
 	}
 	pos = name.rfind('.');
+	if (fi == FILEINFO::shortName) {
+		if (pos == std::string::npos) {
+			return name;
+		}
+		else{
+			return name.substr(0, pos);
+		}
+	}
 	if (pos == std::string::npos) {
 		return "";
 	}
@@ -173,11 +180,16 @@ void getPixbufWH(GdkPixbuf *p,int&w,int&h){
 }
 
 //BEGIN from bridge modified
-PangoLayout* createPangoLayout(std::string text,int height,cairo_t *cr) {
+PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr) {
 	PangoLayout *layout = pango_cairo_create_layout(cr);
 	//not all heights supported for Times
 	//return pango_font_description_from_string(forma("Times New Roman Normal ",height).c_str());
-	PangoFontDescription*desc = pango_font_description_from_string(forma("Arial ",height).c_str());
+	std::string s="Arial ";
+	if(bold){
+		s+="bold ";
+	}
+	s+=forma(height);
+	PangoFontDescription*desc = pango_font_description_from_string(s.c_str());
 	pango_layout_set_font_description(layout, desc);
 
 	pango_layout_set_markup(layout, text.c_str(), -1);
@@ -185,26 +197,28 @@ PangoLayout* createPangoLayout(std::string text,int height,cairo_t *cr) {
 	return layout;
 }
 
-void getTextExtents(std::string text,int height,int&w,int&h,cairo_t *cr) {
-	PangoLayout *layout = createPangoLayout(text.c_str(),height,cr);
+void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr) {
+	PangoLayout *layout = createPangoLayout(text.c_str(),height,bold,cr);
 	pango_layout_get_pixel_size(layout, &w, &h);
 	g_object_unref(layout);
 }
 
-void drawTextToCairo(cairo_t* ct, std::string text,int height, int rleft,int rtop,int rwidth,int rheight,
-		bool centerx, bool centery) {
-	const GdkRGBA BLACK_COLOR = { 0., 0., 0., 1. };
+void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
+		bool centerx, int oy,const GdkRGBA&color) {
 	int w, h;
-	gdk_cairo_set_source_rgba(ct, &BLACK_COLOR);
-	PangoLayout *layout = createPangoLayout(text,height,ct);
+	gdk_cairo_set_source_rgba(ct, &color);
+	PangoLayout *layout = createPangoLayout(text,height,bold,ct);
 	pango_layout_get_pixel_size(layout, &w, &h);
 	double px = rleft;
 	double py = rtop;
 	if (centerx) {
 		px += (rwidth - w) / 2;
 	}
-	if (centery) {
+	if (oy==1) {//centery
 		py += (rheight - h) / 2;
+	}
+	else if (oy==2) {//bottom
+		py += rheight - h;
 	}
 
 	cairo_move_to(ct, px, py);

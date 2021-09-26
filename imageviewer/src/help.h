@@ -49,7 +49,7 @@ std::string forma(Arg const& arg, Args const&... args){
 }
 
 enum class FILEINFO {
-	name, extension, lowerExtension, directory
+	name, extension, lowerExtension, directory,shortName
 };
 
 bool isDir(const char *url);
@@ -93,10 +93,9 @@ int getNumberOfCores();
 void scaleFit(GdkPixbuf *src, GdkPixbuf *&dest, int destW, int destH,
 		int &w, int &h);
 void getPixbufWH(GdkPixbuf *p,int&w,int&h);
-PangoLayout* createPangoLayout(std::string text,int height,cairo_t *cr);
-void getTextExtents(std::string text,int height,int&w,int&h,cairo_t *cr);
-void drawTextToCairo(cairo_t* ct, std::string text,int height, int rleft,int rtop,int rwidth,int rheight,
-		bool centerx, bool centery);
+void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr);
+void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
+		bool centerx, int oy,const GdkRGBA&color);
 
 void freePixbuf(GdkPixbuf*&p);
 

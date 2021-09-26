@@ -19,7 +19,7 @@ VString Frame::sLowerExtension;
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
  * START_MODE=-1 is normal, other values is using for debugging
 */
-#define START_MODE -1
+#define START_MODE 2
 
 #if START_MODE==0
 const MODE INITIAL_MODE=MODE::NORMAL;
@@ -463,12 +463,13 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	static int first=1;
 	if(first){
 		for(i=1;;i++){
-			getTextExtents(LOADING, i, w, h, cr);
+			getTextExtents(LOADING, i,false, w, h, cr);
 			if(w>=ICON_WIDTH || h>=ICON_HEIGHT){
 				fontHeight=i-1;
 				break;
 			}
 		}
+		//printl(fontHeight)
 		if (mode == MODE::LIST) {
 			setTitle();//now lisx, listy counted so need to set title
 		}
@@ -495,46 +496,21 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
+			const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
+			const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
 			if(p){
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-/*
-				if (l % listx == 0) {
-					//https://www.cairographics.org/samples/text/
-					cairo_select_font_face(cr, "Arial", CAIRO_FONT_SLANT_NORMAL,
-							CAIRO_FONT_WEIGHT_BOLD);
-					cairo_set_font_size(cr, 10);
-
-					const bool bc = 0;
-					double x = i, y = j + h;
-					cairo_move_to(cr, x, y);
-					cairo_text_path(cr,
-							getFileInfo(o.path, FILEINFO::shortName).c_str());
-					if (bc) {
-						cairo_set_source_rgb(cr, 1, 1, 1);
-					} else {
-						cairo_set_source_rgb(cr, 0, 0, 0);
-					}
-					cairo_fill_preserve(cr);
-					if (bc) {
-						cairo_set_source_rgb(cr, 0, 0, 0);
-					} else {
-						cairo_set_source_rgb(cr, 1, 0, 0);
-					}
-					cairo_set_line_width(cr, 1);
-					cairo_stroke(cr);
-
-					// draw helping lines
-					cairo_set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
-					cairo_arc(cr, x, y, 5.12, 0, 2 * G_PI);
-					cairo_fill(cr);
-				}
-*/
+				double x = i, y = j;
+				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::shortName),7,true
+						, x,y,ICON_WIDTH,ICON_HEIGHT,
+						true, 2,RED_COLOR);
 			}
 			else{
-				drawTextToCairo(cr, LOADING,fontHeight, i,j,ICON_WIDTH,ICON_HEIGHT,
-						true, true);
+				drawTextToCairo(cr, LOADING,fontHeight,false
+						, i,j,ICON_WIDTH,ICON_HEIGHT,
+						true, 1,BLACK_COLOR);
 			}
 		}
 
