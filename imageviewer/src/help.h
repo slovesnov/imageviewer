@@ -49,7 +49,7 @@ std::string forma(Arg const& arg, Args const&... args){
 }
 
 enum class FILEINFO {
-	name, extension, lowerExtension, directory,shortName
+	NAME, EXTENSION, LOWER_EXTENSION, DIRECTORY, SHORT_NAME
 };
 
 bool isDir(const char *url);

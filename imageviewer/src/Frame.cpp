@@ -307,7 +307,7 @@ void Frame::setTitle() {
 			}
 		}
 		else{
-			const std::string n = getFileInfo(vp[pi].path, FILEINFO::name);
+			const std::string n = getFileInfo(vp[pi].path, FILEINFO::NAME);
 			t += n + separator + format("%dx%d", pw, ph) + separator
 					+ "scale"
 					+ (scale == 1 || mode == MODE::NORMAL ?
@@ -357,7 +357,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 	 * if path is file with bad extension then pi=0 it's ok
 	 */
 	pi = index;
-	dir = d ? p : getFileInfo(p, FILEINFO::directory);
+	dir = d ? p : getFileInfo(p, FILEINFO::DIRECTORY);
 
 	totalFileSize=0;
 
@@ -490,14 +490,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
 			const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
 			if(p){
-				//	cairo_clip(ct); in drawTextToCairo
-				cairo_reset_clip(cr);
-
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-
-				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::shortName),6,true
+				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),6,true
 						, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, 2,RED_COLOR);
 			}
@@ -631,7 +627,7 @@ void Frame::setNoImage() {
 }
 
 bool Frame::isSupportedImage(const std::string &p) {
-	return oneOf(getFileInfo(p, FILEINFO::lowerExtension),sLowerExtension);
+	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION),sLowerExtension);
 }
 
 void Frame::adjustPos() {
@@ -994,20 +990,20 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 }
 
 void Frame::showHelp() {
-	const char t[] =R"(if drag & drop file -> view directory which includes dropped file, starts from dropped file if file is supported
-if dropped file isn't supported then first supported image in directory
-if drag & drop directory -> view directory which includes dropped file, starts from first supported file in directory
+	const char t[] =R"(if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
+if dropped file isn't supported then first supported image in DIRECTORY
+if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
 
 (mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6, GDK_KEY_Down, GDK_KEY_KP_2) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4,GDK_KEY_Up, GDK_KEY_KP_8 ) {
 	LIST MODE scroll one row
-	FIT/NORMAL MODES next/previous image in directory
+	FIT/NORMAL MODES next/previous image in DIRECTORY
 }
 (GDK_KEY_Page_Down, GDK_KEY_KP_3) / (GDK_KEY_Page_Up, GDK_KEY_KP_9) {
 	LIST MODE scroll screen
-	FIT/NORMAL MODES +/-sqrt (number of images in directory)
+	FIT/NORMAL MODES +/-sqrt (number of images in DIRECTORY)
 }
 (GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) {
-	ALL MODES go to first/last image in directory
+	ALL MODES go to first/last image in DIRECTORY
 }
 
 mouse_right, O, GDK_KEY_Clear, GDK_KEY_KP_5 { 
@@ -1032,7 +1028,7 @@ r - rotate image by 180 degrees
 t - rotate image by 90 degrees
 
 GDK_KEY_Delete, GDK_KEY_KP_Decimal {
-	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in directory
+	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
 	LIST MODE - change ascending/descending list order
 }
 

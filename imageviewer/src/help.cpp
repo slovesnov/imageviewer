@@ -66,15 +66,15 @@ bool isDir(const std::string& s) {
 std::string getFileInfo(std::string filepath, FILEINFO fi) {
 	//"c:\\slove.sno\\1\\rr" -> extension = ""
 	std::size_t pos = filepath.rfind(G_DIR_SEPARATOR);
-	if (fi == FILEINFO::directory) {
+	if (fi == FILEINFO::DIRECTORY) {
 		return filepath.substr(0, pos);
 	}
 	std::string name = filepath.substr(pos + 1);
-	if (fi == FILEINFO::name) {
+	if (fi == FILEINFO::NAME) {
 		return name;
 	}
 	pos = name.rfind('.');
-	if (fi == FILEINFO::shortName) {
+	if (fi == FILEINFO::SHORT_NAME) {
 		if (pos == std::string::npos) {
 			return name;
 		}
@@ -86,7 +86,7 @@ std::string getFileInfo(std::string filepath, FILEINFO fi) {
 		return "";
 	}
 	std::string s = name.substr(pos + 1);
-	if (fi == FILEINFO::lowerExtension) {
+	if (fi == FILEINFO::LOWER_EXTENSION) {
 		std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
 			return std::tolower(c);
 		});
