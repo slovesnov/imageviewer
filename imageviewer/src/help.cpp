@@ -229,6 +229,8 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 	pango_cairo_show_layout(ct, layout);
 
 	g_object_unref(layout);
+
+	cairo_reset_clip(ct);
 }
 //END from bridge modified
 
