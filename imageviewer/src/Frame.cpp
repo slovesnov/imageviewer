@@ -478,20 +478,11 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 
 	if (mode == MODE::LIST) {
-		printl(listTopLeftIndex,listAscendingOrder)
+//		printl(listTopLeftIndex,listAscendingOrder)
 		for (k = listTopLeftIndex,l=0;
 				((listAscendingOrder && k < sz)
 						|| (!listAscendingOrder && k >= 0)) && l<listxy;
 				k += listAscendingOrder ? 1 : -1,l ++) {
-//			if(listAscendingOrder){
-//				l = k - listTopLeftIndex;
-//			}
-//			else{
-//				l = listTopLeftIndex-k ;
-//			}
-//			if(l>=listxy){
-//				break;
-//			}
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
