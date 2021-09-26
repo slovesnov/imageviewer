@@ -19,7 +19,7 @@ VString Frame::sLowerExtension;
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
  * START_MODE=-1 is normal, other values is using for debugging
 */
-#define START_MODE 2
+#define START_MODE -1
 
 #if START_MODE==0
 const MODE INITIAL_MODE=MODE::NORMAL;
@@ -479,10 +479,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 	if (mode == MODE::LIST) {
 //		printl(listTopLeftIndex,listAscendingOrder)
-		for (k = listTopLeftIndex,l=0;
+		for (k = listTopLeftIndex, l = 0;
 				((listAscendingOrder && k < sz)
-						|| (!listAscendingOrder && k >= 0)) && l<listxy;
-				k += listAscendingOrder ? 1 : -1,l ++) {
+						|| (!listAscendingOrder && k >= 0)) && l < listxy;
+				k += listAscendingOrder ? 1 : -1, l++) {
 			i=l%listx*ICON_WIDTH+listdx;
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
@@ -493,9 +493,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-				double x = i, y = j;
 				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::shortName),7,true
-						, x,y,ICON_WIDTH,ICON_HEIGHT,
+						, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, 2,RED_COLOR);
 			}
 			else{
