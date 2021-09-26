@@ -188,7 +188,7 @@ PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr
 	if(bold){
 		s+="bold ";
 	}
-	s+=forma(height);
+	s+=std::to_string(height);
 	PangoFontDescription*desc = pango_font_description_from_string(s.c_str());
 	pango_layout_set_font_description(layout, desc);
 
@@ -221,8 +221,11 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 		py += rheight - h;
 	}
 
-	cairo_move_to(ct, px, py);
+	cairo_rectangle(ct,rleft, rtop, rwidth-1, rheight-1);
+	cairo_clip(ct);
+
 	pango_cairo_update_layout(ct, layout);
+	cairo_move_to(ct, px, py);
 	pango_cairo_show_layout(ct, layout);
 
 	g_object_unref(layout);

@@ -490,10 +490,14 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
 			const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
 			if(p){
+				//	cairo_clip(ct); in drawTextToCairo
+				cairo_reset_clip(cr);
+
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::shortName),7,true
+
+				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::shortName),6,true
 						, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, 2,RED_COLOR);
 			}
