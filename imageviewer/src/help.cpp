@@ -240,3 +240,12 @@ void freePixbuf(GdkPixbuf*&p){
 		p = 0;
 	}
 }
+
+bool toInt(const char*d,int&v){
+	char* p;
+	long l = strtol(d, &p, 10);
+	if (!*p) {
+		v=l;
+	}
+	return !*p;
+}

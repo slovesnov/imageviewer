@@ -98,6 +98,6 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 		bool centerx, int oy,const GdkRGBA&color);
 
 void freePixbuf(GdkPixbuf*&p);
-
+bool toInt(const char*d,int&v);
 
 #endif /* HELP_H_ */

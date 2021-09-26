@@ -1179,7 +1179,13 @@ void Frame::readConfig() {
 				printl("error");
 				break;
 			}
-			j=atoi(p+1);
+//			std::string s=p+1;
+//			printl(s)
+			if(!toInt(p+1,j)){
+				printl("error");
+				break;
+			}
+
 			if(i==0){
 				if(j<0 || j>2){
 					printl("error");
@@ -1208,17 +1214,13 @@ void Frame::writeConfig() {
 		"mode",
 		"order"
 	};
+	int a[]={
+			(int)lastNonListMode,listAscendingOrder
+	};
 	std::string s;
 	int i=0;
 	for(auto c:tag){
-		s+=c+" = ";
-		if(i==0){
-			s+=std::to_string(int(lastNonListMode));
-		}
-		else{
-			s+=std::to_string(listAscendingOrder);
-		}
-		s+="\n";
+		s+=c+" = "+std::to_string(a[i])+"\n";
 		i++;
 	}
 	g_file_set_contents (configPath().c_str(), s.c_str(), s.length(), NULL);
