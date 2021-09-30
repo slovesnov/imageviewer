@@ -10,7 +10,7 @@
 
 /* TODO
  *
- * redraw only part in showThumbnail() ds
+ * redraw only part in showThumbnail()
  * scroll mouse list multiplier, delay time
  *
  * run configurations

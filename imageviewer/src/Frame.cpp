@@ -475,6 +475,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		first=0;
 	}
 
+	const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
+	const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
 
 	if (mode == MODE::LIST) {
 //		printl(listTopLeftIndex,listAscendingOrder)
@@ -486,13 +488,11 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j=l/listx*ICON_HEIGHT+listdy;
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
-			const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
-			const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
 			if(p){
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),6,true
+				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),7,true
 						, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, 2,RED_COLOR);
 			}
@@ -535,6 +535,20 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 		copy(mode == MODE::FIT ? pixs : pix, cr, destx, desty, aw, ah, posh, posv);
 	}
+
+/*
+	GdkRectangle r={0,0,width,height};
+	gdk_cairo_get_clip_rectangle(cr,&r);
+	double ko=(double(r.height)/r.width);
+	cairo_translate(cr, r.x+r.width/2, r.y+r.height/2);
+	cairo_scale(cr, 1, ko);
+	gdk_cairo_set_source_rgba(cr, &RED_COLOR);
+	cairo_set_line_width(cr, 3);
+	cairo_move_to(cr,r.width/2,0);//angle 0
+	cairo_arc(cr, 0, 0, r.width/2, 0, 2 * G_PI);
+	cairo_stroke_preserve(cr);
+*/
+
 }
 
 void Frame::drawImage() {
