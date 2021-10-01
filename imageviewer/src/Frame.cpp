@@ -1171,6 +1171,7 @@ void Frame::redraw(bool withTitle) {
 		setTitle();
 	}
 	gtk_widget_queue_draw(area);
+	//gtk_widget_queue_draw_area(widget, x, y, width, height)
 }
 
 void Frame::readConfig() {
