@@ -13,7 +13,7 @@
 
 const char LOG_FILE_NAME[] = "log.txt";
 
-void printHelp(bool toFile, const std::string& s, const char*f, const int l,
+void aslovPrintHelp(bool toFile, const std::string& s, const char*f, const int l,
 		const char*fu) {
 	const char*p = strrchr(f, G_DIR_SEPARATOR);
 	p=p ? p + 1 : f;

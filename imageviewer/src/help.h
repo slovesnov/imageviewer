@@ -25,7 +25,7 @@
 #include <windows.h>
 #include <vector>
 
-void printHelp(bool toFile, const std::string& s, const char*f, const int l,
+void aslovPrintHelp(bool toFile, const std::string& s, const char*f, const int l,
 		const char*fu);
 
 //output info to screen example println("%d %s",1234,"some")
