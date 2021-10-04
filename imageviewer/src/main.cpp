@@ -22,7 +22,6 @@
 
 #include "Frame.h"
 #include "Image.h"
-#include "help.h"
 
 //signature https://developer.gnome.org/gio/stable/GApplication.html#GApplication-open
 static void application_open(GtkApplication *application, GFile **files, gint n_files,
@@ -56,6 +55,7 @@ static void activate(GtkApplication *application, gpointer data) {
 }
 
 int main(int argc, char *argv[]) {
+	aslovInit(argv[0]);
 	//Frame::setApplicationPath(argv[0]);
 	const char appName[]="org.imageviewer";
 	GApplicationFlags flags = GApplicationFlags(
@@ -72,5 +72,4 @@ int main(int argc, char *argv[]) {
 	printl(Image::c1,Image::c2)
 #endif
 
-	return 0;
 }

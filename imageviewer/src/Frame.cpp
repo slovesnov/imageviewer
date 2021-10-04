@@ -9,6 +9,7 @@
  */
 
 #include <cmath>
+#include <glib/gstdio.h>
 #include "Frame.h"
 #include "help.h"
 
@@ -562,7 +563,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	const int k = event->keyval;
 	const guint16 hwkey=event->hardware_keycode;
 
-	int i=indexOf(true, k == GDK_KEY_KP_Add, k == GDK_KEY_KP_Subtract, hwkey== 'L',
+	int i=indexOfV(true, k == GDK_KEY_KP_Add, k == GDK_KEY_KP_Subtract, hwkey== 'L',
 			hwkey == 'E',hwkey == 'R',hwkey == 'T',
 
 			oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
@@ -1196,7 +1197,7 @@ void Frame::readConfig() {
 			}
 //			std::string s=p+1;
 //			printl(s)
-			if(!toInt(p+1,j)){
+			if(!stringToInt(p+1,j)){
 				printl("error");
 				break;
 			}

@@ -11,7 +11,7 @@
 #ifndef FRAME_H_
 #define FRAME_H_
 
-#include "help.h"
+#include "aslov.h"
 #include "Image.h"
 
 typedef std::vector<std::string> VString;

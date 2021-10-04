@@ -9,7 +9,7 @@
  */
 
 #include "Image.h"
-#include "help.h"
+#include "aslov.h"
 
 #ifdef IMAGE_COUNTERS
 int Image::c1=0;
@@ -21,18 +21,7 @@ Image::Image(std::string p,int id){
 	path=p;
 	loadid=id;
 	t=thumbnail=nullptr;
-
-	/* Note stat() function works bad with utf8 non standard ascii symbols in filename,
-	 * may be need encoding, so use g_stat()
-	 */
-	GStatBuf b;
-	if(g_stat(path.c_str(), &b)!=0){
-		println("error");
-		size=0;
-	}
-	else{
-		size=b.st_size;
-	}
+	size=getFileSize(path);
 }
 
 Image::~Image(){
