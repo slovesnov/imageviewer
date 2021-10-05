@@ -33,7 +33,7 @@ Image::~Image(){
 #ifdef IMAGE_COUNTERS
 		c2++;
 #endif
-		freePixbuf(t);
+		free(t);
 	}
 }
 
@@ -43,7 +43,7 @@ Image::Image(Image &&o) {
 
 Image& Image::operator=(Image &&o) {
 	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
-	freePixbuf(t);
+	free(t);
 	assign(o);
 	return *this;
 }

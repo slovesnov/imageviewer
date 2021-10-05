@@ -14,8 +14,6 @@
 #include "aslov.h"
 #include "Image.h"
 
-typedef std::vector<std::string> VString;
-
 enum class MODE {
 	NORMAL, FIT, LIST
 };
@@ -25,9 +23,9 @@ enum class TOOLBAR_INDEX{
 	ROTATE_ANTICLOCKWISE,ROTATE_180,ROTATE_CLOCKWISE,
 	HOME,PAGE_UP,PREVIOUS,NEXT,PAGE_DOWN,END,
 	OPEN,DELETE_ASCENDING_DESCENDING,HELP
-	,SIZE
+	,TB_SIZE
 };
-const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::SIZE);
+const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::TB_SIZE);
 
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
@@ -59,13 +57,12 @@ public:
 	gint endThreads;//already have function stopThreads
 	int fontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
-	static std::string workPath,applicationName;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	GdkPixbuf**ascendingDescending;
 	bool listAscendingOrder;
 	MODE lastNonListMode;
 
-	Frame(GtkApplication *application, std::string const path = "",const char* apppath="");
+	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
 
 	void setTitle();
@@ -99,14 +96,6 @@ public:
 	void setListTopLeftIndexStartValue();
 	void scrollList(int v);
 
-	static std::string imageString(const char *name) {
-		return workPath+format("../images/%s", name);
-	}
-
-//	static GtkWidget* image(const char *name) {
-//		return gtk_image_new_from_file(imageString(name).c_str());
-//	}
-
 	void buttonClicked(TOOLBAR_INDEX t);
 	void buttonClicked(int t){
 		buttonClicked(TOOLBAR_INDEX(t));
@@ -129,12 +118,6 @@ public:
 	void setButtonImage(int i,bool enable,GdkPixbuf*p);
 	void setDADButtonState();
 	void redraw(bool withTitle=true);
-	void readConfig();
-	void writeConfig();
-
-	static std::string configPath() {
-		return workPath+"../"+applicationName+".cfg";
-	}
 
 };
 

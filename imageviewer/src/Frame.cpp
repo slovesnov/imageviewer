@@ -9,12 +9,11 @@
  */
 
 #include <cmath>
-#include <glib/gstdio.h>
+#include <glib/gstdio.h>//g_remove
 #include "Frame.h"
 #include "help.h"
 
 Frame *frame;
-std::string Frame::workPath,Frame::applicationName;
 VString Frame::sLowerExtension;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
@@ -73,6 +72,8 @@ const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_NORMAL,
 		TOOLBAR_INDEX::MODE_FIT, TOOLBAR_INDEX::MODE_LIST };
 
+const std::string CONFIG_TAGS[] = { "mode", "order" };
+
 static gpointer thumbnail_thread(gpointer data) {
 	frame->thumbnailThread(GP2INT(data));
 	return NULL;
@@ -129,15 +130,12 @@ static gboolean set_show_thumbnail_thread(gpointer data) {
 	return G_SOURCE_REMOVE;
 }
 
-Frame::Frame(GtkApplication *application, std::string const path,const char* apppath) {
+Frame::Frame(GtkApplication *application, std::string const path) {
 	frame = this;
 
-	int i;
-	workPath=getFileInfo(apppath,FILEINFO::DIRECTORY)+G_DIR_SEPARATOR;
-	applicationName=getFileInfo(apppath,FILEINFO::SHORT_NAME);
+	int i,j;
 	loadid=-1;
 	ascendingDescending = new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
-	readConfig();
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -146,10 +144,42 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	}
 	g_mutex_init(&mutex);
 
-//	for(auto f:{FILEINFO::name,FILEINFO::directory,FILEINFO::extension,FILEINFO::lowerExtension}){
-//		printl(getFileInfo("c:\\slove.sno\\1\\rr", f));
-//	}
 	lastWidth = lastHeight = posh = posv = 0;
+
+	//begin readConfig
+	listAscendingOrder = true;
+	lastNonListMode = mode = MODE::NORMAL;
+
+	MapStringString m;
+	MapStringString::iterator it;
+	if (loadConfig(m)) {
+		i = 0;
+		for (auto t : CONFIG_TAGS) {
+			if ((it = m.find(t)) != m.end()) {
+				if (!stringToInt(it->second, j)) {
+					printl("error");
+					break;
+				}
+
+				if (i == 0) {
+					if (j < 0 || j > 2) {
+						printl("error");
+						break;
+					}
+					lastNonListMode = mode = MODE(j);
+				} else {
+					if (j < 0 || j > 1) {
+						printl("error");
+						break;
+					}
+					listAscendingOrder = j == 1;
+				}
+
+			}
+			i++;
+		}
+	}
+	//end readConfig
 
 	if (sLowerExtension.empty()) {
 		sLowerExtension = { "jpg" }; //in list only "jpeg" not jpg
@@ -175,14 +205,14 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 	//before setButtonState
 	i=0;
 	for(auto a:ASCENDING_DESCENDING_IMAGES){
-		ascendingDescending[i++]=gdk_pixbuf_new_from_file(imageString(a).c_str(),0);
+		ascendingDescending[i++]=gdk_pixbuf_new_from_file(getImagePath(a).c_str(),0);
 	}
 
 	i=0;
 	for(auto a:TOOLBAR_IMAGES){
 		auto b =button[i]= gtk_button_new();
 
-		buttonPixbuf[i][1]=gdk_pixbuf_new_from_file(imageString(a).c_str(),0);
+		buttonPixbuf[i][1]=gdk_pixbuf_new_from_file(getImagePath(a).c_str(),0);
 
 		buttonPixbuf[i][0] = gdk_pixbuf_copy(buttonPixbuf[i][1]);
 		gdk_pixbuf_saturate_and_pixelate(buttonPixbuf[i][1], buttonPixbuf[i][0],
@@ -247,7 +277,9 @@ Frame::Frame(GtkApplication *application, std::string const path,const char* app
 
 Frame::~Frame() {
 	int i, j;
-	writeConfig();
+
+	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder );
+
 	stopThreads();
 	free();
 	g_mutex_clear(&mutex);
@@ -586,8 +618,8 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 }
 
 void Frame::free() {
-	freePixbuf(pix);
-	freePixbuf(pixs);
+	::free(pix);
+	::free(pixs);
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -1173,72 +1205,4 @@ void Frame::redraw(bool withTitle) {
 	}
 	gtk_widget_queue_draw(area);
 	//gtk_widget_queue_draw_area(widget, x, y, width, height)
-}
-
-void Frame::readConfig() {
-	listAscendingOrder=true;
-	lastNonListMode=mode=MODE::NORMAL;
-
-	gchar *contents = NULL;
-	if(!g_file_get_contents (configPath().c_str(), &contents, NULL, NULL)){
-		printl("config file not found");
-		return;
-	}
-
-	int i,j;
-	gchar **split = NULL;
-	split = g_strsplit (contents, "\n", 0);
-	if(split[0] && split[1]){
-		for(i=0;i<2;i++){
-			gchar*p=strchr(split[i],'=');
-			if(!p){
-				printl("error");
-				break;
-			}
-//			std::string s=p+1;
-//			printl(s)
-			if(!stringToInt(p+1,j)){
-				printl("error");
-				break;
-			}
-
-			if(i==0){
-				if(j<0 || j>2){
-					printl("error");
-					break;
-				}
-				lastNonListMode=mode=MODE(j);
-			}
-			else{
-				if(j<0 || j>1){
-					printl("error");
-					break;
-				}
-				listAscendingOrder=j==1;
-			}
-
-		}
-//		printl(contents)
-//		printl(int(mode),listAscendingOrder)
-	}
-	g_strfreev (split);
-	g_free (contents);
-}
-
-void Frame::writeConfig() {
-	const std::string tag[]={
-		"mode",
-		"order"
-	};
-	int a[]={
-			(int)lastNonListMode,listAscendingOrder
-	};
-	static_assert(SIZEI(tag)==SIZEI(a));
-	std::string s;
-	int i=0;
-	for(auto c:tag){
-		s+=c+" = "+std::to_string(a[i])+"\n";
-		i++;
-	}
-	g_file_set_contents (configPath().c_str(), s.c_str(), s.length(), NULL);
 }
