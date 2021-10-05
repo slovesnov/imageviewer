@@ -205,14 +205,14 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	//before setButtonState
 	i=0;
 	for(auto a:ASCENDING_DESCENDING_IMAGES){
-		ascendingDescending[i++]=gdk_pixbuf_new_from_file(getImagePath(a).c_str(),0);
+		ascendingDescending[i++]=pixbuf(a);
 	}
 
 	i=0;
 	for(auto a:TOOLBAR_IMAGES){
 		auto b =button[i]= gtk_button_new();
 
-		buttonPixbuf[i][1]=gdk_pixbuf_new_from_file(getImagePath(a).c_str(),0);
+		buttonPixbuf[i][1]=pixbuf(a);
 
 		buttonPixbuf[i][0] = gdk_pixbuf_copy(buttonPixbuf[i][1]);
 		gdk_pixbuf_saturate_and_pixelate(buttonPixbuf[i][1], buttonPixbuf[i][0],
@@ -448,6 +448,7 @@ void Frame::loadImage() {
 		GError *err = NULL;
 		/* Create pixbuf */
 		free();
+		//here full path
 		pix = gdk_pixbuf_new_from_file(vp[pi].path.c_str(), &err);
 
 		if (err) {
@@ -796,6 +797,7 @@ void Frame::thumbnailThread(int n) {
 		auto & o=vp[v];
 
 		if(!o.t){
+			//full path
 			p = gdk_pixbuf_new_from_file(o.path.c_str(), NULL);
 			scaleFit(p, o.t, ICON_WIDTH, ICON_HEIGHT, w, h);
 			g_object_unref(p);
