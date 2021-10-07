@@ -939,7 +939,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	i=INDEX_OF(TMODE,t);
+	i=INDEX_OF(t,TMODE);
 	if(i!=-1){
 		MODE m=MODE(i);
 		if(mode!=m){
@@ -957,7 +957,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	i=INDEX_OF(NAVIGATION,t);
+	i=INDEX_OF(t,NAVIGATION);
 	if(i!=-1){
 		if(mode==MODE::LIST){
 			int a[]={GOTO_BEGIN,-listy,-1,1,listy,GOTO_END};
@@ -1025,7 +1025,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	}
 
 	if(mode!=MODE::LIST){
-		i=INDEX_OF(ROTATE,t);
+		i=INDEX_OF(t,ROTATE);
 		if(i!=-1){
 			rotatePixbuf(pix, pw, ph, 90 * (i+1));
 			//small image angle should match with big image, so always call setSmallImage
