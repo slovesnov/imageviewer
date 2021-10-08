@@ -223,7 +223,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 		g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked), GP(i));
 		gtk_box_pack_start(GTK_BOX(toolbar), b, FALSE, FALSE, 0);
-		if(oneOfV(i,3,6,12)){
+		if(oneOf(i,3,6,12)){
 			gtk_widget_set_margin_start(b, 15);
 		}
 		i++;
@@ -591,16 +591,16 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	int i=indexOfV(true, k == GDK_KEY_KP_Add, k == GDK_KEY_KP_Subtract, hwkey== 'L',
 			hwkey == 'E',hwkey == 'R',hwkey == 'T',
 
-			oneOfV(k, GDK_KEY_Home, GDK_KEY_KP_7),
-			oneOfV(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
-			oneOfV(k, GDK_KEY_Left, GDK_KEY_KP_4),
-			oneOfV(k, GDK_KEY_Right, GDK_KEY_KP_6),
-			oneOfV(k, GDK_KEY_Page_Down, GDK_KEY_KP_3),
-			oneOfV(k, GDK_KEY_End, GDK_KEY_KP_1),
+			oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
+			oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
+			oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4),
+			oneOf(k, GDK_KEY_Right, GDK_KEY_KP_6),
+			oneOf(k, GDK_KEY_Page_Down, GDK_KEY_KP_3),
+			oneOf(k, GDK_KEY_End, GDK_KEY_KP_1),
 
 			//english and russian keyboard layout (& caps lock)
 			hwkey == 'O',
-			oneOfV(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
+			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
 			hwkey == 'H' || k==GDK_KEY_F1
 	);
 
