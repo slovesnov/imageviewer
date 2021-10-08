@@ -73,6 +73,7 @@ const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_NORMAL,
 		TOOLBAR_INDEX::MODE_FIT, TOOLBAR_INDEX::MODE_LIST };
 
 const std::string CONFIG_TAGS[] = { "mode", "order" };
+const std::string SEPARATOR = "          ";
 
 static gpointer thumbnail_thread(gpointer data) {
 	frame->thumbnailThread(GP2INT(data));
@@ -308,12 +309,11 @@ void Frame::openUris(char **uris) {
 
 void Frame::setTitle() {
 	std::string s,t;
-	const std::string separator = "          ";
 	int i;
 	if (noImage()) {
-		t = "imageviewer";
+		t = getApplicationName();
 	} else {
-		t = dir+separator ;
+		t = dir+SEPARATOR ;
 		const int sz=size();
 		if(mode==MODE::LIST){
 			double ts=totalFileSize/double(1<<20);
@@ -326,7 +326,7 @@ void Frame::setTitle() {
 					listAscendingOrder ?
 							MIN(listTopLeftIndex + listxy, sz) :
 							MAX(listTopLeftIndex + 2 - listxy, 1), sz)
-					+ separator
+					+ SEPARATOR
 					+ format("total %.2lfMb avg ", ts);
 			double avg=ts / sz;//mb
 			const std::string P[]={"Mb","Kb","b"};
@@ -340,10 +340,10 @@ void Frame::setTitle() {
 		}
 		else{
 			const std::string n = getFileInfo(vp[pi].path, FILEINFO::NAME);
-			t += n + separator + format("%dx%d", pw, ph) + separator
+			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
 					+ "scale"
 					+ (scale == 1 || mode == MODE::NORMAL ?
-							"1" : format("%.2lf", scale)) + separator
+							"1" : format("%.2lf", scale)) + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
@@ -354,7 +354,7 @@ void Frame::setTitle() {
 					GRegexMatchFlags(0), NULL);
 			if (g_regex_match(r, n.c_str(), GRegexMatchFlags(0), NULL)) {
 				i = stoi(n.substr(8, 2)) - 1;
-				t += separator + n.substr(10, 2)
+				t += SEPARATOR + n.substr(10, 2)
 						+ (i >= 0 && i < 12 ? MONTH[i] : "???") + n.substr(4, 4);
 				for (i = 0; i < 3; i++) {
 					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
@@ -363,14 +363,6 @@ void Frame::setTitle() {
 			g_regex_unref(r);
 		}
 	}
-
-	i = __DATE__[4] == ' '; //day<10, avoid two spaces after 'build'
-	t += separator
-			+ format("build %.*s%c%.2s%s %s gcc %d.%d.%d gtk %d.%d.%d", 2 - i,
-			__DATE__ + 4 + i, tolower(__DATE__[0]), __DATE__ + 1, __DATE__ + 7,
-					__TIME__, __GNUC__,
-					__GNUC_MINOR__, __GNUC_PATCHLEVEL__,
-					GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
 
 	gtk_window_set_title(GTK_WINDOW(window), t.c_str());
 }
@@ -601,13 +593,13 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 
 			oneOfV(k, GDK_KEY_Home, GDK_KEY_KP_7),
 			oneOfV(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
-			oneOfV(k, GDK_KEY_Left, GDK_KEY_KP_4, GDK_KEY_Up,GDK_KEY_KP_8),
-			oneOfV(k, GDK_KEY_Right, GDK_KEY_KP_6, GDK_KEY_Down,GDK_KEY_KP_2),
+			oneOfV(k, GDK_KEY_Left, GDK_KEY_KP_4),
+			oneOfV(k, GDK_KEY_Right, GDK_KEY_KP_6),
 			oneOfV(k, GDK_KEY_Page_Down, GDK_KEY_KP_3),
 			oneOfV(k, GDK_KEY_End, GDK_KEY_KP_1),
 
 			//english and russian keyboard layout (& caps lock)
-			hwkey == 'O' || oneOfV(k, GDK_KEY_Clear, GDK_KEY_KP_5),
+			hwkey == 'O',
 			oneOfV(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
 			hwkey == 'H' || k==GDK_KEY_F1
 	);
@@ -1042,7 +1034,7 @@ void Frame::showHelp() {
 if dropped file isn't supported then first supported image in DIRECTORY
 if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
 
-(mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6, GDK_KEY_Down, GDK_KEY_KP_2) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4,GDK_KEY_Up, GDK_KEY_KP_8 ) {
+(mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4) {
 	LIST MODE scroll one row
 	FIT/NORMAL MODES next/previous image in DIRECTORY
 }
@@ -1054,7 +1046,7 @@ if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts f
 	ALL MODES go to first/last image in DIRECTORY
 }
 
-mouse_right, O, GDK_KEY_Clear, GDK_KEY_KP_5 { 
+mouse_right, O { 
 	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
 }
 vertical mouse scroll {
@@ -1086,7 +1078,16 @@ h, F1 - show help)";
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
 	gtk_window_set_transient_for(GTK_WINDOW(d),
 			GTK_WINDOW(window));
-	gtk_window_set_title(GTK_WINDOW(d), "Help");
+
+	int i = __DATE__[4] == ' '; //day<10, avoid two spaces after 'build'
+	auto s= getApplicationName()+SEPARATOR+format(" build %.*s%c%.2s%s %s gcc %d.%d.%d gtk %d.%d.%d", 2 - i,
+			__DATE__ + 4 + i, tolower(__DATE__[0]), __DATE__ + 1, __DATE__ + 7,
+					__TIME__, __GNUC__,
+					__GNUC_MINOR__, __GNUC_PATCHLEVEL__,
+					GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
+	s+=SEPARATOR+"file size "+intToString(getApplicationFileSize());
+
+	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
 
 	auto l=gtk_label_new(t);
