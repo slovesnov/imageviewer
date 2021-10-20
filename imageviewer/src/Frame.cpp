@@ -13,6 +13,10 @@
 #include "Frame.h"
 #include "help.h"
 
+const int ICON_HEIGHT=965/4;//drawing area height 959,so got 8 rows 4*119/3=158 1920/158=12 rows
+//const int ICON_HEIGHT=95;//drawing area height 959,so got 10 rows
+const int ICON_WIDTH=4*ICON_HEIGHT/3;//4*95/3 = 126, 1920/126=15.23 so got 15 columns
+
 Frame *frame;
 VString Frame::sLowerExtension;
 
@@ -416,10 +420,8 @@ void Frame::load(const std::string &p, int index,bool start) {
 
 	if(start){
 	#if	START_MODE==-1
-//	printinfo
 		setMode(mode,true);
 	#else
-//		printinfo
 		setMode(INITIAL_MODE,true);
 	#endif
 	}
@@ -642,7 +644,7 @@ void Frame::setPosRedraw(double dx, double dy, guint32 time) {
 	if (((pw <= aw && dx != 0 && dy == 0) || (ph <= ah && dx == 0 && dy != 0))
 			&& time > SCROLL_DELAY_MILLISECONDS + lastScroll) {
 		lastScroll = time;
-		switchImage(1, dx > 0 || dy > 0);
+//		switchImage(1, dx > 0 || dy > 0);
 		return;
 	}
 	posh += dx;
@@ -685,10 +687,17 @@ void Frame::switchImage(int v, bool add) {
 	if (noImage()) {
 		return;
 	}
+	int i = pi;
 	pi += add ? v : -v;
-	//adjustCycle(pi, size());
-	adjust(pi,0, size()-1);
-	loadImage();
+	adjust(pi, 0, size() - 1);
+
+	/* if last image in dir was scrolled down and user click next image (right key)
+	 * do not need to call loadImage() because it load the same image and scroll it to start
+	 * but nothing should happens
+	 */
+	if (i != pi) {
+		loadImage();
+	}
 }
 
 void Frame::setSmallImage() {
@@ -805,7 +814,6 @@ void Frame::thumbnailThread(int n) {
 }
 
 void Frame::stopThreads() {
-//	printinfo
 	g_atomic_int_set(&endThreads, 1);
 
 	//	clock_t begin=clock();
@@ -861,7 +869,7 @@ void Frame::buttonPress(GdkEventButton *event) {
 				}
 			}
 			else{ //next/previous image
-				buttonClicked(left ? TOOLBAR_INDEX::NEXT : TOOLBAR_INDEX::PREVIOUS);
+				//buttonClicked(left ? TOOLBAR_INDEX::NEXT : TOOLBAR_INDEX::PREVIOUS);
 			}
 		} else if (event->button == 3) { //on right mouse open file/directory
 			buttonClicked(TOOLBAR_INDEX::OPEN);
@@ -916,7 +924,7 @@ void Frame::scrollList(int v) {
 	}
 }
 
-void Frame::buttonClicked(TOOLBAR_INDEX t) {
+//void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	int i;
 	if(t==TOOLBAR_INDEX::OPEN){
 		openDirectory();
@@ -1034,7 +1042,7 @@ void Frame::showHelp() {
 if dropped file isn't supported then first supported image in DIRECTORY
 if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
 
-(mouse_middle, GDK_KEY_Right, GDK_KEY_KP_6) / (mouse_left, GDK_KEY_Left, GDK_KEY_KP_4) {
+(GDK_KEY_Right, GDK_KEY_KP_6) / (GDK_KEY_Left, GDK_KEY_KP_4) {
 	LIST MODE scroll one row
 	FIT/NORMAL MODES next/previous image in DIRECTORY
 }
@@ -1052,11 +1060,11 @@ mouse_right, O {
 vertical mouse scroll {
 	LIST MODE scroll one row
 	FIT MODE ignored
-	NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window
+	NORMAL MODES scroll image up/down if image higher than window
 }
 horizontal mouse scroll {
 	LIST, FIT MODES ignored
-	NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window
+	NORMAL MODES scroll image left/right if image wider than window
 }
 
 GDK_KEY_KP_Add (+ on extended keyboard) - switch to NORMAL MODE
@@ -1073,6 +1081,18 @@ GDK_KEY_Delete, GDK_KEY_KP_Decimal {
 }
 
 h, F1 - show help)";
+
+/*
+	vertical mouse scroll {
+		LIST MODE scroll one row
+		FIT MODE ignored
+		NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window
+	}
+	horizontal mouse scroll {
+		LIST, FIT MODES ignored
+		NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window
+	}
+*/
 
 	auto d=gtk_dialog_new();
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);

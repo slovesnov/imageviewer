@@ -66,9 +66,4 @@ int main(int argc, char *argv[]) {
 	g_signal_connect(app, "open", G_CALLBACK (application_open), NULL); //this function is called when application has arguments
 	g_application_run(G_APPLICATION(app), argc, argv);
 	g_object_unref(app);
-
-#ifdef IMAGE_COUNTERS
-	printl(Image::c1,Image::c2)
-#endif
-
 }

@@ -11,12 +11,6 @@
 #include "Image.h"
 #include "aslov.h"
 
-#ifdef IMAGE_COUNTERS
-int Image::c1=0;
-int Image::c2=0;
-#endif
-
-
 Image::Image(std::string p,int id){
 	path=p;
 	loadid=id;
@@ -26,13 +20,7 @@ Image::Image(std::string p,int id){
 
 Image::~Image(){
 	//see Image.h for documentation
-#ifdef IMAGE_COUNTERS
-		c1++;
-#endif
 	if(t){
-#ifdef IMAGE_COUNTERS
-		c2++;
-#endif
 		free(t);
 	}
 }

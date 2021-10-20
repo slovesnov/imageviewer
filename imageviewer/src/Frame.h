@@ -33,8 +33,6 @@ const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 const bool ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
 const int WHEEL_MULTIPLIER = 80;
 const int SCROLL_DELAY_MILLISECONDS = 500;
-const int ICON_HEIGHT=95;//drawing area height 959,so got 10 rows
-const int ICON_WIDTH=4*ICON_HEIGHT/3;//4*95/3 = 126, 1920/126=15.23 so got 15 columns
 
 class Frame {
 public:

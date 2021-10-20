@@ -35,8 +35,6 @@
  *
  */
 
-//#define IMAGE_COUNTERS
-
 class Image{
 	void assign(Image& o);
 public:
@@ -52,10 +50,6 @@ public:
 	Image(Image&& o);
 	Image& operator=(Image&& o);
 
-#ifdef IMAGE_COUNTERS
-	static int c1;
-	static int c2;
-#endif
 };
 
 typedef std::vector<Image> VImage;
