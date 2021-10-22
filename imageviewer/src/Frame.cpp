@@ -161,7 +161,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		i = 0;
 		for (auto t : CONFIG_TAGS) {
 			if ((it = m.find(t)) != m.end()) {
-				if (!stringToInt(it->second, j)) {
+				if (!parseString(it->second, j)) {
 					printl("error");
 					break;
 				}
@@ -924,7 +924,7 @@ void Frame::scrollList(int v) {
 	}
 }
 
-//void Frame::buttonClicked(TOOLBAR_INDEX t) {
+void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	int i;
 	if(t==TOOLBAR_INDEX::OPEN){
 		openDirectory();
@@ -1099,13 +1099,8 @@ h, F1 - show help)";
 	gtk_window_set_transient_for(GTK_WINDOW(d),
 			GTK_WINDOW(window));
 
-	int i = __DATE__[4] == ' '; //day<10, avoid two spaces after 'build'
-	auto s= getApplicationName()+SEPARATOR+format(" build %.*s%c%.2s%s %s gcc %d.%d.%d gtk %d.%d.%d", 2 - i,
-			__DATE__ + 4 + i, tolower(__DATE__[0]), __DATE__ + 1, __DATE__ + 7,
-					__TIME__, __GNUC__,
-					__GNUC_MINOR__, __GNUC_PATCHLEVEL__,
-					GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
-	s+=SEPARATOR+"file size "+intToString(getApplicationFileSize());
+	auto s= getApplicationName()+SEPARATOR+getBuildVersionString(false);
+	s+=SEPARATOR+"file size "+toString(getApplicationFileSize(),',');
 
 	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
