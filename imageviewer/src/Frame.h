@@ -11,6 +11,7 @@
 #ifndef FRAME_H_
 #define FRAME_H_
 
+#include <atomic>
 #include "aslov.h"
 #include "Image.h"
 
@@ -51,14 +52,16 @@ public:
 	guint32 lastScroll;
 	std::vector<GThread*>pThread;
 	GMutex mutex;
-	int threadNumber,loadid;
+	std::atomic_int threadNumber;
+	int loadid;
 	gint endThreads;//already have function stopThreads
-	int fontHeight,listTopLeftIndex,totalFileSize;
+	int loadingFontHeight,filenameFontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	GdkPixbuf**ascendingDescending;
 	bool listAscendingOrder;
 	MODE lastNonListMode;
+	const static bool filenameFontBold=true;
 
 	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
@@ -116,7 +119,7 @@ public:
 	void setButtonImage(int i,bool enable,GdkPixbuf*p);
 	void setDADButtonState();
 	void redraw(bool withTitle=true);
-
+	int countFontMaxHeight(const std::string& s,bool bold,cairo_t *cr);
 };
 
 #endif /* FRAME_H_ */

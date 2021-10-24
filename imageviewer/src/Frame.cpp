@@ -489,18 +489,14 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 	static int first=1;
 	if(first){
-		for(i=1;;i++){
-			getTextExtents(LOADING, i,false, w, h, cr);
-			if(w>=ICON_WIDTH || h>=ICON_HEIGHT){
-				fontHeight=i-1;
-				break;
-			}
-		}
+		first=0;
+		loadingFontHeight=countFontMaxHeight(LOADING, false,cr);
+		filenameFontHeight=countFontMaxHeight("IMG_20211004_093339", filenameFontBold,cr);
+
 		//printl(fontHeight)
 		if (mode == MODE::LIST) {
 			setTitle();//now lisx, listy counted so need to set title
 		}
-		first=0;
 	}
 
 	const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
@@ -520,12 +516,12 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				getPixbufWH(p,w,h);
 				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
 
-				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),7,true
-						, i,j,ICON_WIDTH,ICON_HEIGHT,
-						true, 2,RED_COLOR);
+				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),
+						filenameFontHeight, filenameFontBold, i, j, ICON_WIDTH,
+						ICON_HEIGHT, true, 2, RED_COLOR);
 			}
 			else{
-				drawTextToCairo(cr, LOADING,fontHeight,false
+				drawTextToCairo(cr, LOADING,loadingFontHeight,false
 						, i,j,ICON_WIDTH,ICON_HEIGHT,
 						true, 2,BLACK_COLOR);
 			}
@@ -764,7 +760,7 @@ void Frame::startThreads() {
 }
 
 void Frame::thumbnailThread(int n) {
-	int w,h,v;
+	int w, h, v, max=0;
 	GdkPixbuf*p;
 
 //#define SHOW_THREAD_TIME
@@ -774,20 +770,15 @@ void Frame::thumbnailThread(int n) {
 	std::string s;
 	bool stopped=false;
 #endif
-	while (1) {
-		g_mutex_lock(&mutex);
-		//Note. v = threadNumber+= LIST_ASCENDING_ORDER?1:-1; NOT WORKING LIKE BELOW CODE
-		if(listAscendingOrder){
-			v=threadNumber++;
-		}
-		else{
-			v=threadNumber--;
-		}
-		g_mutex_unlock(&mutex);
 
-		if ((listAscendingOrder && v >= size()) || (!listAscendingOrder && v<0)) {
-			break;
-		}
+	if(listAscendingOrder){
+		g_mutex_lock(&mutex);
+		max=size();
+		g_mutex_unlock(&mutex);
+	}
+
+	while ((listAscendingOrder && (v = threadNumber++) < max)
+			|| (!listAscendingOrder && (v = threadNumber--) >= 0)) {
 
 		if(g_atomic_int_get (&endThreads)){
 #ifdef SHOW_THREAD_TIME
@@ -1223,4 +1214,16 @@ void Frame::redraw(bool withTitle) {
 	}
 	gtk_widget_queue_draw(area);
 	//gtk_widget_queue_draw_area(widget, x, y, width, height)
+}
+
+int Frame::countFontMaxHeight(const std::string &s, bool bold,cairo_t *cr) {
+	int w,h;
+	for(int i=1;;i++){
+		getTextExtents(s, i,false, w, h, cr);
+		if(w>=ICON_WIDTH || h>=ICON_HEIGHT){
+			return i-1;
+		}
+	}
+	assert(0);
+	return 16;
 }
