@@ -1030,6 +1030,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					loadingFontHeight=0;//to recount font
 					loadid++;
 					for(auto&o:vp){
+						o.free();
 						o.thumbnail=o.t=nullptr;
 						o.loadid=loadid;
 					}

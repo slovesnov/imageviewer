@@ -49,7 +49,7 @@ public:
 	//for correct VImage.erase()
 	Image(Image&& o);
 	Image& operator=(Image&& o);
-
+	void free();
 };
 
 typedef std::vector<Image> VImage;

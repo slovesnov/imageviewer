@@ -20,9 +20,7 @@ Image::Image(std::string p,int id){
 
 Image::~Image(){
 	//see Image.h for documentation
-	if(t){
-		free(t);
-	}
+	free();
 }
 
 Image::Image(Image &&o) {
@@ -31,7 +29,7 @@ Image::Image(Image &&o) {
 
 Image& Image::operator=(Image &&o) {
 	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
-	free(t);
+	free();
 	assign(o);
 	return *this;
 }
@@ -45,4 +43,8 @@ void Image::assign(Image& o){
 	o.t = o.thumbnail = nullptr;
 }
 
-
+void Image::free() {
+	if(t){
+		::free(t);
+	}
+}
