@@ -589,7 +589,9 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	const int k = event->keyval;
 	const guint16 hwkey=event->hardware_keycode;
 
-	int i=indexOfV(true, k == GDK_KEY_KP_Add, k == GDK_KEY_KP_Subtract, hwkey== 'L',
+	const bool plus=k == GDK_KEY_KP_Add;
+	const bool minus=k == GDK_KEY_KP_Subtract;
+	int i=indexOfV(true, plus, minus, hwkey== 'L',
 			hwkey == 'E',hwkey == 'R',hwkey == 'T',
 
 			oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
@@ -606,7 +608,12 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	);
 
 	if(i!=-1){
-		buttonClicked(i);
+		if(mode==MODE::LIST && (plus || minus)){
+			buttonClicked(plus ? LIST_ZOOM_IN:LIST_ZOOM_OUT  );
+		}
+		else{
+			buttonClicked(i);
+		}
 	}
 	return i!=-1;
 }
@@ -1022,7 +1029,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	if(i!=-1){
 		if(mode==MODE::LIST){
 			if(t==LIST_ZOOM_IN || t==LIST_ZOOM_OUT){
-				i=listIconHeight+(t==LIST_ZOOM_OUT?1:-1)*5;
+				i=listIconHeight+(t==LIST_ZOOM_IN?1:-1)*5;
 				if(i>=MIN_ICON_HEIGHT && i<=MAX_ICON_HEIGHT){
 					stopThreads();
 					setIconHeightWidth(i);
@@ -1220,7 +1227,7 @@ void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
 
 void Frame::setVariableImagesButtonsState() {
 	int i=0;
-	TOOLBAR_INDEX t[] = { ASCENDING_DESCENDING, LIST_ZOOM_IN, LIST_ZOOM_OUT };
+	TOOLBAR_INDEX t[] = { ASCENDING_DESCENDING, LIST_ZOOM_OUT, LIST_ZOOM_IN };
 	if(mode==MODE::LIST){
 		int b[]={listAscendingOrder,2,3};
 		i=0;
