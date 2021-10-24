@@ -1086,8 +1086,8 @@ horizontal mouse scroll {
 	NORMAL MODES scroll image left/right if image wider than window
 }
 
-GDK_KEY_KP_Add (+ on extended keyboard) - switch to NORMAL MODE
-GDK_KEY_KP_Subtract (- on extended keyboard) - switch to FIT MODE
+GDK_KEY_KP_Add (+ on extended keyboard) - for LIST_MODE increase icon size otherwise switch to NORMAL MODE 
+GDK_KEY_KP_Subtract (- on extended keyboard) - for LIST_MODE decrease icon size otherwise  switch to FIT MODE
 l - switch to LIST MODE
 
 e - rotate image by 270 degrees
