@@ -23,10 +23,14 @@ enum class TOOLBAR_INDEX{
 	MODE_NORMAL,MODE_FIT,MODE_LIST,
 	ROTATE_ANTICLOCKWISE,ROTATE_180,ROTATE_CLOCKWISE,
 	HOME,PAGE_UP,PREVIOUS,NEXT,PAGE_DOWN,END,
-	OPEN,DELETE_ASCENDING_DESCENDING,HELP
+	OPEN,DELETE,HELP
 	,TB_SIZE
 };
 const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::TB_SIZE);
+
+const TOOLBAR_INDEX LIST_ZOOM_IN=TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE;
+const TOOLBAR_INDEX LIST_ZOOM_OUT=TOOLBAR_INDEX::ROTATE_180;
+const TOOLBAR_INDEX ASCENDING_DESCENDING=TOOLBAR_INDEX::DELETE;
 
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
@@ -58,10 +62,11 @@ public:
 	int loadingFontHeight,filenameFontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
 	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
-	GdkPixbuf**ascendingDescending;
+	std::vector<GdkPixbuf*>addi;
 	bool listAscendingOrder;
 	MODE lastNonListMode;
 	const static bool filenameFontBold=true;
+	int listIconHeight,listIconWidth;
 
 	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
@@ -117,9 +122,10 @@ public:
 	int getFirstListIndex();
 
 	void setButtonImage(int i,bool enable,GdkPixbuf*p);
-	void setDADButtonState();
+	void setVariableImagesButtonsState();
 	void redraw(bool withTitle=true);
 	int countFontMaxHeight(const std::string& s,bool bold,cairo_t *cr);
+	void setIconHeightWidth(int height);
 };
 
 #endif /* FRAME_H_ */

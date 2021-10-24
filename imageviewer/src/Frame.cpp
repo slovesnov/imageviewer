@@ -13,10 +13,6 @@
 #include "Frame.h"
 #include "help.h"
 
-const int ICON_HEIGHT=965/4;//drawing area height 959,so got 8 rows 4*119/3=158 1920/158=12 rows
-//const int ICON_HEIGHT=95;//drawing area height 959,so got 10 rows
-const int ICON_WIDTH=4*ICON_HEIGHT/3;//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-
 Frame *frame;
 VString Frame::sLowerExtension;
 
@@ -41,6 +37,8 @@ const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
 const char LOADING[] ="loading...";
 const int GOTO_BEGIN=INT_MIN;
 const int GOTO_END=INT_MAX;
+const int MIN_ICON_HEIGHT=32;
+const int MAX_ICON_HEIGHT=200;
 
 const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"magnifier_zoom_out.png", "application_view_columns.png",
@@ -61,10 +59,9 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"help.png"
 };
 
-const char *ASCENDING_DESCENDING_IMAGES[] = {
-		"sort_ascending.png","sort_descending.png"
-};
-//const int SIZE_ASCENDING_DESCENDING_IMAGES=SIZEI(ASCENDING_DESCENDING_IMAGES);
+const char *ADDITIONAL_IMAGES[] = {
+		"sort_ascending.png", "sort_descending.png",
+		"arrow_in.png", "arrow_out.png" };
 
 const TOOLBAR_INDEX ROTATE[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
 		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE };
@@ -76,7 +73,7 @@ const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_NORMAL,
 		TOOLBAR_INDEX::MODE_FIT, TOOLBAR_INDEX::MODE_LIST };
 
-const std::string CONFIG_TAGS[] = { "mode", "order" };
+const std::string CONFIG_TAGS[] = { "mode", "order", "list icon height" };
 const std::string SEPARATOR = "          ";
 
 static gpointer thumbnail_thread(gpointer data) {
@@ -140,7 +137,6 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	int i,j;
 	loadid=-1;
-	ascendingDescending = new GdkPixbuf*[SIZEI(ASCENDING_DESCENDING_IMAGES)];
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -150,10 +146,14 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	g_mutex_init(&mutex);
 
 	lastWidth = lastHeight = posh = posv = 0;
+	loadingFontHeight=0;
 
 	//begin readConfig
 	listAscendingOrder = true;
 	lastNonListMode = mode = MODE::NORMAL;
+	//drawing area height 959,so got 10 rows
+	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
+	setIconHeightWidth(95);
 
 	MapStringString m;
 	MapStringString::iterator it;
@@ -172,12 +172,19 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 						break;
 					}
 					lastNonListMode = mode = MODE(j);
-				} else {
+				} else if(i==1){
 					if (j < 0 || j > 1) {
 						printl("error");
 						break;
 					}
 					listAscendingOrder = j == 1;
+				}
+				else{
+					if (j < MIN_ICON_HEIGHT || j > MAX_ICON_HEIGHT) {
+						printl("error");
+						break;
+					}
+					setIconHeightWidth(j);
 				}
 
 			}
@@ -208,9 +215,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 
 	//before setButtonState
-	i=0;
-	for(auto a:ASCENDING_DESCENDING_IMAGES){
-		ascendingDescending[i++]=pixbuf(a);
+	for(auto a:ADDITIONAL_IMAGES){
+		addi.push_back(pixbuf(a));
 	}
 
 	i=0;
@@ -277,13 +283,14 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	}
 
 	setTitle();
+
 	gtk_main();
 }
 
 Frame::~Frame() {
 	int i, j;
 
-	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder );
+	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder,listIconHeight );
 
 	stopThreads();
 	free();
@@ -294,7 +301,6 @@ Frame::~Frame() {
 			g_object_unref(buttonPixbuf[i][j]);
 		}
 	}
-	delete[]ascendingDescending;
 }
 
 void Frame::openUris(char **uris) {
@@ -483,13 +489,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	if (windowSizeChanged) {
 		lastWidth = width;
 		lastHeight = height;
-
 		recountListParameters();
 	}
 
-	static int first=1;
-	if(first){
-		first=0;
+	if(!loadingFontHeight){
 		loadingFontHeight=countFontMaxHeight(LOADING, false,cr);
 		filenameFontHeight=countFontMaxHeight("IMG_20211004_093339", filenameFontBold,cr);
 
@@ -508,21 +511,21 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				((listAscendingOrder && k < sz)
 						|| (!listAscendingOrder && k >= 0)) && l < listxy;
 				k += listAscendingOrder ? 1 : -1, l++) {
-			i=l%listx*ICON_WIDTH+listdx;
-			j=l/listx*ICON_HEIGHT+listdy;
+			i=l%listx*listIconWidth+listdx;
+			j=l/listx*listIconHeight+listdy;
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
 			if(p){
 				getPixbufWH(p,w,h);
-				copy(p, cr, i+(ICON_WIDTH-w)/2, j+(ICON_HEIGHT-h)/2, w, h, 0,0);
+				copy(p, cr, i+(listIconWidth-w)/2, j+(listIconHeight-h)/2, w, h, 0,0);
 
 				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),
-						filenameFontHeight, filenameFontBold, i, j, ICON_WIDTH,
-						ICON_HEIGHT, true, 2, RED_COLOR);
+						filenameFontHeight, filenameFontBold, i, j, listIconWidth,
+						listIconHeight, true, 2, RED_COLOR);
 			}
 			else{
 				drawTextToCairo(cr, LOADING,loadingFontHeight,false
-						, i,j,ICON_WIDTH,ICON_HEIGHT,
+						, i,j,listIconWidth,listIconHeight,
 						true, 2,BLACK_COLOR);
 			}
 		}
@@ -743,7 +746,7 @@ int Frame::showConfirmation(const std::string text) {
 void Frame::startThreads() {
 	int i;
 
-	for (i = getFirstListIndex(); vp[i].thumbnail != 0;
+	for (i = getFirstListIndex(); vp[i].thumbnail != nullptr;
 			i += listAscendingOrder ? 1 : -1) {
 		if ((listAscendingOrder && i >= size())
 				|| (!listAscendingOrder && i < 0)) {
@@ -751,7 +754,6 @@ void Frame::startThreads() {
 		}
 	}
 	threadNumber = i;
-	//printl(getFirstListIndex(), threadNumber, size())
 
 	i = 0;
 	for (auto &p : pThread) {
@@ -791,7 +793,7 @@ void Frame::thumbnailThread(int n) {
 		if(!o.t){
 			//full path
 			p = gdk_pixbuf_new_from_file(o.path.c_str(), NULL);
-			scaleFit(p, o.t, ICON_WIDTH, ICON_HEIGHT, w, h);
+			scaleFit(p, o.t, listIconWidth, listIconHeight, w, h);
 			g_object_unref(p);
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
@@ -853,7 +855,7 @@ void Frame::buttonPress(GdkEventButton *event) {
 					int cx=event->x;
 					int cy=event->y;
 					if(cx>=listdx && cx<lastWidth-listdx && cy>=listdy && cy<lastHeight-listdy){
-						pi = ((cx-listdx)/ICON_WIDTH+(cy-listdy)/ICON_HEIGHT*listx)*(listAscendingOrder?1:-1)+listTopLeftIndex;
+						pi = ((cx-listdx)/listIconWidth+(cy-listdy)/listIconHeight*listx)*(listAscendingOrder?1:-1)+listTopLeftIndex;
 						setMode(MODE::FIT);
 						loadImage();
 					}
@@ -966,13 +968,14 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	if(t==TOOLBAR_INDEX::DELETE_ASCENDING_DESCENDING){
+	if(t==TOOLBAR_INDEX::DELETE){
 		if(mode==MODE::LIST){
+			//ORDER KEY
 			stopThreads();
 			listAscendingOrder=!listAscendingOrder;
 			listTopLeftIndex = getFirstListIndex();
 			startThreads();
-			setDADButtonState();
+			setVariableImagesButtonsState();
 			redraw();
 		}
 		else{
@@ -1015,16 +1018,33 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	if(mode!=MODE::LIST){
-		i=INDEX_OF(t,ROTATE);
-		if(i!=-1){
+	i=INDEX_OF(t,ROTATE);
+	if(i!=-1){
+		if(mode==MODE::LIST){
+			if(t==LIST_ZOOM_IN || t==LIST_ZOOM_OUT){
+				i=listIconHeight+(t==LIST_ZOOM_OUT?1:-1)*5;
+				if(i>=MIN_ICON_HEIGHT && i<=MAX_ICON_HEIGHT){
+					stopThreads();
+					setIconHeightWidth(i);
+					recountListParameters();
+					loadingFontHeight=0;//to recount font
+					loadid++;
+					for(auto&o:vp){
+						o.thumbnail=o.t=nullptr;
+						o.loadid=loadid;
+					}
+					startThreads();
+					redraw(false);
+				}
+			}
+		}
+		else{
 			rotatePixbuf(pix, pw, ph, 90 * (i+1));
 			//small image angle should match with big image, so always call setSmallImage
 			setSmallImage();
 			drawImage();
-			return;
 		}
-
+		return;
 	}
 }
 
@@ -1109,17 +1129,17 @@ h, F1 - show help)";
 
 void Frame::recountListParameters() {
 	const int sz=size();
-	listx=MAX(1,lastWidth/ICON_WIDTH);
-	listy=MAX(1,lastHeight/ICON_HEIGHT);
+	listx=MAX(1,lastWidth/listIconWidth);
+	listy=MAX(1,lastHeight/listIconHeight);
 	//MIN(listx,sz) center horizontally if images less than listx
-	listdx=(lastWidth-MIN(listx,sz)*ICON_WIDTH)/2;
+	listdx=(lastWidth-MIN(listx,sz)*listIconWidth)/2;
 	//MIN(listx,sz) center vertically if images less than listx*listy
 	int i;
 	i=sz/listx;
 	if(sz%listx!=0){
 		i++;
 	}
-	listdy=(lastHeight-MIN(listy, i)*ICON_HEIGHT)/2;
+	listdy=(lastHeight-MIN(listy, i)*listIconHeight)/2;
 	listxy=listx*listy;
 	//printl(sz,listx,listy)
 }
@@ -1139,11 +1159,10 @@ void Frame::setMode(MODE m,bool start) {
 			setButtonState(a,i++!=int(m));
 		}
 
-		for(auto a:ROTATE){
-			setButtonState(a,mode!=MODE::LIST);
-		}
+		//other two buttons wet in setVariableImagesButtonsState()
+		setButtonState(TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE,mode!=MODE::LIST);
 
-		setDADButtonState();
+		setVariableImagesButtonsState();
 	}
 }
 
@@ -1198,13 +1217,24 @@ void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
 	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(p));
 }
 
-void Frame::setDADButtonState() {
-	auto a=TOOLBAR_INDEX::DELETE_ASCENDING_DESCENDING;
+void Frame::setVariableImagesButtonsState() {
+	int i=0;
+	TOOLBAR_INDEX t[] = { ASCENDING_DESCENDING, LIST_ZOOM_IN, LIST_ZOOM_OUT };
 	if(mode==MODE::LIST){
-		setButtonImage(int(a), true, ascendingDescending[listAscendingOrder]);
+		int b[]={listAscendingOrder,2,3};
+		i=0;
+		for(auto a:t){
+			setButtonImage(int(a), true, addi[b[i]]);
+			i++;
+		}
 	}
 	else{
-		setButtonState(a,mode!=MODE::LIST);
+		bool b[]={mode!=MODE::LIST,true,true};
+		i=0;
+		for(auto a:t){
+			setButtonState(a, b[i]);
+			i++;
+		}
 	}
 }
 
@@ -1220,10 +1250,15 @@ int Frame::countFontMaxHeight(const std::string &s, bool bold,cairo_t *cr) {
 	int w,h;
 	for(int i=1;;i++){
 		getTextExtents(s, i,false, w, h, cr);
-		if(w>=ICON_WIDTH || h>=ICON_HEIGHT){
+		if(w>=listIconWidth || h>=listIconHeight){
 			return i-1;
 		}
 	}
 	assert(0);
 	return 16;
+}
+
+void Frame::setIconHeightWidth(int height) {
+	listIconHeight=height;
+	listIconWidth=4*height/3;
 }
