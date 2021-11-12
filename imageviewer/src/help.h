@@ -13,6 +13,7 @@
 
 #include <gtk/gtk.h>
 #include <string>
+#include "Pixbuf.h"
 
 void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr);
 void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
@@ -20,6 +21,9 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 
 void adjust(int &v, int min,int max = INT_MAX);
 std::string filechooser(GtkWidget *parent);
+
+void scaleFit(GdkPixbuf *src, Pixbuf &dest, int destW, int destH,
+		int &w, int &h);
 
 void scaleFit(GdkPixbuf *src, GdkPixbuf *&dest, int destW, int destH,
 		int &w, int &h);

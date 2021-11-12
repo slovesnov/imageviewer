@@ -45,6 +45,6 @@ void Image::assign(Image& o){
 
 void Image::free() {
 	if(t){
-		::free(t);
+		g_object_unref(t);
 	}
 }

@@ -44,7 +44,7 @@ public:
 	GtkWidget *window, *area,*button[TOOLBAR_INDEX_SIZE];
 	int lastWidth, lastHeight;
 	int posh, posv;
-	GdkPixbuf *pix, *pixs;
+	Pixbuf pix, pixs;
 	int pw, ph, aw, ah, pws, phs;
 	double scale;
 	int pi;
@@ -61,7 +61,7 @@ public:
 	gint endThreads;//already have function stopThreads
 	int loadingFontHeight,filenameFontHeight,listTopLeftIndex,totalFileSize;
 	int listx,listy,listdx,listdy,listxy;
-	GdkPixbuf* buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
+	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*>addi;
 	bool listAscendingOrder;
 	MODE lastNonListMode;
@@ -77,7 +77,6 @@ public:
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
 	gboolean keyPress(GdkEventKey *event);
-	void free();
 	void setDragDrop(GtkWidget *widget);
 	void openUris(char **uris);
 	void scroll(GdkEventScroll *event);
@@ -91,7 +90,7 @@ public:
 	void switchImage(int v, bool add);
 
 	void setSmallImage();
-	void rotatePixbuf(GdkPixbuf *&p, int &w, int &h, int angle);
+	void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
 
 	int showConfirmation(const std::string text);
 	void startThreads();

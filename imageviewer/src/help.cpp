@@ -49,6 +49,26 @@ std::string filechooser(GtkWidget *parent) {
 	return s;
 }
 
+void scaleFit(GdkPixbuf *src, Pixbuf &dest, int destW, int destH,
+		int &w, int &h){
+	int pw = gdk_pixbuf_get_width(src);
+	int ph = gdk_pixbuf_get_height(src);
+	if (pw <= destW && ph <= destH) { //image smaller than screen
+		w = pw;
+		h = ph;
+	} else {
+		//pw*k<=destW && ph*k<=destH k=min(destW/pw,destH/ph)
+		if (destW * ph <= destH * pw) {
+			w = destW;
+			h = ph * destW / pw;
+		} else {
+			w = pw * destH / ph;
+			h = destH;
+		}
+	}
+	dest = gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
+}
+
 void scaleFit(GdkPixbuf *src, GdkPixbuf *&dest, int destW, int destH,
 		int &w, int &h) {
 	int pw = gdk_pixbuf_get_width(src);

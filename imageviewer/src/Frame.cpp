@@ -270,7 +270,6 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	setDragDrop(window);
 
-	pix = pixs = 0;
 	lastScroll = 0;
 
 	if (path.empty()) {
@@ -288,19 +287,9 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 }
 
 Frame::~Frame() {
-	int i, j;
-
 	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder,listIconHeight );
-
 	stopThreads();
-	free();
 	g_mutex_clear(&mutex);
-
-	for (i = 0; i < SIZEI(buttonPixbuf); i++) {
-		for (j = 0; j < SIZEI(*buttonPixbuf); j++) {
-			g_object_unref(buttonPixbuf[i][j]);
-		}
-	}
 }
 
 void Frame::openUris(char **uris) {
@@ -447,7 +436,6 @@ void Frame::loadImage() {
 	if (!noImage()) {
 		GError *err = NULL;
 		/* Create pixbuf */
-		free();
 		//here full path
 		pix = gdk_pixbuf_new_from_file(vp[pi].path.c_str(), &err);
 
@@ -457,7 +445,8 @@ void Frame::loadImage() {
 			setNoImage();
 			return;
 		}
-		getPixbufWH(pix,pw,ph);
+		pw=pix.width();
+		ph=pix.height();
 
 		if (mode == MODE::FIT && lastWidth > 0) {
 			setSmallImage();
@@ -516,7 +505,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			auto& o=vp[k];
 			GdkPixbuf*p=o.thumbnail;
 			if(p){
-				getPixbufWH(p,w,h);
+				w=gdk_pixbuf_get_width(p);
+				h=gdk_pixbuf_get_height(p);
 				copy(p, cr, i+(listIconWidth-w)/2, j+(listIconHeight-h)/2, w, h, 0,0);
 
 				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),
@@ -618,11 +608,6 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	return i!=-1;
 }
 
-void Frame::free() {
-	::free(pix);
-	::free(pixs);
-}
-
 void Frame::setDragDrop(GtkWidget *widget) {
 	gtk_drag_dest_set(widget, GTK_DEST_DEFAULT_ALL, NULL, 0, GDK_ACTION_COPY);
 	gtk_drag_dest_add_uri_targets(widget);
@@ -711,16 +696,14 @@ void Frame::setSmallImage() {
 	scale = double(pws) / pw;
 }
 
-void Frame::rotatePixbuf(GdkPixbuf *&q, int &w, int &h, int angle) {
+void Frame::rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
 	//angle 90 or 180 or 270
-	GdkPixbuf *p = q;
-	q = gdk_pixbuf_rotate_simple(p,
+	p = gdk_pixbuf_rotate_simple(p,
 			angle == 180 ?
 					GDK_PIXBUF_ROTATE_UPSIDEDOWN :
 					(angle == 90 ?
 							GDK_PIXBUF_ROTATE_CLOCKWISE :
 							GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE));
-	g_object_unref(p);
 	if (angle != 180) {
 		std::swap(w, h);
 	}
