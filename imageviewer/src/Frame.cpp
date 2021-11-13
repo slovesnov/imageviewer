@@ -692,7 +692,7 @@ void Frame::switchImage(int v, bool add) {
 }
 
 void Frame::setSmallImage() {
-	scaleFit(pix, pixs, lastWidth, lastHeight, pws, phs);
+	pixs = scaleFit(pix, lastWidth, lastHeight, pws, phs);
 	scale = double(pws) / pw;
 }
 
@@ -753,7 +753,7 @@ void Frame::startThreads() {
 
 void Frame::thumbnailThread(int n) {
 	int w, h, v, max=0;
-	GdkPixbuf*p;
+	Pixbuf p;
 
 //#define SHOW_THREAD_TIME
 
@@ -780,11 +780,10 @@ void Frame::thumbnailThread(int n) {
 		}
 		auto & o=vp[v];
 
-		if(!o.t){
+		if(!o.thumbnail){
 			//full path
-			p = gdk_pixbuf_new_from_file(o.path.c_str(), NULL);
-			scaleFit(p, o.t, listIconWidth, listIconHeight, w, h);
-			g_object_unref(p);
+			p = o.path;
+			o.thumbnail=scaleFit(p, listIconWidth, listIconHeight, w, h);
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
@@ -866,7 +865,6 @@ void Frame::setShowThumbnail(int i) {
 		//printl("skipped",o.loadid,loadid,"i=",i);
 		return;
 	}
-	o.thumbnail=o.t;
 	if (mode == MODE::LIST
 			&& ((listAscendingOrder && i >= listTopLeftIndex
 					&& i < listTopLeftIndex + listxy)
@@ -996,9 +994,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					//old indexes for setShowThumbnail() are not valid so make new loadid & set o.thumbmails
 					loadid++;
 					for(auto&o:vp){
-						if(!o.thumbnail && o.t){
-							o.thumbnail=o.t;
-						}
 						o.loadid=loadid;
 					}
 					startThreads();
@@ -1021,7 +1016,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					loadid++;
 					for(auto&o:vp){
 						o.free();
-						o.thumbnail=o.t=nullptr;
+						o.thumbnail=nullptr;
 						o.loadid=loadid;
 					}
 					startThreads();

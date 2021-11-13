@@ -14,16 +14,16 @@
 #include <string>
 #include <gtk/gtk.h>
 #include <vector>
+#include <atomic>
 
 /* Note use mutex for every Image is bad idea too long g_mutex_init & g_mutex_clear so use GdkPixbuf*t
  * which is set by thread. Drawing using thumbnail class member. After loading thread set t class member and call
  * setShowThumbnail() to set thumbnail from t and queue draw if needed. So it's separates writing and reading
  * thumbnail class member.
  *
- * It's possible three options
- * t=thumbnail=nullptr - image isn't loaded
- * t!=nullptr & thumbnail=nullptr - thread loaded image, but setShowThumbnail wasn't called
- * t=thumbnail!=nullptr - thread loaded image, and setShowThumbnail was called
+ * It's possible two options
+ * thumbnail = nullptr - image isn't loaded
+ * thumbnail != nullptr - thread loaded image, and setShowThumbnail was called
  *
  * loadid is using when user open another folder while current isn't fully loaded yet. In this case
  * need to stop all threads and clear setShowThumbnail() in queue. Now I don't know how to remove setShowThumbnail()
@@ -35,20 +35,19 @@
  *
  */
 
-class Image{
-	void assign(Image& o);
+class Image {
+	void assign(Image &o);
 public:
 	std::string path;
-	int size,loadid;
-	//t - is used for thread loading, see Image::~Image()
-	GdkPixbuf*thumbnail,*t;
+	int size, loadid;
+	std::atomic<GdkPixbuf*> thumbnail;
 
-	Image(std::string p,int id);
+	Image(std::string p, int id);
 	~Image();
 
 	//for correct VImage.erase()
-	Image(Image&& o);
-	Image& operator=(Image&& o);
+	Image(Image &&o);
+	Image& operator=(Image &&o);
 	void free();
 };
 

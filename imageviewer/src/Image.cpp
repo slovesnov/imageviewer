@@ -11,15 +11,14 @@
 #include "Image.h"
 #include "aslov.h"
 
-Image::Image(std::string p,int id){
-	path=p;
-	loadid=id;
-	t=thumbnail=nullptr;
-	size=getFileSize(path);
+Image::Image(std::string p, int id) {
+	path = p;
+	loadid = id;
+	thumbnail = nullptr;
+	size = getFileSize(path);
 }
 
-Image::~Image(){
-	//see Image.h for documentation
+Image::~Image() {
 	free();
 }
 
@@ -28,23 +27,21 @@ Image::Image(Image &&o) {
 }
 
 Image& Image::operator=(Image &&o) {
-	//it thumpbnail!=nullptr then thumpbnail=t and don't need free memory
 	free();
 	assign(o);
 	return *this;
 }
 
-void Image::assign(Image& o){
+void Image::assign(Image &o) {
 	path = o.path;
 	size = o.size;
-	loadid=o.loadid;
-	thumbnail = o.thumbnail;
-	t = o.t;
-	o.t = o.thumbnail = nullptr;
+	loadid = o.loadid;
+	thumbnail = o.thumbnail.load();
+	o.thumbnail = nullptr;
 }
 
 void Image::free() {
-	if(t){
-		g_object_unref(t);
+	if (thumbnail) {
+		g_object_unref (thumbnail);
 	}
 }
