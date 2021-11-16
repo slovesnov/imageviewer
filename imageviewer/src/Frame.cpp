@@ -14,7 +14,6 @@
 #include "help.h"
 
 Frame *frame;
-VString Frame::sLowerExtension;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
  * START_MODE=-1 is normal, other values is using for debugging
@@ -193,19 +192,32 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	}
 	//end readConfig
 
-	if (sLowerExtension.empty()) {
-		sLowerExtension = { "jpg" }; //in list only "jpeg" not jpg
-		GSList *formats;
-		GSList *elem;
-		GdkPixbufFormat *pf;
-		formats = gdk_pixbuf_get_formats();
-		for (elem = formats; elem; elem = elem->next) {
-			pf = (GdkPixbufFormat*) elem->data;
-			auto p = gdk_pixbuf_format_get_name(pf);
-			sLowerExtension.push_back(p);
+	GSList *formats;
+	GSList *elem;
+	GdkPixbufFormat *pf;
+	char*c,** extension_list;
+	formats = gdk_pixbuf_get_formats();
+	for (elem = formats; elem; elem = elem->next) {
+		pf = (GdkPixbufFormat*) elem->data;
+		//p = gdk_pixbuf_format_get_name(pf);
+		extension_list = gdk_pixbuf_format_get_extensions (pf);
+		for (i = 0; (c=extension_list[i]) != 0; i++) {
+			if(i==0){
+				if(!extensionString.empty()){
+					extensionString+=' ';
+				}
+				extensionString+=c;
+			}
+//			if(i==0 && !cmp(c,p)){
+//				printl("error");
+//			}
+			vLowerExtension.push_back(c);
+			//printl(c,cmp(c,p));
 		}
-		g_slist_free(formats);
+		g_strfreev (extension_list);
+
 	}
+	g_slist_free(formats);
 
 	window = gtk_application_window_new(GTK_APPLICATION(application));
 	area = gtk_drawing_area_new();
@@ -659,7 +671,7 @@ void Frame::setNoImage() {
 }
 
 bool Frame::isSupportedImage(const std::string &p) {
-	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION),sLowerExtension);
+	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION),vLowerExtension);
 }
 
 void Frame::adjustPos() {
@@ -1050,7 +1062,6 @@ if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts f
 (GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) {
 	ALL MODES go to first/last image in DIRECTORY
 }
-
 mouse_right, O { 
 	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
 }
@@ -1067,7 +1078,6 @@ horizontal mouse scroll {
 GDK_KEY_KP_Add (+ on extended keyboard) - for LIST_MODE increase icon size otherwise switch to NORMAL MODE 
 GDK_KEY_KP_Subtract (- on extended keyboard) - for LIST_MODE decrease icon size otherwise  switch to FIT MODE
 l - switch to LIST MODE
-
 e - rotate image by 270 degrees
 r - rotate image by 180 degrees
 t - rotate image by 90 degrees
@@ -1076,7 +1086,6 @@ GDK_KEY_Delete, GDK_KEY_KP_Decimal {
 	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
 	LIST MODE - change ascending/descending list order
 }
-
 h, F1 - show help)";
 
 /*
@@ -1102,7 +1111,8 @@ h, F1 - show help)";
 	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
 
-	auto l=gtk_label_new(t);
+	s=t+("\nsupported formats "+extensionString);
+	auto l=gtk_label_new(s.c_str());
 	auto ca= gtk_dialog_get_content_area(GTK_DIALOG(d));
 
 	gtk_container_add(GTK_CONTAINER(ca),l);

@@ -50,8 +50,9 @@ public:
 	int pi;
 	MODE mode;
 	VImage vp;
-	//lower cased allowable pixbuf formats
-	static VString sLowerExtension;
+	//lower cased allowable files extension
+	VString vLowerExtension;
+	std::string extensionString;
 	std::string dir;
 	guint32 lastScroll;
 	std::vector<GThread*>pThread;
@@ -83,7 +84,7 @@ public:
 	void setPosRedraw(double dx, double dy, guint32 time = 0);
 	bool noImage();
 	void setNoImage();
-	static bool isSupportedImage(std::string const &p);
+	bool isSupportedImage(std::string const &p);
 	void adjustPos();
 
 	void openDirectory();
