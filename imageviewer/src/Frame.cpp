@@ -55,7 +55,7 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 
 		"folder.png","cross.png",
 
-		"help.png"
+		"transform_move.png","help.png"
 };
 
 const char *ADDITIONAL_IMAGES[] = {
@@ -222,9 +222,10 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	window = gtk_application_window_new(GTK_APPLICATION(application));
 	area = gtk_drawing_area_new();
 	//auto box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	auto toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+	toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_widget_set_halign(toolbar, GTK_ALIGN_CENTER);
-
+	//prevents destroy after gtk_container_remove
+	g_object_ref (toolbar);
 
 	//before setButtonState
 	for(auto a:ADDITIONAL_IMAGES){
@@ -251,7 +252,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		i++;
 	}
 
-	auto box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(box), area, TRUE, TRUE, 0);
 	gtk_container_add(GTK_CONTAINER(box), toolbar);
 
@@ -299,6 +300,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 }
 
 Frame::~Frame() {
+	g_object_unref (toolbar);
+
 	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder,listIconHeight );
 	stopThreads();
 	g_mutex_clear(&mutex);
@@ -593,20 +596,21 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 
 	const bool plus=k == GDK_KEY_KP_Add;
 	const bool minus=k == GDK_KEY_KP_Subtract;
-	int i=indexOfV(true, plus, minus, hwkey== 'L',
-			hwkey == 'E',hwkey == 'R',hwkey == 'T',
+	int i=indexOfV(true, plus, minus, hwkey== 'L'
+			,hwkey == 'E',hwkey == 'R',hwkey == 'T'
 
-			oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
-			oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
-			oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4),
-			oneOf(k, GDK_KEY_Right, GDK_KEY_KP_6),
-			oneOf(k, GDK_KEY_Page_Down, GDK_KEY_KP_3),
-			oneOf(k, GDK_KEY_End, GDK_KEY_KP_1),
+			,oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7)
+			,oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9)
+			,oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4)
+			,oneOf(k, GDK_KEY_Right, GDK_KEY_KP_6)
+			,oneOf(k, GDK_KEY_Page_Down, GDK_KEY_KP_3)
+			,oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
 
 			//english and russian keyboard layout (& caps lock)
-			hwkey == 'O',
-			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
-			hwkey == 'H' || k==GDK_KEY_F1
+			,hwkey == 'O'
+			,oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal)
+			,oneOf(k, GDK_KEY_F11, GDK_KEY_Escape)
+			,hwkey == 'H' || k==GDK_KEY_F1
 	);
 
 	if(i!=-1){
@@ -927,6 +931,19 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		showHelp();
 		return;
 	}
+	if(t==TOOLBAR_INDEX::FULLSCREEN){
+		GdkWindow *gdk_window = gtk_widget_get_window(window);
+		GdkWindowState state = gdk_window_get_state(gdk_window);
+		if(state & GDK_WINDOW_STATE_FULLSCREEN){
+			gtk_container_add(GTK_CONTAINER(box), toolbar);
+			gtk_window_unfullscreen(GTK_WINDOW(window));
+		}
+		else{
+			gtk_container_remove(GTK_CONTAINER(box), toolbar);
+			gtk_window_fullscreen(GTK_WINDOW(window));
+		}
+		return;
+	}
 
 	if(noImage()){
 		return;
@@ -1074,7 +1091,7 @@ horizontal mouse scroll {
 	LIST, FIT MODES ignored
 	NORMAL MODES scroll image left/right if image wider than window
 }
-
+GDK_KEY_F11 or GDK_KEY_Escape switch full screen mode
 GDK_KEY_KP_Add (+ on extended keyboard) - for LIST_MODE increase icon size otherwise switch to NORMAL MODE 
 GDK_KEY_KP_Subtract (- on extended keyboard) - for LIST_MODE decrease icon size otherwise  switch to FIT MODE
 l - switch to LIST MODE

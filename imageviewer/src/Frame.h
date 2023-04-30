@@ -23,7 +23,7 @@ enum class TOOLBAR_INDEX{
 	MODE_NORMAL,MODE_FIT,MODE_LIST,
 	ROTATE_ANTICLOCKWISE,ROTATE_180,ROTATE_CLOCKWISE,
 	HOME,PAGE_UP,PREVIOUS,NEXT,PAGE_DOWN,END,
-	OPEN,DELETE,HELP
+	OPEN,DELETE,FULLSCREEN,HELP
 	,TB_SIZE
 };
 const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::TB_SIZE);
@@ -41,7 +41,7 @@ const int SCROLL_DELAY_MILLISECONDS = 500;
 
 class Frame {
 public:
-	GtkWidget *window, *area,*button[TOOLBAR_INDEX_SIZE];
+	GtkWidget *window, *area,*box,*toolbar,*button[TOOLBAR_INDEX_SIZE];
 	int lastWidth, lastHeight;
 	int posh, posv;
 	Pixbuf pix, pixs;
