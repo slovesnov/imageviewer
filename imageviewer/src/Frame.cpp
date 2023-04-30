@@ -609,7 +609,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 			//english and russian keyboard layout (& caps lock)
 			,hwkey == 'O'
 			,oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal)
-			,oneOf(k, GDK_KEY_F11, GDK_KEY_Escape)
+			,hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape)
 			,hwkey == 'H' || k==GDK_KEY_F1
 	);
 
@@ -1067,7 +1067,6 @@ void Frame::showHelp() {
 	const char t[] =R"(if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
 if dropped file isn't supported then first supported image in DIRECTORY
 if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
-
 (GDK_KEY_Right, GDK_KEY_KP_6) / (GDK_KEY_Left, GDK_KEY_KP_4) {
 	LIST MODE scroll one row
 	FIT/NORMAL MODES next/previous image in DIRECTORY
@@ -1076,9 +1075,7 @@ if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts f
 	LIST MODE scroll screen
 	FIT/NORMAL MODES +/-sqrt (number of images in DIRECTORY)
 }
-(GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) {
-	ALL MODES go to first/last image in DIRECTORY
-}
+(GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) go to first/last image in DIRECTORY
 mouse_right, O { 
 	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
 }
@@ -1091,14 +1088,13 @@ horizontal mouse scroll {
 	LIST, FIT MODES ignored
 	NORMAL MODES scroll image left/right if image wider than window
 }
-GDK_KEY_F11 or GDK_KEY_Escape switch full screen mode
+GDK_KEY_F11, F, GDK_KEY_Escape switch full screen mode
 GDK_KEY_KP_Add (+ on extended keyboard) - for LIST_MODE increase icon size otherwise switch to NORMAL MODE 
 GDK_KEY_KP_Subtract (- on extended keyboard) - for LIST_MODE decrease icon size otherwise  switch to FIT MODE
 l - switch to LIST MODE
 e - rotate image by 270 degrees
 r - rotate image by 180 degrees
 t - rotate image by 90 degrees
-
 GDK_KEY_Delete, GDK_KEY_KP_Decimal {
 	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
 	LIST MODE - change ascending/descending list order
