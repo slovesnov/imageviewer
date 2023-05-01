@@ -594,8 +594,9 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	const int k = event->keyval;
 	const guint16 hwkey=event->hardware_keycode;
 
-	const bool plus=k == GDK_KEY_KP_Add;
-	const bool minus=k == GDK_KEY_KP_Subtract;
+	//printl(k, GDK_KEY_minus,GDK_KEY_equal,GDK_KEY_KP_Subtract, GDK_KEY_minus);
+	const bool plus=k == GDK_KEY_KP_Add || k==GDK_KEY_equal;
+	const bool minus=k == GDK_KEY_KP_Subtract ||  k==GDK_KEY_minus;
 	int i=indexOfV(true, plus, minus, hwkey== 'L'
 			,hwkey == 'E',hwkey == 'R',hwkey == 'T'
 
@@ -923,6 +924,7 @@ void Frame::scrollList(int v) {
 
 void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	int i;
+	//printl(int(t),t==TOOLBAR_INDEX::HELP)
 	if(t==TOOLBAR_INDEX::OPEN){
 		openDirectory();
 		return;
@@ -1089,8 +1091,7 @@ horizontal mouse scroll {
 	NORMAL MODES scroll image left/right if image wider than window
 }
 GDK_KEY_F11, F, GDK_KEY_Escape switch full screen mode
-GDK_KEY_KP_Add (+ on extended keyboard) - for LIST_MODE increase icon size otherwise switch to NORMAL MODE 
-GDK_KEY_KP_Subtract (- on extended keyboard) - for LIST_MODE decrease icon size otherwise  switch to FIT MODE
++/- for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
 l - switch to LIST MODE
 e - rotate image by 270 degrees
 r - rotate image by 180 degrees
