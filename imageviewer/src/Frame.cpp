@@ -957,7 +957,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		if(mode!=m){
 			setMode(m);
 			if (mode == MODE::LIST) {
-				setListTopLeftIndexStartValue();
+				//setListTopLeftIndexStartValue();
 				redraw();
 			} else {
 				if (mode == MODE::FIT) {
