@@ -69,7 +69,7 @@ GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
 	return gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
 }
 
-PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr) {
+PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr,bool withBackground=false) {
 	PangoLayout *layout = pango_cairo_create_layout(cr);
 	//not all heights supported for Times
 	//return pango_font_description_from_string(forma("Times New Roman Normal ",height).c_str());
@@ -81,7 +81,13 @@ PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr
 	PangoFontDescription*desc = pango_font_description_from_string(s.c_str());
 	pango_layout_set_font_description(layout, desc);
 
-	pango_layout_set_markup(layout, text.c_str(), -1);
+	if(withBackground){
+		s="<span background='#333333'>"+text+"</span>";
+	}
+	else{
+		s=text;
+	}
+	pango_layout_set_markup(layout, s.c_str(), -1);
 	pango_font_description_free(desc);
 	return layout;
 }
@@ -93,10 +99,10 @@ void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *c
 }
 
 void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
-		bool centerx, int oy,const GdkRGBA&color) {
+		bool centerx, int oy,const GdkRGBA&color,bool withBackground/*=false*/) {
 	int w, h;
 	gdk_cairo_set_source_rgba(ct, &color);
-	PangoLayout *layout = createPangoLayout(text,height,bold,ct);
+	PangoLayout *layout = createPangoLayout(text,height,bold,ct,withBackground);
 	pango_layout_get_pixel_size(layout, &w, &h);
 	double px = rleft;
 	double py = rtop;

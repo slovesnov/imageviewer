@@ -507,7 +507,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	}
 
 	const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
-	const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
+	const GdkRGBA WHITE_COLOR = { 1, 1, 1, 1 };
 
 	if (mode == MODE::LIST) {
 //		printl(listTopLeftIndex,listAscendingOrder)
@@ -526,7 +526,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),
 						filenameFontHeight, filenameFontBold, i, j, listIconWidth,
-						listIconHeight, true, 2, RED_COLOR);
+						listIconHeight, true, 2, WHITE_COLOR,true);
 			}
 			else{
 				drawTextToCairo(cr, LOADING,loadingFontHeight,false
