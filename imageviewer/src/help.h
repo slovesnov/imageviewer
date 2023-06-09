@@ -20,7 +20,7 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 		bool centerx, int oy,const GdkRGBA&color,bool blackBackground=false);
 
 void adjust(int &v, int min,int max = INT_MAX);
-std::string filechooser(GtkWidget *parent);
+std::string filechooser(GtkWidget *parent, const std::string &dir);
 
 GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
 		int &w, int &h);

@@ -17,7 +17,7 @@ void adjust(int &v, int min,int max /*= INT_MAX*/) {
 	}
 }
 
-std::string filechooser(GtkWidget *parent) {
+std::string filechooser(GtkWidget *parent, const std::string &dir) {
 	std::string s;
 	bool onlyFolder = false;
 	const gint MY_SELECTED = 0;
@@ -36,6 +36,7 @@ std::string filechooser(GtkWidget *parent) {
 		 */
 		gtk_dialog_add_button(GTK_DIALOG(dialog), "Select", MY_SELECTED);
 	}
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), (dir+"/..").c_str());
 
 	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
 	auto v=gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));

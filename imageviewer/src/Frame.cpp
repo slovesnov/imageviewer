@@ -685,7 +685,7 @@ void Frame::adjustPos() {
 }
 
 void Frame::openDirectory() {
-	std::string s = filechooser(window);
+	std::string s = filechooser(window,dir);
 	if (!s.empty()) {
 		load(s);
 	}
