@@ -1093,9 +1093,7 @@ horizontal mouse scroll {
 GDK_KEY_F11, F, GDK_KEY_Escape switch full screen mode
 +/- for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
 l - switch to LIST MODE
-e - rotate image by 270 degrees
-r - rotate image by 180 degrees
-t - rotate image by 90 degrees
+e, r, t - rotate image by 90, 180, 270 degrees counterclockwise
 GDK_KEY_Delete, GDK_KEY_KP_Decimal {
 	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
 	LIST MODE - change ascending/descending list order
