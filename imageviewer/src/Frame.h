@@ -19,7 +19,7 @@ enum class MODE {
 	NORMAL, FIT, LIST
 };
 
-enum class LANGUAGE{
+enum class LANGUAGE {
 	IMAGE_VIEWER,
 	LANGUAGE,
 	ASK_BEFORE_DELETING_A_FILE,
@@ -56,6 +56,7 @@ enum class LANGUAGE{
 	LTOOLTIP15,
 	LTOOLTIP16,
 	LTOOLTIP17,
+	LTOOLTIP18,
 	HELP
 };
 
@@ -80,6 +81,7 @@ enum class TOOLBAR_INDEX {
 	END,
 	OPEN,
 	DELETE_FILE,
+	REORDER_FILE,
 	FULLSCREEN,
 	SETTINGS,
 	HELP,
@@ -89,7 +91,6 @@ const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
 
 const TOOLBAR_INDEX LIST_ZOOM_OUT = TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE; //increase size
 const TOOLBAR_INDEX LIST_ZOOM_IN = TOOLBAR_INDEX::ROTATE_180; //decrease size
-const TOOLBAR_INDEX ASCENDING_DESCENDING = TOOLBAR_INDEX::DELETE_FILE;
 
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
@@ -101,7 +102,8 @@ const double IMAGE_VIEWER_VERSION = 1.0;
 
 class Frame {
 public:
-	GtkWidget *window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE],*m_options[SIZE_OPTIONS],*m_modal;
+	GtkWidget *m_window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE],
+			*m_options[SIZE_OPTIONS], *m_modal;
 	int lastWidth, lastHeight;
 	int posh, posv;
 	Pixbuf pix, pixs;
@@ -118,18 +120,18 @@ public:
 	std::vector<GThread*> pThread;
 	GMutex mutex;
 	std::atomic_int threadNumber;
-	int loadid;
+	int m_loadid;
 	gint endThreads; //already have function stopThreads
-	int loadingFontHeight, filenameFontHeight, listTopLeftIndex, totalFileSize;
+	int m_loadingFontHeight, filenameFontHeight, m_listTopLeftIndex, totalFileSize;
 	int listx, listy, listdx, listdy, listxy;
 	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
-	std::vector<GdkPixbuf*> addi;
-	bool listAscendingOrder;
+	std::vector<GdkPixbuf*> m_additionalImages;
+	bool m_ascendingOrder;
 	MODE lastNonListMode;
 	const static bool filenameFontBold = true;
 	int listIconHeight, listIconWidth;
 	VString m_language;
-	int m_languageIndex,m_askBeforeDelete,m_deleteOption,m_showPopup;
+	int m_languageIndex, m_askBeforeDelete, m_deleteOption, m_showPopup;
 	static const int MAX_BUFF_LEN = 2048;
 
 	Frame(GtkApplication *application, std::string const path = "");
@@ -172,7 +174,7 @@ public:
 	void optionsButtonClicked(LANGUAGE l);
 	void showHelp();
 	void showSettings();
-	void showModalDialog(const std::string& title,GtkWidget*w,int o);
+	void showModalDialog(const std::string &title, GtkWidget *w, int o);
 
 	void recountListParameters();
 	void setButtonState(int i, bool enable);
@@ -196,8 +198,8 @@ public:
 	void loadLanguage();
 	GtkWidget* createLanguageCombo(int n);
 	std::string getTitleVersion();
-	std::string& getLanguageString(LANGUAGE l,int add=0);
-	GtkWidget* createTextCombo(int n,VString v, int active);
+	std::string& getLanguageString(LANGUAGE l, int add = 0);
+	GtkWidget* createTextCombo(int n, VString v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();

@@ -38,9 +38,9 @@
 class Image {
 	void assign(Image &o);
 public:
-	std::string path;
-	int size, loadid;
-	std::atomic<GdkPixbuf*> thumbnail;
+	std::string m_path;
+	int m_size, m_loadid;
+	std::atomic<GdkPixbuf*> m_thumbnail;
 
 	Image(std::string p, int id);
 	~Image();

@@ -12,10 +12,10 @@
 #include "aslov.h"
 
 Image::Image(std::string p, int id) {
-	path = p;
-	loadid = id;
-	thumbnail = nullptr;
-	size = getFileSize(path);
+	m_path = p;
+	m_loadid = id;
+	m_thumbnail = nullptr;
+	m_size = getFileSize(m_path);
 }
 
 Image::~Image() {
@@ -33,15 +33,15 @@ Image& Image::operator=(Image &&o) {
 }
 
 void Image::assign(Image &o) {
-	path = o.path;
-	size = o.size;
-	loadid = o.loadid;
-	thumbnail = o.thumbnail.load();
-	o.thumbnail = nullptr;
+	m_path = o.m_path;
+	m_size = o.m_size;
+	m_loadid = o.m_loadid;
+	m_thumbnail = o.m_thumbnail.load();
+	o.m_thumbnail = nullptr;
 }
 
 void Image::free() {
-	if (thumbnail) {
-		g_object_unref (thumbnail);
+	if (m_thumbnail) {
+		g_object_unref (m_thumbnail);
 	}
 }
