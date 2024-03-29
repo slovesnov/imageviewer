@@ -39,6 +39,23 @@ enum class LANGUAGE{
 	OK,
 	CANCEL,
 	RESET,
+	LTOOLTIP1,
+	LTOOLTIP2,
+	LTOOLTIP3,
+	LTOOLTIP4,
+	LTOOLTIP5,
+	LTOOLTIP6,
+	LTOOLTIP7,
+	LTOOLTIP8,
+	LTOOLTIP9,
+	LTOOLTIP10,
+	LTOOLTIP11,
+	LTOOLTIP12,
+	LTOOLTIP13,
+	LTOOLTIP14,
+	LTOOLTIP15,
+	LTOOLTIP16,
+	LTOOLTIP17,
 	HELP
 };
 
@@ -179,10 +196,11 @@ public:
 	void loadLanguage();
 	GtkWidget* createLanguageCombo(int n);
 	std::string getTitleVersion();
-	std::string& getLanguageString(LANGUAGE l);
+	std::string& getLanguageString(LANGUAGE l,int add=0);
 	GtkWidget* createTextCombo(int n,VString v, int active);
 	void resetOptions();
 	void updateOptions();
+	void setPopups();
 };
 
 #endif /* FRAME_H_ */
