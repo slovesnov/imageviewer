@@ -17,6 +17,23 @@ version
 ok
 cancel
 reset
+big image
+small image
+images list
+rotate by 90°|enlarge icons
+rotate by 180°|reduce icon size
+rotate by 90°
+first image
+rewind several images
+previous image
+next image
+fast forward
+last image
+open file/folder
+delete file|change file order
+fullscreen
+settings
+help
 if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
 if dropped file isn't supported then first supported image in DIRECTORY
 if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
