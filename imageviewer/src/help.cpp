@@ -135,7 +135,6 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
  * https://stackoverflow.com/questions/70257751/move-a-file-or-folder-to-the-recyclebin-trash-c17
  */
 bool deleteFileToRecycleBin(const std::string& path) {
-	//old version g_remove(a.path.c_str());
 	auto p=utf8ToLocale(path)+'\0';
 	SHFILEOPSTRUCT fileOp;
 	fileOp.hwnd = NULL;

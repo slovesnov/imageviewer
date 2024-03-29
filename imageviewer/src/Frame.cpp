@@ -11,6 +11,7 @@
 #include <cmath>
 #include "Frame.h"
 #include "help.h"
+#include <glib/gstdio.h>//g_remove
 
 Frame *frame;
 
@@ -1012,17 +1013,22 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			setVariableImagesButtonsState();
 			redraw();
 		} else {
-			if (showConfirmation("Do you really want to delete current image?")
+			if (!m_askBeforeDelete || showConfirmation("Do you really want to delete current image?")
 					== GTK_RESPONSE_YES) {
-				//not need full reload
 
+				//not need full reload
 				stopThreads();
 
 				//before g_remove change totalFileSize
 				auto &a = vp[pi];
 				totalFileSize -= a.size;
-				deleteFileToRecycleBin(a.path);
 
+				if(m_deleteOption){
+					g_remove(a.path.c_str());
+				}
+				else{
+					deleteFileToRecycleBin(a.path);
+				}
 				int sz = size();
 				vp.erase(vp.begin() + pi);
 				if (sz == 1) {
@@ -1374,21 +1380,21 @@ void Frame::optionsButtonClicked(LANGUAGE l){
 	if(l==LANGUAGE::OK){
 		j=gtk_combo_box_get_active(GTK_COMBO_BOX(m_options[i++]));
 		if(j!=m_languageIndex){
-
+			m_languageIndex=j;
+			loadLanguage();
 		}
-		m_languageIndex=j;
 		m_askBeforeDelete=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_options[i++]));
 		m_deleteOption=gtk_combo_box_get_active(GTK_COMBO_BOX(m_options[i++]));
 		m_showPopup=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_options[i++]));
-		gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_OK);
 	}
 	else if(l==LANGUAGE::RESET){
 		resetOptions();
 		updateOptions();
 	}
-	else if(l==LANGUAGE::CANCEL){
-		gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_CANCEL);
-	}
+//	else if(l==LANGUAGE::CANCEL){
+//	}
+	gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_OK);
+	setTitle();//update title after dialog is closed
 }
 
 void Frame::resetOptions() {
