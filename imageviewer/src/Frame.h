@@ -177,6 +177,7 @@ public:
 	void showModalDialog(const std::string &title, GtkWidget *w, int o);
 
 	void recountListParameters();
+	void updateNavigationButtonsState();
 	void setButtonState(int i, bool enable);
 	void setButtonState(TOOLBAR_INDEX i, bool enable) {
 		setButtonState(int(i), enable);

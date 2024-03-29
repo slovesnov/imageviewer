@@ -1196,11 +1196,26 @@ void Frame::recountListParameters() {
 	}
 	listdy = (lastHeight - MIN(listy, i) * listIconHeight) / 2;
 	listxy = listx * listy;
+	updateNavigationButtonsState();
+}
+
+void Frame::updateNavigationButtonsState(){
+	const int sz = size();
 	if (sz <= listxy) {					//all images in screen
 		setNavigationButtonsState(0, 0);
 	}
+	else{
+		int min, max;
+		getListMinMaxIndex(min, max);
+		if (m_ascendingOrder) {
+			setNavigationButtonsState(m_listTopLeftIndex > min,
+					m_listTopLeftIndex < max);
+		} else {
+			setNavigationButtonsState(m_listTopLeftIndex < max,
+					m_listTopLeftIndex > min);
+		}
+	}
 
-//	printl(sz,listx,listy)
 }
 
 void Frame::setButtonState(int i, bool enable) {
@@ -1227,20 +1242,7 @@ void Frame::setMode(MODE m, bool start) {
 }
 
 void Frame::listTopLeftIndexChanged() {
-	int min, max;
-	getListMinMaxIndex(min, max);
-//	printl(m_ascendingOrder,min,max,m_listTopLeftIndex)
-	if (m_ascendingOrder) {
-//		printl(m_listTopLeftIndex > min,
-//				m_listTopLeftIndex < max)
-		setNavigationButtonsState(m_listTopLeftIndex > min,
-				m_listTopLeftIndex < max);
-	} else {
-//		printl(m_listTopLeftIndex < max,
-//				m_listTopLeftIndex > min)
-		setNavigationButtonsState(m_listTopLeftIndex < max,
-				m_listTopLeftIndex > min);
-	}
+	updateNavigationButtonsState();
 	redraw();
 }
 
