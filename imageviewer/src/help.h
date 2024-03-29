@@ -16,13 +16,13 @@
 #include "Pixbuf.h"
 
 const std::string LNG[] = { "en", "ru" };
+const std::string LNG_LONG[] = { "english", "russian" };
 
 void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr);
 void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
 		bool centerx, int oy,const GdkRGBA&color,bool blackBackground=false);
 
 void adjust(int &v, int min,int max = INT_MAX);
-std::string filechooser(GtkWidget *parent, const std::string &dir);
 
 GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
 		int &w, int &h);

@@ -33,12 +33,13 @@ enum class LANGUAGE {
 	HOMEPAGE1,
 	AUTHOR,
 	AUTHOR1,
-	EMAIL,
-	EMAIL1,
 	VERSION,
 	OK,
 	CANCEL,
 	RESET,
+	OPEN,
+	OPEN_FILE,
+	SELECT,
 	LTOOLTIP1,
 	LTOOLTIP2,
 	LTOOLTIP3,
@@ -62,8 +63,7 @@ enum class LANGUAGE {
 
 const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,
-		LANGUAGE::EMAIL };
+		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 enum class TOOLBAR_INDEX {
@@ -104,7 +104,7 @@ class Frame {
 public:
 	GtkWidget *m_window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE],
 			*m_options[SIZE_OPTIONS], *m_modal;
-	int lastWidth, lastHeight;
+	int m_lastWidth, m_lastHeight;
 	int posh, posv;
 	Pixbuf pix, pixs;
 	int pw, ph, aw, ah, pws, phs;
@@ -118,20 +118,20 @@ public:
 	std::string dir;
 	guint32 lastScroll;
 	std::vector<GThread*> pThread;
-	GMutex mutex;
-	std::atomic_int threadNumber;
+	GMutex m_mutex;
+	std::atomic_int m_threadNumber;
 	int m_loadid;
-	gint endThreads; //already have function stopThreads
+	gint m_endThreads; //already have function stopThreads
 	int m_loadingFontHeight, filenameFontHeight, m_listTopLeftIndex, totalFileSize;
 	int listx, listy, listdx, listdy, listxy;
 	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
-	MODE lastNonListMode;
-	const static bool filenameFontBold = true;
-	int listIconHeight, listIconWidth;
+	MODE m_lastNonListMode;
+	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
-	int m_languageIndex, m_askBeforeDelete, m_deleteOption, m_showPopup;
+	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
+	const static bool filenameFontBold = true;
 	static const int MAX_BUFF_LEN = 2048;
 
 	Frame(GtkApplication *application, std::string const path = "");
@@ -174,7 +174,7 @@ public:
 	void optionsButtonClicked(LANGUAGE l);
 	void showHelp();
 	void showSettings();
-	void showModalDialog(const std::string &title, GtkWidget *w, int o);
+	void showModalDialog(GtkWidget *w, int o);
 
 	void recountListParameters();
 	void updateNavigationButtonsState();
@@ -183,9 +183,7 @@ public:
 		setButtonState(int(i), enable);
 	}
 	void setMode(MODE m, bool start = false);
-	int size() {
-		return vp.size();
-	}
+	int size();
 	void listTopLeftIndexChanged();
 	void setNavigationButtonsState(bool c1, bool c2);
 	void getListMinMaxIndex(int &min, int &max);
@@ -204,6 +202,7 @@ public:
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
+	std::string filechooser(GtkWidget *parent, const std::string &dir);
 };
 
 #endif /* FRAME_H_ */

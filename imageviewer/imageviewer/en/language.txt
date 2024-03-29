@@ -1,6 +1,6 @@
 image viewer
 language
-ask before deleting a file
+warning before deleting a file
 remove file option
 show popup tips
 remove files to recycle bin
@@ -9,14 +9,15 @@ file size
 supported formats
 homepage
 https://slovesnov.users.sf.net?imageviewer
-author
-aleksey slovesnov
-email
-slovesnov@yandex.ru
+author email
+aleksey slovesnov slovesnov@yandex.ru
 version
 ok
 cancel
 reset
+open
+open file
+select
 image size 100%
 fit the image to the window size
 images list
@@ -35,36 +36,36 @@ change file order
 fullscreen
 settings
 help
-if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
-if dropped file isn't supported then first supported image in DIRECTORY
-if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
-(arrow right , KP_6) / (arrow left, KP_4) {
+Drag &amp; drop file to view directory which includes dropped file, starts from dropped file if file is supported.
+If dropped file isn't supported then viewer starts from 1st supported image. One can drop directory to view it.
+<i>Shortcuts list.</i>
+<b>arrow right</b> or <b>KP_6</b> / <b>arrow left</b> or <b>KP_4</b> {
 	LIST MODE scroll one row
-	FIT/NORMAL MODES next/previous image in DIRECTORY
+	FIT/NORMAL MODES next/previous image in directory
 }
-(Page_Down, KP_3) / (Page_Up, KP_9) {
+<b>Page_Down</b> or <b>KP_3</b> / <b>Page_Up</b> or <b>KP_9</b> {
 	LIST MODE scroll screen
-	FIT/NORMAL MODES +/-sqrt (number of images in DIRECTORY)
+	FIT/NORMAL MODES +/-sqrt (number of images in directory)
 }
-(Home, KP_7) / (End, KP_1) go to first/last image in DIRECTORY
-mouse_right, O { 
-	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
+<b>Home</b> or <b>KP_7</b> / <b>End</b> or <b>KP_1</b> go to first/last image in directory
+<b>mouse right button</b> or <b>O</b> { 
+	open file/folder, use <i>select</i> button in dialog to open file or folder, <i>open</i> button works only with files
 }
-vertical mouse scroll {
+<b>vertical mouse scroll</b> {
 	LIST MODE scroll one row
 	FIT MODE ignored
 	NORMAL MODE scroll image up/down if image higher than window
 }
-horizontal mouse scroll {
+<b>horizontal mouse scroll</b> {
 	LIST, FIT MODES ignored
 	NORMAL MODE scroll image left/right if image wider than window
 }
-F11, F, Escape switch full screen mode
-+/- for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
-l - switch to LIST MODE
-e, r, t - rotate image by 90, 180, 270 degrees counterclockwise
-Delete, KP_Decimal {
-	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
+<b>F11</b> or <b>F</b> or <b>Escape</b> switch full screen mode
+<b>+</b>, <b>-</b> for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
+<b>L</b> - switch to LIST MODE
+<b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90, 180, 270 degrees
+<b>Delete</b> or <b>KP_Decimal</b> {
+	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in directory
 	LIST MODE - change ascending/descending list order
 }
-h, F1 - show help
+<b>H</b> or <b>F1</b> - show help

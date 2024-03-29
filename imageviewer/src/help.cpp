@@ -19,39 +19,6 @@ void adjust(int &v, int min,int max /*= INT_MAX*/) {
 	}
 }
 
-std::string filechooser(GtkWidget *parent, const std::string &dir) {
-	std::string s;
-	bool onlyFolder = false;
-	const gint MY_SELECTED = 0;
-
-	GtkWidget *dialog = gtk_file_chooser_dialog_new("Open File",
-			GTK_WINDOW(parent),
-			onlyFolder ?
-					GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER :
-					GTK_FILE_CHOOSER_ACTION_OPEN, "_Cancel",
-			GTK_RESPONSE_CANCEL, "_Open", GTK_RESPONSE_ACCEPT, NULL);
-
-	if (!onlyFolder) {
-		/* add the additional "Select" button
-		 * "select" button allow select folder and file
-		 * "open" button can open only files
-		 */
-		gtk_dialog_add_button(GTK_DIALOG(dialog), "Select", MY_SELECTED);
-	}
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), (dir+"/..").c_str());
-
-	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-	auto v=gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-	if (response == GTK_RESPONSE_ACCEPT
-			|| (!onlyFolder && response == MY_SELECTED && v)) {
-		s = v;
-	}
-
-	gtk_widget_destroy(dialog);
-
-	return s;
-}
-
 GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
 		int &w, int &h) {
 	int pw = gdk_pixbuf_get_width(src);
