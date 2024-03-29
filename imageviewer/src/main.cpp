@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 	GApplicationFlags flags = GApplicationFlags(
 			G_APPLICATION_HANDLES_OPEN
 					| (ONE_INSTANCE ?
-							G_APPLICATION_FLAGS_NONE : G_APPLICATION_NON_UNIQUE));
+							G_APPLICATION_DEFAULT_FLAGS : G_APPLICATION_NON_UNIQUE));
 	GtkApplication *app = gtk_application_new(appName, flags);
 	g_signal_connect(app, "activate", G_CALLBACK (activate), 0); //this function is called when application has no arguments
 	g_signal_connect(app, "open", G_CALLBACK (application_open), NULL); //this function is called when application has arguments

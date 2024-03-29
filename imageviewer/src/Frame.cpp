@@ -9,7 +9,7 @@
  */
 
 #include <cmath>
-#include <glib/gstdio.h>//g_remove
+#include <windows.h>//delete_file_to_recycle_bin
 #include "Frame.h"
 #include "help.h"
 
@@ -17,7 +17,7 @@ Frame *frame;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
  * START_MODE=-1 is normal, other values is using for debugging
-*/
+ */
 #define START_MODE -1
 
 #if START_MODE==0
@@ -28,38 +28,31 @@ const MODE INITIAL_MODE=MODE::FIT;
 const MODE INITIAL_MODE=MODE::LIST;
 #endif
 
-
 const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
 		"sep", "oct", "nov", "dec" };
 //const char *MONTH[] = { "January", "February", "March", "April", "May", "June",
 //		"July", "August", "September", "October", "November", "December" };
-const char LOADING[] ="loading...";
-const int GOTO_BEGIN=INT_MIN;
-const int GOTO_END=INT_MAX;
-const int MIN_ICON_HEIGHT=32;
-const int MAX_ICON_HEIGHT=200;
+const char LOADING[] = "loading...";
+const int GOTO_BEGIN = INT_MIN;
+const int GOTO_END = INT_MAX;
+const int MIN_ICON_HEIGHT = 32;
+const int MAX_ICON_HEIGHT = 200;
 
 const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"magnifier_zoom_out.png", "application_view_columns.png",
 
-		"arrow_rotate_anticlockwise.png",
-		"arrow_refresh.png",
+		"arrow_rotate_anticlockwise.png", "arrow_refresh.png",
 		"arrow_rotate_clockwise.png",
 
-		"control_start_blue.png",
-		"control_rewind_blue.png",
-		"previous.png",
-		"control_play_blue.png",
-		"control_fastforward_blue.png",
+		"control_start_blue.png", "control_rewind_blue.png", "previous.png",
+		"control_play_blue.png", "control_fastforward_blue.png",
 		"control_end_blue.png",
 
-		"folder.png","cross.png",
+		"folder.png", "cross.png",
 
-		"transform_move.png","help.png"
-};
+		"transform_move.png", "help.png" };
 
-const char *ADDITIONAL_IMAGES[] = {
-		"sort_ascending.png", "sort_descending.png",
+const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png", "sort_descending.png",
 		"arrow_in.png", "arrow_out.png" };
 
 const TOOLBAR_INDEX ROTATE[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
@@ -131,21 +124,37 @@ static gboolean set_show_thumbnail_thread(gpointer data) {
 	return G_SOURCE_REMOVE;
 }
 
+/* delete file to recycle bin support utf8 chars in file names
+ * https://stackoverflow.com/questions/70257751/move-a-file-or-folder-to-the-recyclebin-trash-c17
+ */
+bool delete_file_to_recycle_bin(std::string path) {
+	//old version g_remove(a.path.c_str());
+	auto p=utf8ToLocale(path)+'\0';
+	SHFILEOPSTRUCT fileOp;
+	fileOp.hwnd = NULL;
+	fileOp.wFunc = FO_DELETE;
+	fileOp.pFrom = p.c_str();
+	fileOp.pTo = NULL;
+	fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION
+			| FOF_SILENT;
+	return !SHFileOperation(&fileOp);
+}
+
 Frame::Frame(GtkApplication *application, std::string const path) {
 	frame = this;
 
-	int i,j;
-	loadid=-1;
+	int i, j;
+	loadid = -1;
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
-	for (auto& p:pThread) {
-		p=nullptr;
+	for (auto &p : pThread) {
+		p = nullptr;
 	}
 	g_mutex_init(&mutex);
 
 	lastWidth = lastHeight = posh = posv = 0;
-	loadingFontHeight=0;
+	loadingFontHeight = 0;
 
 	//begin readConfig
 	listAscendingOrder = true;
@@ -161,26 +170,29 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		for (auto t : CONFIG_TAGS) {
 			if ((it = m.find(t)) != m.end()) {
 				if (!parseString(it->second, j)) {
-					printl("error");
+					printl("error")
+					;
 					break;
 				}
 
 				if (i == 0) {
 					if (j < 0 || j > 2) {
-						printl("error");
+						printl("error")
+						;
 						break;
 					}
 					lastNonListMode = mode = MODE(j);
-				} else if(i==1){
+				} else if (i == 1) {
 					if (j < 0 || j > 1) {
-						printl("error");
+						printl("error")
+						;
 						break;
 					}
 					listAscendingOrder = j == 1;
-				}
-				else{
+				} else {
 					if (j < MIN_ICON_HEIGHT || j > MAX_ICON_HEIGHT) {
-						printl("error");
+						printl("error")
+						;
 						break;
 					}
 					setIconHeightWidth(j);
@@ -195,18 +207,18 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	GSList *formats;
 	GSList *elem;
 	GdkPixbufFormat *pf;
-	char*c,** extension_list;
+	char *c, **extension_list;
 	formats = gdk_pixbuf_get_formats();
 	for (elem = formats; elem; elem = elem->next) {
 		pf = (GdkPixbufFormat*) elem->data;
 		//p = gdk_pixbuf_format_get_name(pf);
-		extension_list = gdk_pixbuf_format_get_extensions (pf);
-		for (i = 0; (c=extension_list[i]) != 0; i++) {
-			if(i==0){
-				if(!extensionString.empty()){
-					extensionString+=' ';
+		extension_list = gdk_pixbuf_format_get_extensions(pf);
+		for (i = 0; (c = extension_list[i]) != 0; i++) {
+			if (i == 0) {
+				if (!extensionString.empty()) {
+					extensionString += ' ';
 				}
-				extensionString+=c;
+				extensionString += c;
 			}
 //			if(i==0 && !cmp(c,p)){
 //				printl("error");
@@ -214,7 +226,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 			vLowerExtension.push_back(c);
 			//printl(c,cmp(c,p));
 		}
-		g_strfreev (extension_list);
+		g_strfreev(extension_list);
 
 	}
 	g_slist_free(formats);
@@ -225,18 +237,18 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_widget_set_halign(toolbar, GTK_ALIGN_CENTER);
 	//prevents destroy after gtk_container_remove
-	g_object_ref (toolbar);
+	g_object_ref(toolbar);
 
 	//before setButtonState
-	for(auto a:ADDITIONAL_IMAGES){
+	for (auto a : ADDITIONAL_IMAGES) {
 		addi.push_back(pixbuf(a));
 	}
 
-	i=0;
-	for(auto a:TOOLBAR_IMAGES){
-		auto b =button[i]= gtk_button_new();
+	i = 0;
+	for (auto a : TOOLBAR_IMAGES) {
+		auto b = button[i] = gtk_button_new();
 
-		buttonPixbuf[i][1]=pixbuf(a);
+		buttonPixbuf[i][1] = pixbuf(a);
 
 		buttonPixbuf[i][0] = gdk_pixbuf_copy(buttonPixbuf[i][1]);
 		gdk_pixbuf_saturate_and_pixelate(buttonPixbuf[i][1], buttonPixbuf[i][0],
@@ -244,9 +256,10 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 		setButtonState(i, true);
 
-		g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked), GP(i));
+		g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked),
+				GP(i));
 		gtk_box_pack_start(GTK_BOX(toolbar), b, FALSE, FALSE, 0);
-		if(oneOf(i,3,6,12)){
+		if (oneOf(i, 3, 6, 12)) {
 			gtk_widget_set_margin_start(b, 15);
 		}
 		i++;
@@ -288,8 +301,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	if (path.empty()) {
 		setNoImage();
 	} else {
-		load(path,0,true); //after area is created
-		if(mode==MODE::LIST){//after vp is loading in load() function
+		load(path, 0, true); //after area is created
+		if (mode == MODE::LIST) { //after vp is loading in load() function
 			setListTopLeftIndexStartValue();
 		}
 	}
@@ -300,9 +313,10 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 }
 
 Frame::~Frame() {
-	g_object_unref (toolbar);
+	g_object_unref(toolbar);
 
-	WRITE_CONFIG(CONFIG_TAGS,  (int) lastNonListMode,listAscendingOrder,listIconHeight );
+	WRITE_CONFIG(CONFIG_TAGS, (int ) lastNonListMode, listAscendingOrder,
+			listIconHeight);
 	stopThreads();
 	g_mutex_clear(&mutex);
 }
@@ -322,15 +336,15 @@ void Frame::openUris(char **uris) {
 }
 
 void Frame::setTitle() {
-	std::string s,t;
+	std::string s, t;
 	int i;
 	if (noImage()) {
 		t = getApplicationName();
 	} else {
-		t = dir+SEPARATOR ;
-		const int sz=size();
-		if(mode==MODE::LIST){
-			double ts=totalFileSize/double(1<<20);
+		t = dir + SEPARATOR;
+		const int sz = size();
+		if (mode == MODE::LIST) {
+			double ts = totalFileSize / double(1 << 20);
 			/* format("%d-%d/%d" a-b/size
 			 * a=listTopLeftIndex + 1
 			 * if LIST_ASCENDING_ORDER=1 a<b & b-a+1=listxy => b=a-1+listxy=listTopLeftIndex + listxy
@@ -340,22 +354,19 @@ void Frame::setTitle() {
 					listAscendingOrder ?
 							MIN(listTopLeftIndex + listxy, sz) :
 							MAX(listTopLeftIndex + 2 - listxy, 1), sz)
-					+ SEPARATOR
-					+ format("total %.2lfMb avg ", ts);
-			double avg=ts / sz;//mb
-			const std::string P[]={"Mb","Kb","b"};
-			for(i=0;i<3;i++,avg*=1024){
-				s=format("%.2lf", avg);
-				if(s!="0.00" || i==2){
-					t+=s+P[i];
+					+ SEPARATOR + format("total %.2lfMb avg ", ts);
+			double avg = ts / sz; //mb
+			const std::string P[] = { "Mb", "Kb", "b" };
+			for (i = 0; i < 3; i++, avg *= 1024) {
+				s = format("%.2lf", avg);
+				if (s != "0.00" || i == 2) {
+					t += s + P[i];
 					break;
 				}
 			}
-		}
-		else{
+		} else {
 			const std::string n = getFileInfo(vp[pi].path, FILEINFO::NAME);
-			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
-					+ "scale"
+			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + "scale"
 					+ (scale == 1 || mode == MODE::NORMAL ?
 							"1" : format("%.2lf", scale)) + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
@@ -369,7 +380,8 @@ void Frame::setTitle() {
 			if (g_regex_match(r, n.c_str(), GRegexMatchFlags(0), NULL)) {
 				i = stoi(n.substr(8, 2)) - 1;
 				t += SEPARATOR + n.substr(10, 2)
-						+ (i >= 0 && i < 12 ? MONTH[i] : "???") + n.substr(4, 4);
+						+ (i >= 0 && i < 12 ? MONTH[i] : "???")
+						+ n.substr(4, 4);
 				for (i = 0; i < 3; i++) {
 					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
 				}
@@ -381,12 +393,12 @@ void Frame::setTitle() {
 	gtk_window_set_title(GTK_WINDOW(window), t.c_str());
 }
 
-void Frame::load(const std::string &p, int index,bool start) {
+void Frame::load(const std::string &p, int index, bool start) {
 	std::string s;
 	GDir *di;
 	const gchar *filename;
 
-	stopThreads();//endThreads=0 after
+	stopThreads(); //endThreads=0 after
 	loadid++;
 	vp.clear();
 	const bool d = isDir(p);
@@ -397,7 +409,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 	pi = index;
 	dir = d ? p : getFileInfo(p, FILEINFO::DIRECTORY);
 
-	totalFileSize=0;
+	totalFileSize = 0;
 
 	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
 	if ((di = g_dir_open(dir.c_str(), 0, 0))) {
@@ -407,7 +419,7 @@ void Frame::load(const std::string &p, int index,bool start) {
 				if (!d && s == p) {
 					pi = size();
 				}
-				vp.push_back(Image(s,loadid));
+				vp.push_back(Image(s, loadid));
 				totalFileSize += vp.back().size;
 			}
 		}
@@ -417,30 +429,27 @@ void Frame::load(const std::string &p, int index,bool start) {
 
 	if (vp.empty()) {
 		setNoImage();
-	}
-	else{
+	} else {
 		//if was no image, need to set toolbar buttons enabled
-		for(int i=0;i<TOOLBAR_INDEX_SIZE;i++){
-			setButtonState(i,i!=int(mode));
+		for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
+			setButtonState(i, i != int(mode));
 		}
 
 		startThreads();
-		setListTopLeftIndexStartValue();//have to reset
+		setListTopLeftIndexStartValue(); //have to reset
 	}
 
-	if(start){
-	#if	START_MODE==-1
-		setMode(mode,true);
-	#else
+	if (start) {
+#if	START_MODE==-1
+		setMode(mode, true);
+#else
 		setMode(INITIAL_MODE,true);
 	#endif
-	}
-	else{
-		if(!d && mode==MODE::LIST){
+	} else {
+		if (!d && mode == MODE::LIST) {
 			setMode(MODE::NORMAL);
 		}
 	}
-
 
 	//need to redraw anyway even if no image
 	loadImage();
@@ -460,14 +469,14 @@ void Frame::loadImage() {
 			setNoImage();
 			return;
 		}
-		pw=pix.width();
-		ph=pix.height();
+		pw = pix.width();
+		ph = pix.height();
 
 		if (mode == MODE::FIT && lastWidth > 0) {
 			setSmallImage();
 		}
 
-		setNavigationButtonsState(pi!= 0, pi!=size()-1);
+		setNavigationButtonsState(pi != 0, pi != size() - 1);
 	}
 
 	drawImage();
@@ -479,8 +488,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		return;
 	}
 
-	int i,j,k,l,width, height, destx, desty, w, h;
-	const int sz=size();
+	int i, j, k, l, width, height, destx, desty, w, h;
+	const int sz = size();
 
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
@@ -496,13 +505,14 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		recountListParameters();
 	}
 
-	if(!loadingFontHeight){
-		loadingFontHeight=countFontMaxHeight(LOADING, false,cr);
-		filenameFontHeight=countFontMaxHeight("IMG_20211004_093339", filenameFontBold,cr);
+	if (!loadingFontHeight) {
+		loadingFontHeight = countFontMaxHeight(LOADING, false, cr);
+		filenameFontHeight = countFontMaxHeight("IMG_20211004_093339",
+				filenameFontBold, cr);
 
 		//printl(fontHeight)
 		if (mode == MODE::LIST) {
-			setTitle();//now lisx, listy counted so need to set title
+			setTitle(); //now lisx, listy counted so need to set title
 		}
 	}
 
@@ -515,29 +525,27 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				((listAscendingOrder && k < sz)
 						|| (!listAscendingOrder && k >= 0)) && l < listxy;
 				k += listAscendingOrder ? 1 : -1, l++) {
-			i=l%listx*listIconWidth+listdx;
-			j=l/listx*listIconHeight+listdy;
-			auto& o=vp[k];
-			GdkPixbuf*p=o.thumbnail;
-			if(p){
-				w=gdk_pixbuf_get_width(p);
-				h=gdk_pixbuf_get_height(p);
-				copy(p, cr, i+(listIconWidth-w)/2, j+(listIconHeight-h)/2, w, h, 0,0);
+			i = l % listx * listIconWidth + listdx;
+			j = l / listx * listIconHeight + listdy;
+			auto &o = vp[k];
+			GdkPixbuf *p = o.thumbnail;
+			if (p) {
+				w = gdk_pixbuf_get_width(p);
+				h = gdk_pixbuf_get_height(p);
+				copy(p, cr, i + (listIconWidth - w) / 2,
+						j + (listIconHeight - h) / 2, w, h, 0, 0);
 
 				drawTextToCairo(cr, getFileInfo(o.path, FILEINFO::SHORT_NAME),
-						filenameFontHeight, filenameFontBold, i, j, listIconWidth,
-						listIconHeight, true, 2, WHITE_COLOR,true);
-			}
-			else{
-				drawTextToCairo(cr, LOADING,loadingFontHeight,false
-						, i,j,listIconWidth,listIconHeight,
-						true, 2,BLACK_COLOR);
+						filenameFontHeight, filenameFontBold, i, j,
+						listIconWidth, listIconHeight, true, 2, WHITE_COLOR,
+						true);
+			} else {
+				drawTextToCairo(cr, LOADING, loadingFontHeight, false, i, j,
+						listIconWidth, listIconHeight, true, 2, BLACK_COLOR);
 			}
 		}
 
-
-	}
-	else{
+	} else {
 		if (mode == MODE::FIT) {
 			if (windowSizeChanged) {
 				setSmallImage(); //set pws,phs
@@ -552,8 +560,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		destx = (width - w) / 2;
 		desty = (height - h) / 2;
 
-		adjust(destx,0);
-		adjust(desty,0);
+		adjust(destx, 0);
+		adjust(desty, 0);
 
 		aw = MIN(w, width);
 		ah = MIN(h, height);
@@ -565,21 +573,22 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 		}
 
-		copy(mode == MODE::FIT ? pixs : pix, cr, destx, desty, aw, ah, posh, posv);
+		copy(mode == MODE::FIT ? pixs : pix, cr, destx, desty, aw, ah, posh,
+				posv);
 	}
 
-/*
-	GdkRectangle r={0,0,width,height};
-	gdk_cairo_get_clip_rectangle(cr,&r);
-	double ko=(double(r.height)/r.width);
-	cairo_translate(cr, r.x+r.width/2, r.y+r.height/2);
-	cairo_scale(cr, 1, ko);
-	gdk_cairo_set_source_rgba(cr, &RED_COLOR);
-	cairo_set_line_width(cr, 3);
-	cairo_move_to(cr,r.width/2,0);//angle 0
-	cairo_arc(cr, 0, 0, r.width/2, 0, 2 * G_PI);
-	cairo_stroke_preserve(cr);
-*/
+	/*
+	 GdkRectangle r={0,0,width,height};
+	 gdk_cairo_get_clip_rectangle(cr,&r);
+	 double ko=(double(r.height)/r.width);
+	 cairo_translate(cr, r.x+r.width/2, r.y+r.height/2);
+	 cairo_scale(cr, 1, ko);
+	 gdk_cairo_set_source_rgba(cr, &RED_COLOR);
+	 cairo_set_line_width(cr, 3);
+	 cairo_move_to(cr,r.width/2,0);//angle 0
+	 cairo_arc(cr, 0, 0, r.width/2, 0, 2 * G_PI);
+	 cairo_stroke_preserve(cr);
+	 */
 
 }
 
@@ -592,37 +601,35 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 //	from gtk documentation return value
 //	TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
 	const int k = event->keyval;
-	const guint16 hwkey=event->hardware_keycode;
+	const guint16 hwkey = event->hardware_keycode;
 
 	//printl(k, GDK_KEY_minus,GDK_KEY_equal,GDK_KEY_KP_Subtract, GDK_KEY_minus);
-	const bool plus=k == GDK_KEY_KP_Add || k==GDK_KEY_equal;
-	const bool minus=k == GDK_KEY_KP_Subtract ||  k==GDK_KEY_minus;
-	int i=indexOfV(true, plus, minus, hwkey== 'L'
-			,hwkey == 'E',hwkey == 'R',hwkey == 'T'
+	const bool plus = k == GDK_KEY_KP_Add || k == GDK_KEY_equal;
+	const bool minus = k == GDK_KEY_KP_Subtract || k == GDK_KEY_minus;
+	int i = indexOfV(true, plus, minus, hwkey == 'L', hwkey == 'E',
+			hwkey == 'R', hwkey == 'T'
 
-			,oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7)
-			,oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9)
-			,oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4)
-			,oneOf(k, GDK_KEY_Right, GDK_KEY_KP_6)
-			,oneOf(k, GDK_KEY_Page_Down, GDK_KEY_KP_3)
-			,oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
+			, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
+			oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
+			oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4),
+			oneOf(k, GDK_KEY_Right, GDK_KEY_KP_6),
+			oneOf(k, GDK_KEY_Page_Down, GDK_KEY_KP_3),
+			oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
 
 			//english and russian keyboard layout (& caps lock)
-			,hwkey == 'O'
-			,oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal)
-			,hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape)
-			,hwkey == 'H' || k==GDK_KEY_F1
-	);
+					, hwkey == 'O',
+			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
+			hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape),
+			hwkey == 'H' || k == GDK_KEY_F1);
 
-	if(i!=-1){
-		if(mode==MODE::LIST && (plus || minus)){
-			buttonClicked(plus ? LIST_ZOOM_IN:LIST_ZOOM_OUT  );
-		}
-		else{
+	if (i != -1) {
+		if (mode == MODE::LIST && (plus || minus)) {
+			buttonClicked(plus ? LIST_ZOOM_IN : LIST_ZOOM_OUT);
+		} else {
 			buttonClicked(i);
 		}
 	}
-	return i!=-1;
+	return i != -1;
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -634,14 +641,13 @@ void Frame::setDragDrop(GtkWidget *widget) {
 
 void Frame::scroll(GdkEventScroll *event) {
 	//printl(event->delta_x,event->delta_y,event->time,event->type)
-	auto x=event->delta_x* WHEEL_MULTIPLIER;
-	auto y=event->delta_y* WHEEL_MULTIPLIER;
+	auto x = event->delta_x * WHEEL_MULTIPLIER;
+	auto y = event->delta_y * WHEEL_MULTIPLIER;
 
 	if (mode == MODE::NORMAL && (x != 0 || y != 0)) {
-		setPosRedraw(x , y, event->time);
-	}
-	else if(mode==MODE::LIST){
-		scrollList(event->delta_y* 50);
+		setPosRedraw(x, y, event->time);
+	} else if (mode == MODE::LIST) {
+		scrollList(event->delta_y * 50);
 	}
 }
 
@@ -669,23 +675,23 @@ void Frame::setNoImage() {
 	vp.clear();
 	setTitle();
 
-	for(int i=0;i<TOOLBAR_INDEX_SIZE;i++){
-		TOOLBAR_INDEX t=TOOLBAR_INDEX(i);
-		setButtonState(i,t==TOOLBAR_INDEX::OPEN || t==TOOLBAR_INDEX::HELP);
+	for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
+		TOOLBAR_INDEX t = TOOLBAR_INDEX(i);
+		setButtonState(i, t == TOOLBAR_INDEX::OPEN || t == TOOLBAR_INDEX::HELP);
 	}
 }
 
 bool Frame::isSupportedImage(const std::string &p) {
-	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION),vLowerExtension);
+	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION), vLowerExtension);
 }
 
 void Frame::adjustPos() {
-	adjust(posh,0, pw - aw);
-	adjust(posv,0, ph - ah);
+	adjust(posh, 0, pw - aw);
+	adjust(posv, 0, ph - ah);
 }
 
 void Frame::openDirectory() {
-	std::string s = filechooser(window,dir);
+	std::string s = filechooser(window, dir);
 	if (!s.empty()) {
 		load(s);
 	}
@@ -769,7 +775,7 @@ void Frame::startThreads() {
 }
 
 void Frame::thumbnailThread(int n) {
-	int w, h, v, max=0;
+	int w, h, v, max = 0;
 	Pixbuf p;
 
 //#define SHOW_THREAD_TIME
@@ -780,27 +786,27 @@ void Frame::thumbnailThread(int n) {
 	bool stopped=false;
 #endif
 
-	if(listAscendingOrder){
+	if (listAscendingOrder) {
 		g_mutex_lock(&mutex);
-		max=size();
+		max = size();
 		g_mutex_unlock(&mutex);
 	}
 
 	while ((listAscendingOrder && (v = threadNumber++) < max)
 			|| (!listAscendingOrder && (v = threadNumber--) >= 0)) {
 
-		if(g_atomic_int_get (&endThreads)){
+		if (g_atomic_int_get(&endThreads)) {
 #ifdef SHOW_THREAD_TIME
 			stopped = true;
 #endif
 			break;
 		}
-		auto & o=vp[v];
+		auto &o = vp[v];
 
-		if(!o.thumbnail){
+		if (!o.thumbnail) {
 			//full path
 			p = o.path;
-			o.thumbnail=scaleFit(p, listIconWidth, listIconHeight, w, h);
+			o.thumbnail = scaleFit(p, listIconWidth, listIconHeight, w, h);
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
@@ -816,16 +822,15 @@ void Frame::stopThreads() {
 	g_atomic_int_set(&endThreads, 1);
 
 	//	clock_t begin=clock();
-	for (auto& p:pThread) {
-		if(p){//1st time p==nullptr
+	for (auto &p : pThread) {
+		if (p) {		//1st time p==nullptr
 			g_thread_join(p);
-			p=nullptr;//allow call stopThreads many times
+			p = nullptr;		//allow call stopThreads many times
 		}
 	}
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
 
 	g_atomic_int_set(&endThreads, 0);
-
 
 //	int i=888;
 //	gboolean b=g_source_remove_by_user_data ( GP(i));
@@ -833,42 +838,44 @@ void Frame::stopThreads() {
 //		printl("removed",i)
 //	}
 
-/*
-	bool r=false;
-	int i;
-	for(i=0;i<size();i++){
-		gboolean b=g_source_remove_by_user_data ( GP(i));
-		if(b){
-			r=true;
-			printl("removed",i)
-		}
-	}
-	if(!r){
-		printl("nothing to remove",size())
-	}
-*/
-
+	/*
+	 bool r=false;
+	 int i;
+	 for(i=0;i<size();i++){
+	 gboolean b=g_source_remove_by_user_data ( GP(i));
+	 if(b){
+	 r=true;
+	 printl("removed",i)
+	 }
+	 }
+	 if(!r){
+	 printl("nothing to remove",size())
+	 }
+	 */
 
 }
 
 void Frame::buttonPress(GdkEventButton *event) {
 	//middle button is three fingers tap (in windows10 settings)
 	if (event->type == GDK_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
-		const bool left=event->button == 1;
+		const bool left = event->button == 1;
 		if (left || event->button == 2) { //left/middle mouse button
-			if(mode==MODE::LIST){
-				if(left){// left button check click on image
-					int cx=event->x;
-					int cy=event->y;
-					if(cx>=listdx && cx<lastWidth-listdx && cy>=listdy && cy<lastHeight-listdy){
-						pi = ((cx-listdx)/listIconWidth+(cy-listdy)/listIconHeight*listx)*(listAscendingOrder?1:-1)+listTopLeftIndex;
+			if (mode == MODE::LIST) {
+				if (left) { // left button check click on image
+					int cx = event->x;
+					int cy = event->y;
+					if (cx >= listdx && cx < lastWidth - listdx && cy >= listdy
+							&& cy < lastHeight - listdy) {
+						pi = ((cx - listdx) / listIconWidth
+								+ (cy - listdy) / listIconHeight * listx)
+								* (listAscendingOrder ? 1 : -1)
+								+ listTopLeftIndex;
 						setMode(MODE::FIT);
 						loadImage();
 					}
 				}
-			}
-			else{ //next/previous image
-				//buttonClicked(left ? TOOLBAR_INDEX::NEXT : TOOLBAR_INDEX::PREVIOUS);
+			} else { //next/previous image
+					 //buttonClicked(left ? TOOLBAR_INDEX::NEXT : TOOLBAR_INDEX::PREVIOUS);
 			}
 		} else if (event->button == 3) { //on right mouse open file/directory
 			buttonClicked(TOOLBAR_INDEX::OPEN);
@@ -877,8 +884,8 @@ void Frame::buttonPress(GdkEventButton *event) {
 }
 
 void Frame::setShowThumbnail(int i) {
-	auto& o=vp[i];
-	if(o.loadid!=loadid){
+	auto &o = vp[i];
+	if (o.loadid != loadid) {
 		//printl("skipped",o.loadid,loadid,"i=",i);
 		return;
 	}
@@ -896,27 +903,25 @@ void Frame::setListTopLeftIndexStartValue() {
 }
 
 void Frame::scrollList(int v) {
-	if(mode==MODE::LIST){
-		int i,j,min,max;
-		if(listxy>=size()){
+	if (mode == MODE::LIST) {
+		int i, j, min, max;
+		if (listxy >= size()) {
 			//min=max=0;
 			return;
 		}
 		getListMinMaxIndex(min, max);
-		if(v==GOTO_BEGIN){
-			i=listAscendingOrder?min:max;
-		}
-		else if(v==GOTO_END){
-			i=listAscendingOrder?max:min;
-		}
-		else{
-			i=listTopLeftIndex+v*(listAscendingOrder?1:-1)*listx;
+		if (v == GOTO_BEGIN) {
+			i = listAscendingOrder ? min : max;
+		} else if (v == GOTO_END) {
+			i = listAscendingOrder ? max : min;
+		} else {
+			i = listTopLeftIndex + v * (listAscendingOrder ? 1 : -1) * listx;
 		}
 
-		j=listTopLeftIndex;
-		listTopLeftIndex= i;
-		adjust(listTopLeftIndex,min,max);
-		if(j!=listTopLeftIndex){
+		j = listTopLeftIndex;
+		listTopLeftIndex = i;
+		adjust(listTopLeftIndex, min, max);
+		if (j != listTopLeftIndex) {
 			listTopLeftIndexChanged();
 		}
 	}
@@ -925,36 +930,35 @@ void Frame::scrollList(int v) {
 void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	int i;
 	//printl(int(t),t==TOOLBAR_INDEX::HELP)
-	if(t==TOOLBAR_INDEX::OPEN){
+	if (t == TOOLBAR_INDEX::OPEN) {
 		openDirectory();
 		return;
 	}
-	if(t==TOOLBAR_INDEX::HELP){
+	if (t == TOOLBAR_INDEX::HELP) {
 		showHelp();
 		return;
 	}
-	if(t==TOOLBAR_INDEX::FULLSCREEN){
+	if (t == TOOLBAR_INDEX::FULLSCREEN) {
 		GdkWindow *gdk_window = gtk_widget_get_window(window);
 		GdkWindowState state = gdk_window_get_state(gdk_window);
-		if(state & GDK_WINDOW_STATE_FULLSCREEN){
+		if (state & GDK_WINDOW_STATE_FULLSCREEN) {
 			gtk_container_add(GTK_CONTAINER(box), toolbar);
 			gtk_window_unfullscreen(GTK_WINDOW(window));
-		}
-		else{
+		} else {
 			gtk_container_remove(GTK_CONTAINER(box), toolbar);
 			gtk_window_fullscreen(GTK_WINDOW(window));
 		}
 		return;
 	}
 
-	if(noImage()){
+	if (noImage()) {
 		return;
 	}
 
-	i=INDEX_OF(t,TMODE);
-	if(i!=-1){
-		MODE m=MODE(i);
-		if(mode!=m){
+	i = INDEX_OF(t, TMODE);
+	if (i != -1) {
+		MODE m = MODE(i);
+		if (mode != m) {
 			setMode(m);
 			if (mode == MODE::LIST) {
 				//setListTopLeftIndexStartValue();
@@ -969,35 +973,37 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	i=INDEX_OF(t,NAVIGATION);
-	if(i!=-1){
-		if(mode==MODE::LIST){
-			int a[]={GOTO_BEGIN,-listy,-1,1,listy,GOTO_END};
+	i = INDEX_OF(t, NAVIGATION);
+	if (i != -1) {
+		if (mode == MODE::LIST) {
+			int a[] = { GOTO_BEGIN, -listy, -1, 1, listy, GOTO_END };
 			scrollList(a[i]);
-		}
-		else{
-			if (t==TOOLBAR_INDEX::HOME || t==TOOLBAR_INDEX::END) {
-				pi = t==TOOLBAR_INDEX::HOME ? 0 : size() - 1;
+		} else {
+			if (t == TOOLBAR_INDEX::HOME || t == TOOLBAR_INDEX::END) {
+				pi = t == TOOLBAR_INDEX::HOME ? 0 : size() - 1;
 				loadImage();
 			} else {
-				switchImage(t==TOOLBAR_INDEX::PAGE_UP || t==TOOLBAR_INDEX::PAGE_DOWN ? sqrt(size()) : 1,
-						t==TOOLBAR_INDEX::NEXT || t==TOOLBAR_INDEX::PAGE_DOWN);
+				switchImage(
+						t == TOOLBAR_INDEX::PAGE_UP
+								|| t == TOOLBAR_INDEX::PAGE_DOWN ?
+								sqrt(size()) : 1,
+						t == TOOLBAR_INDEX::NEXT
+								|| t == TOOLBAR_INDEX::PAGE_DOWN);
 			}
 		}
 		return;
 	}
 
-	if(t==TOOLBAR_INDEX::DELETE){
-		if(mode==MODE::LIST){
+	if (t == TOOLBAR_INDEX::DELETE_FILE) {
+		if (mode == MODE::LIST) {
 			//ORDER KEY
 			stopThreads();
-			listAscendingOrder=!listAscendingOrder;
+			listAscendingOrder = !listAscendingOrder;
 			listTopLeftIndex = getFirstListIndex();
 			startThreads();
 			setVariableImagesButtonsState();
 			redraw();
-		}
-		else{
+		} else {
 			if (showConfirmation("Do you really want to delete current image?")
 					== GTK_RESPONSE_YES) {
 				//not need full reload
@@ -1005,18 +1011,17 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				stopThreads();
 
 				//before g_remove change totalFileSize
-				auto&a=vp[pi];
-				totalFileSize-=a.size;
-				g_remove(a.path.c_str());
+				auto &a = vp[pi];
+				totalFileSize -= a.size;
+				delete_file_to_recycle_bin(a.path);
 
-				int sz=size();
-				vp.erase(vp.begin()+pi);
-				if(sz==1){
+				int sz = size();
+				vp.erase(vp.begin() + pi);
+				if (sz == 1) {
 					setNoImage();
-				}
-				else{
-					if(pi == sz - 1){//cann't call size() here because vp.size() is changed after erase()
-						pi=0;
+				} else {
+					if (pi == sz - 1) { //cann't call size() here because vp.size() is changed after erase()
+						pi = 0;
 					}
 					recountListParameters();
 					loadImage();
@@ -1024,8 +1029,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					//see Image.h for documentation why need to set new loadid & set o.thumbmails
 					//old indexes for setShowThumbnail() are not valid so make new loadid & set o.thumbmails
 					loadid++;
-					for(auto&o:vp){
-						o.loadid=loadid;
+					for (auto &o : vp) {
+						o.loadid = loadid;
 					}
 					startThreads();
 				}
@@ -1034,29 +1039,28 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	i=INDEX_OF(t,ROTATE);
-	if(i!=-1){
-		if(mode==MODE::LIST){
-			if(t==LIST_ZOOM_IN || t==LIST_ZOOM_OUT){
-				i=listIconHeight+(t==LIST_ZOOM_IN?1:-1)*5;
-				if(i>=MIN_ICON_HEIGHT && i<=MAX_ICON_HEIGHT){
+	i = INDEX_OF(t, ROTATE);
+	if (i != -1) {
+		if (mode == MODE::LIST) {
+			if (t == LIST_ZOOM_IN || t == LIST_ZOOM_OUT) {
+				i = listIconHeight + (t == LIST_ZOOM_IN ? 1 : -1) * 5;
+				if (i >= MIN_ICON_HEIGHT && i <= MAX_ICON_HEIGHT) {
 					stopThreads();
 					setIconHeightWidth(i);
 					recountListParameters();
-					loadingFontHeight=0;//to recount font
+					loadingFontHeight = 0;					//to recount font
 					loadid++;
-					for(auto&o:vp){
+					for (auto &o : vp) {
 						o.free();
-						o.thumbnail=nullptr;
-						o.loadid=loadid;
+						o.thumbnail = nullptr;
+						o.loadid = loadid;
 					}
 					startThreads();
 					redraw(false);
 				}
 			}
-		}
-		else{
-			rotatePixbuf(pix, pw, ph, 90 * (i+1));
+		} else {
+			rotatePixbuf(pix, pw, ph, 90 * (i + 1));
 			//small image angle should match with big image, so always call setSmallImage
 			setSmallImage();
 			drawImage();
@@ -1066,7 +1070,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 }
 
 void Frame::showHelp() {
-	const char t[] =R"(if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
+	const char t[] =
+			R"(if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
 if dropped file isn't supported then first supported image in DIRECTORY
 if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
 (GDK_KEY_Right, GDK_KEY_KP_6) / (GDK_KEY_Left, GDK_KEY_KP_4) {
@@ -1100,34 +1105,33 @@ GDK_KEY_Delete, GDK_KEY_KP_Decimal {
 }
 h, F1 - show help)";
 
-/*
-	vertical mouse scroll {
-		LIST MODE scroll one row
-		FIT MODE ignored
-		NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window
-	}
-	horizontal mouse scroll {
-		LIST, FIT MODES ignored
-		NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window
-	}
-*/
+	/*
+	 vertical mouse scroll {
+	 LIST MODE scroll one row
+	 FIT MODE ignored
+	 NORMAL MODES scroll image up/down if image higher than window or switch to next/previous image if image height is less than window
+	 }
+	 horizontal mouse scroll {
+	 LIST, FIT MODES ignored
+	 NORMAL MODES scroll image left/right if image wider than window or switch to next/previous image if image is narrower than window
+	 }
+	 */
 
-	auto d=gtk_dialog_new();
+	auto d = gtk_dialog_new();
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
-	gtk_window_set_transient_for(GTK_WINDOW(d),
-			GTK_WINDOW(window));
+	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(window));
 
-	auto s= getApplicationName()+SEPARATOR+getBuildVersionString(false);
-	s+=SEPARATOR+"file size "+toString(getApplicationFileSize(),',');
+	auto s = getApplicationName() + SEPARATOR + getBuildVersionString(false);
+	s += SEPARATOR + "file size " + toString(getApplicationFileSize(), ',');
 
 	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
 
-	s=t+("\nsupported formats "+extensionString);
-	auto l=gtk_label_new(s.c_str());
-	auto ca= gtk_dialog_get_content_area(GTK_DIALOG(d));
+	s = t + ("\nsupported formats " + extensionString);
+	auto l = gtk_label_new(s.c_str());
+	auto ca = gtk_dialog_get_content_area(GTK_DIALOG(d));
 
-	gtk_container_add(GTK_CONTAINER(ca),l);
+	gtk_container_add(GTK_CONTAINER(ca), l);
 
 	gtk_widget_show_all(d);
 
@@ -1136,19 +1140,19 @@ h, F1 - show help)";
 }
 
 void Frame::recountListParameters() {
-	const int sz=size();
-	listx=MAX(1,lastWidth/listIconWidth);
-	listy=MAX(1,lastHeight/listIconHeight);
+	const int sz = size();
+	listx = MAX(1, lastWidth / listIconWidth);
+	listy = MAX(1, lastHeight / listIconHeight);
 	//MIN(listx,sz) center horizontally if images less than listx
-	listdx=(lastWidth-MIN(listx,sz)*listIconWidth)/2;
+	listdx = (lastWidth - MIN(listx,sz) * listIconWidth) / 2;
 	//MIN(listx,sz) center vertically if images less than listx*listy
 	int i;
-	i=sz/listx;
-	if(sz%listx!=0){
+	i = sz / listx;
+	if (sz % listx != 0) {
 		i++;
 	}
-	listdy=(lastHeight-MIN(listy, i)*listIconHeight)/2;
-	listxy=listx*listy;
+	listdy = (lastHeight - MIN(listy, i) * listIconHeight) / 2;
+	listxy = listx * listy;
 	//printl(sz,listx,listy)
 }
 
@@ -1156,90 +1160,89 @@ void Frame::setButtonState(int i, bool enable) {
 	setButtonImage(i, enable, buttonPixbuf[i][enable]);
 }
 
-void Frame::setMode(MODE m,bool start) {
-	if(mode!=m || start){
-		mode=m;
-		if(mode!=MODE::LIST){
-			lastNonListMode=mode;
+void Frame::setMode(MODE m, bool start) {
+	if (mode != m || start) {
+		mode = m;
+		if (mode != MODE::LIST) {
+			lastNonListMode = mode;
 		}
-		int i=0;
-		for(auto a:TMODE){
-			setButtonState(a,i++!=int(m));
+		int i = 0;
+		for (auto a : TMODE) {
+			setButtonState(a, i++ != int(m));
 		}
 
 		//other two buttons wet in setVariableImagesButtonsState()
-		setButtonState(TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE,mode!=MODE::LIST);
+		setButtonState(TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE, mode != MODE::LIST);
 
 		setVariableImagesButtonsState();
 	}
 }
 
 void Frame::listTopLeftIndexChanged() {
-	int min,max;
-	getListMinMaxIndex(min,max);
-	if(listAscendingOrder){
+	int min, max;
+	getListMinMaxIndex(min, max);
+	if (listAscendingOrder) {
 		//setNavigationButtonsState(listTopLeftIndex!=0 , listTopLeftIndex<size()-listxy );
-		setNavigationButtonsState(listTopLeftIndex>min , listTopLeftIndex<max );
-	}
-	else{
-		setNavigationButtonsState(listTopLeftIndex<max , listTopLeftIndex>min );
+		setNavigationButtonsState(listTopLeftIndex > min,
+				listTopLeftIndex < max);
+	} else {
+		setNavigationButtonsState(listTopLeftIndex < max,
+				listTopLeftIndex > min);
 	}
 	redraw();
 }
 
-void Frame::setNavigationButtonsState(bool c1,bool c2) {
-	int i=0;
-	for(auto a:NAVIGATION){
-		setButtonState(a, i<3 ? c1:c2 );
+void Frame::setNavigationButtonsState(bool c1, bool c2) {
+	int i = 0;
+	for (auto a : NAVIGATION) {
+		setButtonState(a, i < 3 ? c1 : c2);
 		i++;
 	}
 }
 
 void Frame::getListMinMaxIndex(int &min, int &max) {
-	int j,sz=size();
-	if(listAscendingOrder){
-		j=sz;
-		if(sz%listx!=0){
-			j+=listx-sz%listx;
+	int j, sz = size();
+	if (listAscendingOrder) {
+		j = sz;
+		if (sz % listx != 0) {
+			j += listx - sz % listx;
 		}
-		min=0;
-		max=j-listxy;
-	}
-	else{
-		j=0;
-		if(sz%listx!=0){
-			j-=listx-sz%listx;
+		min = 0;
+		max = j - listxy;
+	} else {
+		j = 0;
+		if (sz % listx != 0) {
+			j -= listx - sz % listx;
 		}
-		min=j+listxy-1;
-		max=sz-1;
+		min = j + listxy - 1;
+		max = sz - 1;
 	}
 }
 
 int Frame::getFirstListIndex() {
-	return listAscendingOrder?0:size()-1;
+	return listAscendingOrder ? 0 : size() - 1;
 }
 
 void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
-	auto b=button[i];
-	gtk_widget_set_sensitive (b, enable);
+	auto b = button[i];
+	gtk_widget_set_sensitive(b, enable);
 	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(p));
 }
 
 void Frame::setVariableImagesButtonsState() {
-	int i=0;
+	int i = 0;
 	TOOLBAR_INDEX t[] = { ASCENDING_DESCENDING, LIST_ZOOM_OUT, LIST_ZOOM_IN };
-	if(mode==MODE::LIST){
-		int b[]={listAscendingOrder,2,3};
-		i=0;
-		for(auto a:t){
+	if (mode == MODE::LIST) {
+		int b[] = { listAscendingOrder, 2, 3 };
+		i = 0;
+		for (auto a : t) {
 			setButtonImage(int(a), true, addi[b[i]]);
 			i++;
 		}
-	}
-	else{
-		bool b[]={mode!=MODE::LIST,true,true};
-		i=0;
-		for(auto a:t){
+	} else {
+		bool b[] = { mode != MODE::LIST, true, true };
+		i = 0;
+		for (auto a : t) {
 			setButtonState(a, b[i]);
 			i++;
 		}
@@ -1247,19 +1250,19 @@ void Frame::setVariableImagesButtonsState() {
 }
 
 void Frame::redraw(bool withTitle) {
-	if(withTitle){
+	if (withTitle) {
 		setTitle();
 	}
 	gtk_widget_queue_draw(area);
 	//gtk_widget_queue_draw_area(widget, x, y, width, height)
 }
 
-int Frame::countFontMaxHeight(const std::string &s, bool bold,cairo_t *cr) {
-	int w,h;
-	for(int i=1;;i++){
-		getTextExtents(s, i,false, w, h, cr);
-		if(w>=listIconWidth || h>=listIconHeight){
-			return i-1;
+int Frame::countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr) {
+	int w, h;
+	for (int i = 1;; i++) {
+		getTextExtents(s, i, false, w, h, cr);
+		if (w >= listIconWidth || h >= listIconHeight) {
+			return i - 1;
 		}
 	}
 	assert(0);
@@ -1267,6 +1270,6 @@ int Frame::countFontMaxHeight(const std::string &s, bool bold,cairo_t *cr) {
 }
 
 void Frame::setIconHeightWidth(int height) {
-	listIconHeight=height;
-	listIconWidth=4*height/3;
+	listIconHeight = height;
+	listIconWidth = 4 * height / 3;
 }

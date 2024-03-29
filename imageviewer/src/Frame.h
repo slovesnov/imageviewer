@@ -19,18 +19,30 @@ enum class MODE {
 	NORMAL, FIT, LIST
 };
 
-enum class TOOLBAR_INDEX{
-	MODE_NORMAL,MODE_FIT,MODE_LIST,
-	ROTATE_ANTICLOCKWISE,ROTATE_180,ROTATE_CLOCKWISE,
-	HOME,PAGE_UP,PREVIOUS,NEXT,PAGE_DOWN,END,
-	OPEN,DELETE,FULLSCREEN,HELP
-	,TB_SIZE
+enum class TOOLBAR_INDEX {
+	MODE_NORMAL,
+	MODE_FIT,
+	MODE_LIST,
+	ROTATE_ANTICLOCKWISE,
+	ROTATE_180,
+	ROTATE_CLOCKWISE,
+	HOME,
+	PAGE_UP,
+	PREVIOUS,
+	NEXT,
+	PAGE_DOWN,
+	END,
+	OPEN,
+	DELETE_FILE,
+	FULLSCREEN,
+	HELP,
+	TB_SIZE
 };
-const int TOOLBAR_INDEX_SIZE=int(TOOLBAR_INDEX::TB_SIZE);
+const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
 
-const TOOLBAR_INDEX LIST_ZOOM_OUT=TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE;//increase size
-const TOOLBAR_INDEX LIST_ZOOM_IN=TOOLBAR_INDEX::ROTATE_180;//decrease size
-const TOOLBAR_INDEX ASCENDING_DESCENDING=TOOLBAR_INDEX::DELETE;
+const TOOLBAR_INDEX LIST_ZOOM_OUT = TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE; //increase size
+const TOOLBAR_INDEX LIST_ZOOM_IN = TOOLBAR_INDEX::ROTATE_180; //decrease size
+const TOOLBAR_INDEX ASCENDING_DESCENDING = TOOLBAR_INDEX::DELETE_FILE;
 
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
@@ -41,7 +53,7 @@ const int SCROLL_DELAY_MILLISECONDS = 500;
 
 class Frame {
 public:
-	GtkWidget *window, *area,*box,*toolbar,*button[TOOLBAR_INDEX_SIZE];
+	GtkWidget *window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE];
 	int lastWidth, lastHeight;
 	int posh, posv;
 	Pixbuf pix, pixs;
@@ -55,25 +67,25 @@ public:
 	std::string extensionString;
 	std::string dir;
 	guint32 lastScroll;
-	std::vector<GThread*>pThread;
+	std::vector<GThread*> pThread;
 	GMutex mutex;
 	std::atomic_int threadNumber;
 	int loadid;
-	gint endThreads;//already have function stopThreads
-	int loadingFontHeight,filenameFontHeight,listTopLeftIndex,totalFileSize;
-	int listx,listy,listdx,listdy,listxy;
+	gint endThreads; //already have function stopThreads
+	int loadingFontHeight, filenameFontHeight, listTopLeftIndex, totalFileSize;
+	int listx, listy, listdx, listdy, listxy;
 	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
-	std::vector<GdkPixbuf*>addi;
+	std::vector<GdkPixbuf*> addi;
 	bool listAscendingOrder;
 	MODE lastNonListMode;
-	const static bool filenameFontBold=true;
-	int listIconHeight,listIconWidth;
+	const static bool filenameFontBold = true;
+	int listIconHeight, listIconWidth;
 
 	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
 
 	void setTitle();
-	void load(const std::string &p, int index = 0,bool start=false); //supports dir & file
+	void load(const std::string &p, int index = 0, bool start = false); //supports dir & file
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
@@ -103,28 +115,28 @@ public:
 	void scrollList(int v);
 
 	void buttonClicked(TOOLBAR_INDEX t);
-	void buttonClicked(int t){
+	void buttonClicked(int t) {
 		buttonClicked(TOOLBAR_INDEX(t));
 	}
 	void showHelp();
 	void recountListParameters();
-	void setButtonState(int i,bool enable);
-	void setButtonState(TOOLBAR_INDEX i,bool enable){
-		setButtonState(int(i),enable);
+	void setButtonState(int i, bool enable);
+	void setButtonState(TOOLBAR_INDEX i, bool enable) {
+		setButtonState(int(i), enable);
 	}
-	void setMode(MODE m,bool start=false);
-	int size(){
+	void setMode(MODE m, bool start = false);
+	int size() {
 		return vp.size();
 	}
 	void listTopLeftIndexChanged();
-	void setNavigationButtonsState(bool c1,bool c2);
-	void getListMinMaxIndex(int&min,int&max);
+	void setNavigationButtonsState(bool c1, bool c2);
+	void getListMinMaxIndex(int &min, int &max);
 	int getFirstListIndex();
 
-	void setButtonImage(int i,bool enable,GdkPixbuf*p);
+	void setButtonImage(int i, bool enable, GdkPixbuf *p);
 	void setVariableImagesButtonsState();
-	void redraw(bool withTitle=true);
-	int countFontMaxHeight(const std::string& s,bool bold,cairo_t *cr);
+	void redraw(bool withTitle = true);
+	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
 	void setIconHeightWidth(int height);
 };
 
