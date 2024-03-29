@@ -488,11 +488,12 @@ void Frame::loadImage() {
 			setSmallImage();
 		}
 
-//		TODO bookmark
-		if (m_ascendingOrder) {
-			setNavigationButtonsState(pi != 0, pi != size() - 1);
-		} else {
-			setNavigationButtonsState(pi != size() - 1, pi != 0);
+		if (mode == MODE::LIST) {
+			if (m_ascendingOrder) {
+				setNavigationButtonsState(pi != 0, pi != size() - 1);
+			} else {
+				setNavigationButtonsState(pi != size() - 1, pi != 0);
+			}
 		}
 	}
 
@@ -537,7 +538,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	const GdkRGBA WHITE_COLOR = { 1, 1, 1, 1 };
 
 	if (mode == MODE::LIST) {
-		//TODO bookmark printl(m_listTopLeftIndex,m_ascendingOrder,sz)
 		for (k = m_listTopLeftIndex, l = 0;
 				((m_ascendingOrder && k < sz) || (!m_ascendingOrder && k >= 0))
 						&& l < listxy; k += m_ascendingOrder ? 1 : -1, l++) {
@@ -997,7 +997,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			scrollList(a[i]);
 		} else {
 			if (t == TOOLBAR_INDEX::HOME || t == TOOLBAR_INDEX::END) {
-				//TODO bookmark
 				pi = ((t == TOOLBAR_INDEX::HOME) == m_ascendingOrder) ?
 						0 : size() - 1;
 				loadImage();
@@ -1197,7 +1196,11 @@ void Frame::recountListParameters() {
 	}
 	listdy = (lastHeight - MIN(listy, i) * listIconHeight) / 2;
 	listxy = listx * listy;
-	//printl(sz,listx,listy)
+	if (sz <= listxy) {					//all images in screen
+		setNavigationButtonsState(0, 0);
+	}
+
+//	printl(sz,listx,listy)
 }
 
 void Frame::setButtonState(int i, bool enable) {
@@ -1226,10 +1229,15 @@ void Frame::setMode(MODE m, bool start) {
 void Frame::listTopLeftIndexChanged() {
 	int min, max;
 	getListMinMaxIndex(min, max);
+//	printl(m_ascendingOrder,min,max,m_listTopLeftIndex)
 	if (m_ascendingOrder) {
+//		printl(m_listTopLeftIndex > min,
+//				m_listTopLeftIndex < max)
 		setNavigationButtonsState(m_listTopLeftIndex > min,
 				m_listTopLeftIndex < max);
 	} else {
+//		printl(m_listTopLeftIndex < max,
+//				m_listTopLeftIndex > min)
 		setNavigationButtonsState(m_listTopLeftIndex < max,
 				m_listTopLeftIndex > min);
 	}
@@ -1275,7 +1283,6 @@ void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
 }
 
 void Frame::setVariableImagesButtonsState() {
-	//TODO just as bookmark
 	int i = 0;
 	setButtonImage(int(TOOLBAR_INDEX::REORDER_FILE), true,
 			m_additionalImages[!m_ascendingOrder]);
