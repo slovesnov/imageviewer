@@ -17,8 +17,8 @@ version
 ok
 cancel
 reset
-big image
-small image
+image size 100%
+fit the image to the window size
 images list
 rotate by 90°|enlarge icons
 rotate by 180°|reduce icon size
