@@ -1,0 +1,52 @@
+image viewer
+language
+ask before deleting a file
+remove file option
+show popup tips
+remove files to recycle bin
+remove files permanently
+file size
+supported formats
+homepage
+https://slovesnov.users.sf.net?imageviewer
+author
+aleksey slovesnov
+email
+slovesnov@yandex.ru
+version
+ok
+cancel
+reset
+if drag & drop file -> view DIRECTORY which includes dropped file, starts from dropped file if file is supported
+if dropped file isn't supported then first supported image in DIRECTORY
+if drag & drop DIRECTORY -> view DIRECTORY which includes dropped file, starts from first supported file in DIRECTORY
+(GDK_KEY_Right, GDK_KEY_KP_6) / (GDK_KEY_Left, GDK_KEY_KP_4) {
+	LIST MODE scroll one row
+	FIT/NORMAL MODES next/previous image in DIRECTORY
+}
+(GDK_KEY_Page_Down, GDK_KEY_KP_3) / (GDK_KEY_Page_Up, GDK_KEY_KP_9) {
+	LIST MODE scroll screen
+	FIT/NORMAL MODES +/-sqrt (number of images in DIRECTORY)
+}
+(GDK_KEY_Home, GDK_KEY_KP_7) / (GDK_KEY_End, GDK_KEY_KP_1) go to first/last image in DIRECTORY
+mouse_right, O { 
+	open file/folder to select folder or file. Use "select" button in dialog to open file or folder, "open" button works only with files
+}
+vertical mouse scroll {
+	LIST MODE scroll one row
+	FIT MODE ignored
+	NORMAL MODES scroll image up/down if image higher than window
+}
+horizontal mouse scroll {
+	LIST, FIT MODES ignored
+	NORMAL MODES scroll image left/right if image wider than window
+}
+GDK_KEY_F11, F, GDK_KEY_Escape switch full screen mode
++/- for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
+l - switch to LIST MODE
+e, r, t - rotate image by 90, 180, 270 degrees counterclockwise
+GDK_KEY_Delete, GDK_KEY_KP_Decimal {
+	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in DIRECTORY
+	LIST MODE - change ascending/descending list order
+}
+h, F1 - show help

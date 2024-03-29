@@ -19,6 +19,35 @@ enum class MODE {
 	NORMAL, FIT, LIST
 };
 
+enum class LANGUAGE{
+	IMAGE_VIEWER,
+	LANGUAGE,
+	ASK_BEFORE_DELETING_A_FILE,
+	REMOVE_FILE_OPTION,
+	SHOW_POPUP_TIPS,
+	REMOVE_FILES_TO_RECYCLE_BIN,
+	REMOVE_FILES_PERMANENTLY,
+	FILE_SIZE,
+	SUPPORTED_FORMATS,
+	HOMEPAGE,
+	HOMEPAGE1,
+	AUTHOR,
+	AUTHOR1,
+	EMAIL,
+	EMAIL1,
+	VERSION,
+	OK,
+	CANCEL,
+	RESET,
+	HELP
+};
+
+const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
+		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
+		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,
+		LANGUAGE::EMAIL };
+const int SIZE_OPTIONS = SIZE(OPTIONS);
+
 enum class TOOLBAR_INDEX {
 	MODE_NORMAL,
 	MODE_FIT,
@@ -35,6 +64,7 @@ enum class TOOLBAR_INDEX {
 	OPEN,
 	DELETE_FILE,
 	FULLSCREEN,
+	SETTINGS,
 	HELP,
 	TB_SIZE
 };
@@ -50,10 +80,11 @@ const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 const bool ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
 const int WHEEL_MULTIPLIER = 80;
 const int SCROLL_DELAY_MILLISECONDS = 500;
+const double IMAGE_VIEWER_VERSION = 1.0;
 
 class Frame {
 public:
-	GtkWidget *window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE];
+	GtkWidget *window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE],*m_options[SIZE_OPTIONS],*m_modal;
 	int lastWidth, lastHeight;
 	int posh, posv;
 	Pixbuf pix, pixs;
@@ -80,6 +111,9 @@ public:
 	MODE lastNonListMode;
 	const static bool filenameFontBold = true;
 	int listIconHeight, listIconWidth;
+	VString m_language;
+	int m_languageIndex,m_askBeforeDelete,m_deleteOption,m_showPopup;
+	static const int MAX_BUFF_LEN = 2048;
 
 	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
@@ -118,7 +152,11 @@ public:
 	void buttonClicked(int t) {
 		buttonClicked(TOOLBAR_INDEX(t));
 	}
+	void optionsButtonClicked(LANGUAGE l);
 	void showHelp();
+	void showSettings();
+	void showModalDialog(const std::string& title,GtkWidget*w,int o);
+
 	void recountListParameters();
 	void setButtonState(int i, bool enable);
 	void setButtonState(TOOLBAR_INDEX i, bool enable) {
@@ -138,6 +176,13 @@ public:
 	void redraw(bool withTitle = true);
 	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
 	void setIconHeightWidth(int height);
+	void loadLanguage();
+	GtkWidget* createLanguageCombo(int n);
+	std::string getTitleVersion();
+	std::string& getLanguageString(LANGUAGE l);
+	GtkWidget* createTextCombo(int n,VString v, int active);
+	void resetOptions();
+	void updateOptions();
 };
 
 #endif /* FRAME_H_ */

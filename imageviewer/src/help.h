@@ -15,6 +15,8 @@
 #include <string>
 #include "Pixbuf.h"
 
+const std::string LNG[] = { "en", "ru" };
+
 void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr);
 void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
 		bool centerx, int oy,const GdkRGBA&color,bool blackBackground=false);
@@ -24,5 +26,9 @@ std::string filechooser(GtkWidget *parent, const std::string &dir);
 
 GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
 		int &w, int &h);
+
+bool deleteFileToRecycleBin(const std::string& path);
+
+FILE* open(int i, std::string s);
 
 #endif /* HELP_H_ */

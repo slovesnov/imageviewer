@@ -8,6 +8,8 @@
  *         homepage: slovesnov.users.sourceforge.net
  */
 #include "help.h"
+#include "aslov.h"
+#include <windows.h>//deleteFileToRecycleBin
 
 void adjust(int &v, int min,int max /*= INT_MAX*/) {
 	if (v < min) {
@@ -128,3 +130,29 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 
 	cairo_reset_clip(ct);
 }
+
+/* deleteFileToRecycleBin support utf8 chars in file names
+ * https://stackoverflow.com/questions/70257751/move-a-file-or-folder-to-the-recyclebin-trash-c17
+ */
+bool deleteFileToRecycleBin(const std::string& path) {
+	//old version g_remove(a.path.c_str());
+	auto p=utf8ToLocale(path)+'\0';
+	SHFILEOPSTRUCT fileOp;
+	fileOp.hwnd = NULL;
+	fileOp.wFunc = FO_DELETE;
+	fileOp.pFrom = p.c_str();
+	fileOp.pTo = NULL;
+	fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION
+			| FOF_SILENT;
+	return !SHFileOperation(&fileOp);
+}
+
+static std::string getShortLanguageString(int i) {
+	return LNG[i];
+}
+
+FILE* open(int i, std::string s) {
+	return ::open(getResourcePath(getShortLanguageString(i) + "/" + s + ".txt"),
+			"r");
+}
+
