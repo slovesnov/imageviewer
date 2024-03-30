@@ -39,7 +39,6 @@ enum class LANGUAGE {
 	OK,
 	CANCEL,
 	RESET,
-	LOADING,
 	JAN,
 	FEB,
 	MAR,

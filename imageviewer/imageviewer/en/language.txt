@@ -17,7 +17,6 @@ no
 ok
 cancel
 reset
-loading...
 jan
 feb
 mar
