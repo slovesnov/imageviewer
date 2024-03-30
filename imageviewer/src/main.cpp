@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 	const char appName[]="org.imageviewer";
 	GApplicationFlags flags = GApplicationFlags(
 			G_APPLICATION_HANDLES_OPEN
-					| (ONE_INSTANCE ?
+					| (Frame::isOneInstanceOnly() ?
 							G_APPLICATION_DEFAULT_FLAGS : G_APPLICATION_NON_UNIQUE));
 	GtkApplication *app = gtk_application_new(appName, flags);
 	g_signal_connect(app, "activate", G_CALLBACK (activate), 0); //this function is called when application has no arguments

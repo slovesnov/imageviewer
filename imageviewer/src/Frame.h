@@ -63,6 +63,7 @@ enum class LANGUAGE {
 	BYTES,
 	AVERAGE,
 	TOTAL,
+	ONE_APPLICATION_INSTANCE,
 	LTOOLTIP1,
 	LTOOLTIP2,
 	LTOOLTIP3,
@@ -88,7 +89,7 @@ enum class LANGUAGE {
 
 const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,LANGUAGE::SUPPORTED_FORMATS };
+		LANGUAGE::SHOW_POPUP_TIPS,LANGUAGE::ONE_APPLICATION_INSTANCE, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,LANGUAGE::SUPPORTED_FORMATS };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP..
@@ -123,7 +124,7 @@ const TOOLBAR_INDEX LIST_ZOOM_IN = TOOLBAR_INDEX::ROTATE_180; //decrease size
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
 //all system constants
-const bool ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
+const bool DEFAULT_ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
 const int WHEEL_MULTIPLIER = 80;
 const int SCROLL_DELAY_MILLISECONDS = 500;
 const double IMAGE_VIEWER_VERSION = 1.0;
@@ -159,6 +160,7 @@ public:
 	VString m_language;
 	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
 	guint m_timer;
+	static int m_oneInstance;
 	const static bool filenameFontBold = true;
 
 	Frame(GtkApplication *application, std::string const path = "");
@@ -235,6 +237,7 @@ public:
 	void addEvent();
 	void stopTimer(guint& t);
 	std::string getExtensionString(bool b);
+	static bool isOneInstanceOnly();
 };
 
 #endif /* FRAME_H_ */

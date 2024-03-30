@@ -39,8 +39,7 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"magnifier_zoom_out.png", "application_view_columns.png",
 
 		"arrow_rotate_anticlockwise.png", "arrow_refresh.png",
-		"arrow_rotate_clockwise.png",
-		"leftright.png","updown.png",
+		"arrow_rotate_clockwise.png", "leftright.png", "updown.png",
 
 		"control_start_blue.png", "control_rewind_blue.png", "previous.png",
 		"control_play_blue.png", "control_fastforward_blue.png",
@@ -51,9 +50,8 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"fullscreen.png", "settings.png", "help.png" };
 
 const TOOLBAR_INDEX IMAGE_MODIFY[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
-		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE
-		,TOOLBAR_INDEX::FLIP_HORIZONTAL,TOOLBAR_INDEX::FLIP_VERTICAL
-};
+		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE,
+		TOOLBAR_INDEX::FLIP_HORIZONTAL, TOOLBAR_INDEX::FLIP_VERTICAL };
 
 const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 		TOOLBAR_INDEX::PAGE_UP, TOOLBAR_INDEX::PREVIOUS, TOOLBAR_INDEX::NEXT,
@@ -67,7 +65,8 @@ const TOOLBAR_INDEX TOOLBAR_BUTTON_WITH_MARGIN[] = {
 		TOOLBAR_INDEX::OPEN };
 
 const std::string CONFIG_TAGS[] = { "mode", "order", "list icon height",
-		"language", "warning before delete", "delete option", "show popup" };
+		"language", "warning before delete", "delete option", "show popup",
+		"one application instance" };
 enum class ENUM_CONFIG_TAGS {
 	CMODE,
 	ORDER,
@@ -75,10 +74,12 @@ enum class ENUM_CONFIG_TAGS {
 	CLANGUAGE,
 	ASK_BEFORE_DELETE,
 	DELETE_OPTION,
-	SHOW_POPUP
+	SHOW_POPUP,
+	ONE_APPLICATION_INSTANCE
 };
 const std::string SEPARATOR = "       ";
-static const int EVENT_TIME = 1000;//milliseconds, may be problems with small timer
+static const int EVENT_TIME = 1000; //milliseconds, may be problems with small timer
+int Frame::m_oneInstance;
 
 static gpointer thumbnail_thread(gpointer data) {
 	frame->thumbnailThread(GP2INT(data));
@@ -145,11 +146,8 @@ static gboolean label_clicked(GtkWidget *label, const gchar *uri, gpointer) {
 	return TRUE;
 }
 
-void directory_changed (GFileMonitor     *monitor,
-               GFile            *file,
-               GFile            *other_file,
-               GFileMonitorEvent event_type,
-               gpointer          user_data){
+void directory_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
+		GFileMonitorEvent event_type, gpointer user_data) {
 	frame->addEvent();
 }
 
@@ -164,7 +162,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	int i, j;
 	ENUM_CONFIG_TAGS ct;
 	m_loadid = -1;
-	m_timer=0;
+	m_timer = 0;
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -223,6 +221,9 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 				} else if (ct == ENUM_CONFIG_TAGS::SHOW_POPUP && j >= 0
 						&& j < 2) {
 					m_showPopup = j;
+				} else if (ct == ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE && j >= 0
+						&& j < 2) {
+					m_oneInstance=j;
 				} else {
 					if (j < MIN_ICON_HEIGHT || j > MAX_ICON_HEIGHT) {
 						printl("error")
@@ -325,7 +326,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	g_signal_connect(m_window, OPEN_FILE_SIGNAL_NAME, G_CALLBACK(open_files),
 			NULL);
 
-	g_signal_connect(G_OBJECT (m_area), "draw", G_CALLBACK (draw_callback), NULL);
+	g_signal_connect(G_OBJECT (m_area), "draw", G_CALLBACK (draw_callback),
+			NULL);
 
 	setDragDrop(m_window);
 
@@ -349,8 +351,8 @@ Frame::~Frame() {
 	g_object_unref(m_toolbar);
 
 	WRITE_CONFIG(CONFIG_TAGS, (int ) m_lastNonListMode, m_ascendingOrder,
-			m_listIconHeight, m_languageIndex, m_warningBeforeDelete, m_deleteOption,
-			m_showPopup);
+			m_listIconHeight, m_languageIndex, m_warningBeforeDelete,
+			m_deleteOption, m_showPopup, m_oneInstance);
 	stopThreads();
 	g_mutex_clear(&m_mutex);
 }
@@ -388,12 +390,14 @@ void Frame::setTitle() {
 					m_ascendingOrder ?
 							MIN(m_listTopLeftIndex + listxy, sz) :
 							MAX(m_listTopLeftIndex + 2 - listxy, 1), sz)
-					+ SEPARATOR + getLanguageString(LANGUAGE::TOTAL)
-					+ " "+getSizeMbKbB(ts) + ", "
-					+ getLanguageString(LANGUAGE::AVERAGE) + " "+getSizeMbKbB(ts/sz);
+					+ SEPARATOR + getLanguageString(LANGUAGE::TOTAL) + " "
+					+ getSizeMbKbB(ts) + ", "
+					+ getLanguageString(LANGUAGE::AVERAGE) + " "
+					+ getSizeMbKbB(ts / sz);
 		} else {
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
-			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + getLanguageString(LANGUAGE::SCALE)+" "
+			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
+					+ getLanguageString(LANGUAGE::SCALE) + " "
 					+ (scale == 1 || mode == MODE::NORMAL ?
 							"1" : format("%.2lf", scale)) + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
@@ -407,7 +411,8 @@ void Frame::setTitle() {
 			if (g_regex_match(r, n.c_str(), GRegexMatchFlags(0), NULL)) {
 				i = stoi(n.substr(8, 2)) - 1;
 				t += SEPARATOR + n.substr(10, 2)
-						+ (i >= 0 && i < 12 ? getLanguageString(LANGUAGE::JAN, i) : "???")
+						+ (i >= 0 && i < 12 ?
+								getLanguageString(LANGUAGE::JAN, i) : "???")
 						+ n.substr(4, 4);
 				for (i = 0; i < 3; i++) {
 					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
@@ -536,7 +541,8 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	}
 
 	if (!m_loadingFontHeight) {
-		m_loadingFontHeight = countFontMaxHeight(getLanguageString(LANGUAGE::LOADING).c_str(), false, cr);
+		m_loadingFontHeight = countFontMaxHeight(
+				getLanguageString(LANGUAGE::LOADING).c_str(), false, cr);
 		filenameFontHeight = countFontMaxHeight("IMG_20211004_093339",
 				filenameFontBold, cr);
 
@@ -569,8 +575,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			} else {
-				drawTextToCairo(cr, getLanguageString(LANGUAGE::LOADING).c_str(), m_loadingFontHeight, false, i, j,
-						m_listIconWidth, m_listIconHeight, true, 2, BLACK_COLOR);
+				drawTextToCairo(cr,
+						getLanguageString(LANGUAGE::LOADING).c_str(),
+						m_loadingFontHeight, false, i, j, m_listIconWidth,
+						m_listIconHeight, true, 2, BLACK_COLOR);
 			}
 		}
 
@@ -648,7 +656,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 			//english and russian keyboard layout (& caps lock)
 					, hwkey == 'O',
 			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
-			false,//no hotkey for order
+			false,		//no hotkey for order
 			hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape),
 			hwkey == 'H' || k == GDK_KEY_F1);
 
@@ -764,19 +772,23 @@ void Frame::rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
 	}
 }
 
-void Frame::flipPixbuf(Pixbuf &p, bool horizontal){
-	p=gdk_pixbuf_flip(p,horizontal);
+void Frame::flipPixbuf(Pixbuf &p, bool horizontal) {
+	p = gdk_pixbuf_flip(p, horizontal);
 }
 
 int Frame::showConfirmation(const std::string &text) {
 	GtkWidget *dialog;
 	dialog = gtk_dialog_new_with_buttons(
 			getLanguageString(LANGUAGE::QUESTION).c_str(), GTK_WINDOW(m_window),
-			GTK_DIALOG_MODAL, getLanguageString(LANGUAGE::YES).c_str(), GTK_RESPONSE_YES, getLanguageString(LANGUAGE::NO).c_str(), GTK_RESPONSE_NO,
+			GTK_DIALOG_MODAL, getLanguageString(LANGUAGE::YES).c_str(),
+			GTK_RESPONSE_YES, getLanguageString(LANGUAGE::NO).c_str(),
+			GTK_RESPONSE_NO,
 			NULL);
 	auto content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
 	gtk_container_add(GTK_CONTAINER(content_area),
-			gtk_label_new(getLanguageString(LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE).c_str()));
+			gtk_label_new(
+					getLanguageString(
+							LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE).c_str()));
 	gtk_widget_show_all(dialog);
 	auto r = gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
@@ -817,10 +829,8 @@ void Frame::thumbnailThread(int n) {
 		g_mutex_unlock(&m_mutex);
 	}
 
-
 	while ((m_ascendingOrder && (v = m_threadNumber++) < max)
 			|| (!m_ascendingOrder && (v = m_threadNumber--) >= 0)) {
-
 
 		if (g_atomic_int_get(&m_endThreads)) {
 #ifdef SHOW_THREAD_TIME
@@ -833,7 +843,8 @@ void Frame::thumbnailThread(int n) {
 		if (!o.m_thumbnail) {
 			//full path
 			p = o.m_path;
-			o.m_thumbnail = scaleFit(p, m_listIconWidth, m_listIconHeight, w, h);
+			o.m_thumbnail = scaleFit(p, m_listIconWidth, m_listIconHeight, w,
+					h);
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
@@ -891,8 +902,8 @@ void Frame::buttonPress(GdkEventButton *event) {
 				if (left) { // left button check click on image
 					int cx = event->x;
 					int cy = event->y;
-					if (cx >= listdx && cx < m_lastWidth - listdx && cy >= listdy
-							&& cy < m_lastHeight - listdy) {
+					if (cx >= listdx && cx < m_lastWidth - listdx
+							&& cy >= listdy && cy < m_lastHeight - listdy) {
 						pi = ((cx - listdx) / m_listIconWidth
 								+ (cy - listdy) / m_listIconHeight * listx)
 								* (m_ascendingOrder ? 1 : -1)
@@ -1036,11 +1047,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		}
 	}
 
-	if (t == TOOLBAR_INDEX::DELETE_FILE) {//mode!=MODE::LIST can be called from keyboard
-		if (mode!=MODE::LIST && (!m_warningBeforeDelete
-				|| showConfirmation(
-						getLanguageString(LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE))
-						== GTK_RESPONSE_YES)) {
+	if (t == TOOLBAR_INDEX::DELETE_FILE) { //mode!=MODE::LIST can be called from keyboard
+		if (mode != MODE::LIST
+				&& (!m_warningBeforeDelete
+						|| showConfirmation(
+								getLanguageString(
+										LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE))
+								== GTK_RESPONSE_YES)) {
 
 			//not need full reload
 			stopThreads();
@@ -1085,7 +1098,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					stopThreads();
 					setIconHeightWidth(i);
 					recountListParameters();
-					m_loadingFontHeight = 0;					//to recount font
+					m_loadingFontHeight = 0;				//to recount font
 					m_loadid++;
 					for (auto &o : vp) {
 						o.free();
@@ -1097,10 +1110,9 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				}
 			}
 		} else {
-			if(i>=3){
-				flipPixbuf(pix, i==3);
-			}
-			else{
+			if (i >= 3) {
+				flipPixbuf(pix, i == 3);
+			} else {
 				rotatePixbuf(pix, pw, ph, 90 * (i + 1));
 			}
 			//small image angle should match with big image, so always call setSmallImage
@@ -1120,7 +1132,7 @@ void Frame::showSettings() {
 	GtkWidget *grid, *w;
 	VString v;
 	std::string s;
-	char* markup;
+	char *markup;
 
 	grid = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
@@ -1134,29 +1146,32 @@ void Frame::showSettings() {
 		auto e = OPTIONS[i];
 		if (e == LANGUAGE::LANGUAGE) {
 			w = createLanguageCombo(i);
-			gtk_widget_set_halign (w,GTK_ALIGN_START);//not stretch
+			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::REMOVE_FILE_OPTION) {
 			for (auto e : { LANGUAGE::REMOVE_FILES_TO_RECYCLE_BIN,
 					LANGUAGE::REMOVE_FILES_PERMANENTLY }) {
 				v.push_back(getLanguageString(e));
 			}
 			w = createTextCombo(i, v, 0);
-			gtk_widget_set_halign (w,GTK_ALIGN_START);//not stretch
-		} else if (e == LANGUAGE::ASK_BEFORE_DELETING_A_FILE
-				|| e == LANGUAGE::SHOW_POPUP_TIPS) {
+			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
+		} else if (oneOf(e, LANGUAGE::ASK_BEFORE_DELETING_A_FILE,
+				LANGUAGE::SHOW_POPUP_TIPS,
+				LANGUAGE::ONE_APPLICATION_INSTANCE)) {
 			w = m_options[i] = gtk_check_button_new();
-		} else if (e == LANGUAGE::HOMEPAGE){
-			s=getLanguageString(e, 1);
+		} else if (e == LANGUAGE::HOMEPAGE) {
+			s = getLanguageString(e, 1);
 			w = gtk_label_new(NULL);
 			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
-					s.c_str(), LNG_LONG[m_languageIndex].c_str(),s.substr(s.find("slo")).c_str(), LNG_LONG[m_languageIndex].c_str());
+					s.c_str(), LNG_LONG[m_languageIndex].c_str(),
+					s.substr(s.find("slo")).c_str(),
+					LNG_LONG[m_languageIndex].c_str());
 			gtk_label_set_markup(GTK_LABEL(w), markup);
 			g_free(markup);
 			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
 					gpointer(s.c_str()));
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
-		}else if(e==LANGUAGE::SUPPORTED_FORMATS){
-			w=gtk_label_new(getExtensionString(true).c_str());
+		} else if (e == LANGUAGE::SUPPORTED_FORMATS) {
+			w = gtk_label_new(getExtensionString(true).c_str());
 		} else {
 			w = gtk_label_new(getLanguageString(e, 1).c_str());
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
@@ -1168,7 +1183,7 @@ void Frame::showSettings() {
 			+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
 			+ toString(getApplicationFileSize(), ',');
 	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i++, 2, 1);
-	showModalDialog( grid, 1);
+	showModalDialog(grid, 1);
 }
 
 void Frame::showHelp() {
@@ -1232,13 +1247,12 @@ void Frame::recountListParameters() {
 	updateNavigationButtonsState();
 }
 
-void Frame::updateNavigationButtonsState(){
+void Frame::updateNavigationButtonsState() {
 	const int sz = size();
-	if(mode==MODE::LIST){
+	if (mode == MODE::LIST) {
 		if (sz <= listxy) {					//all images in screen
 			setNavigationButtonsState(0, 0);
-		}
-		else{
+		} else {
 			int min, max;
 			getListMinMaxIndex(min, max);
 			if (m_ascendingOrder) {
@@ -1249,8 +1263,7 @@ void Frame::updateNavigationButtonsState(){
 						m_listTopLeftIndex > min);
 			}
 		}
-	}
-	else{
+	} else {
 		if (m_ascendingOrder) {
 			setNavigationButtonsState(pi != 0, pi != size() - 1);
 		} else {
@@ -1274,8 +1287,9 @@ void Frame::setMode(MODE m, bool start) {
 			setButtonState(e, i++ != int(m));
 		}
 
-		for(auto e:{TOOLBAR_INDEX::ROTATE_CLOCKWISE,TOOLBAR_INDEX::FLIP_HORIZONTAL,
-			TOOLBAR_INDEX::FLIP_VERTICAL,TOOLBAR_INDEX::DELETE_FILE}){
+		for (auto e : { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
+				TOOLBAR_INDEX::FLIP_HORIZONTAL, TOOLBAR_INDEX::FLIP_VERTICAL,
+				TOOLBAR_INDEX::DELETE_FILE }) {
 			setButtonState(e, mode != MODE::LIST);
 		}
 
@@ -1437,7 +1451,7 @@ std::string& Frame::getLanguageString(LANGUAGE l, int add) {
 	return m_language[int(l) + add];
 }
 
-GtkWidget* Frame::createTextCombo(int n, VString& v, int active) {
+GtkWidget* Frame::createTextCombo(int n, VString &v, int active) {
 	GtkWidget *w = m_options[n] = gtk_combo_box_text_new();
 	for (auto &a : v) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(w), a.c_str());
@@ -1459,6 +1473,8 @@ void Frame::optionsButtonClicked(LANGUAGE l) {
 				GTK_COMBO_BOX(m_options[i++]));
 		m_showPopup = gtk_toggle_button_get_active(
 				GTK_TOGGLE_BUTTON(m_options[i++]));
+		m_oneInstance=gtk_toggle_button_get_active(
+				GTK_TOGGLE_BUTTON(m_options[i++]));
 	} else if (l == LANGUAGE::RESET) {
 		resetOptions();
 		updateOptions();
@@ -1478,6 +1494,7 @@ void Frame::resetOptions() {
 	m_warningBeforeDelete = 1;
 	m_deleteOption = 0;
 	m_showPopup = 1;
+	m_oneInstance = 1;
 }
 
 void Frame::updateOptions() {
@@ -1488,6 +1505,8 @@ void Frame::updateOptions() {
 	gtk_combo_box_set_active(GTK_COMBO_BOX(m_options[i++]), m_deleteOption);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(m_options[i++]),
 			m_showPopup);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(m_options[i++]),
+			m_oneInstance);
 }
 
 void Frame::setPopups() {
@@ -1513,24 +1532,28 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 	bool onlyFolder = false;
 	const gint MY_SELECTED = 0;
 
-	GtkWidget *dialog = gtk_file_chooser_dialog_new(getLanguageString(LANGUAGE::OPEN_FILE).c_str(),
-			GTK_WINDOW(parent),
+	GtkWidget *dialog = gtk_file_chooser_dialog_new(
+			getLanguageString(LANGUAGE::OPEN_FILE).c_str(), GTK_WINDOW(parent),
 			onlyFolder ?
 					GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER :
-					GTK_FILE_CHOOSER_ACTION_OPEN, getLanguageString(LANGUAGE::CANCEL).c_str(),
-			GTK_RESPONSE_CANCEL, getLanguageString(LANGUAGE::OPEN).c_str(), GTK_RESPONSE_ACCEPT, NULL);
+					GTK_FILE_CHOOSER_ACTION_OPEN,
+			getLanguageString(LANGUAGE::CANCEL).c_str(), GTK_RESPONSE_CANCEL,
+			getLanguageString(LANGUAGE::OPEN).c_str(), GTK_RESPONSE_ACCEPT,
+			NULL);
 
 	if (!onlyFolder) {
 		/* add the additional "Select" button
 		 * "select" button allow select folder and file
 		 * "open" button can open only files
 		 */
-		gtk_dialog_add_button(GTK_DIALOG(dialog), getLanguageString(LANGUAGE::SELECT).c_str(), MY_SELECTED);
+		gtk_dialog_add_button(GTK_DIALOG(dialog),
+				getLanguageString(LANGUAGE::SELECT).c_str(), MY_SELECTED);
 	}
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), (dir+"/..").c_str());
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog),
+			(dir + "/..").c_str());
 
 	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-	auto v=gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+	auto v = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	if (response == GTK_RESPONSE_ACCEPT
 			|| (!onlyFolder && response == MY_SELECTED && v)) {
 		s = v;
@@ -1541,61 +1564,78 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 	return s;
 }
 
-std::string Frame::getSizeMbKbB(double v){
+std::string Frame::getSizeMbKbB(double v) {
 	std::string s;
 	for (int i = 0; i < 3; i++, v *= 1024) {
 		s = format("%.2lf", v);
 		if (s != "0.00" || i == 2) {
-			return s + getLanguageString(LANGUAGE::MEGABYTES,i);
+			return s + getLanguageString(LANGUAGE::MEGABYTES, i);
 		}
 	}
 	return "";
 }
 
-void Frame::addMonitor(std::string& path) {
+void Frame::addMonitor(std::string &path) {
 	GFileMonitor *monitor;
-	GFile *directory = g_file_new_for_path (path.c_str());
-	monitor = g_file_monitor_directory (directory, G_FILE_MONITOR_SEND_MOVED, NULL, NULL);
+	GFile *directory = g_file_new_for_path(path.c_str());
+	monitor = g_file_monitor_directory(directory, G_FILE_MONITOR_SEND_MOVED,
+			NULL, NULL);
 	if (monitor != NULL) {
-		g_signal_connect_object (G_OBJECT (monitor),
-					 "changed",
-					 G_CALLBACK (directory_changed),
-					 NULL, G_CONNECT_AFTER);
+		g_signal_connect_object(G_OBJECT(monitor), "changed",
+				G_CALLBACK(directory_changed),
+				NULL, G_CONNECT_AFTER);
 	}
 }
 
 void Frame::directoryChanged() {
-	m_timer=0;
+	m_timer = 0;
 	load(dir);
 }
 
 void Frame::addEvent() {
 	//if delete several files then got many delete events, the same if copy file to folder so just proceed last signal
 	stopTimer(m_timer);
-	m_timer=g_timeout_add(EVENT_TIME, timer_animation_handler, gpointer(0));
+	m_timer = g_timeout_add(EVENT_TIME, timer_animation_handler, gpointer(0));
 }
 
-void Frame::stopTimer(guint& t){
-	if(t){
+void Frame::stopTimer(guint &t) {
+	if (t) {
 		g_source_remove(t);
-		t=0;
+		t = 0;
 	}
 }
 
 std::string Frame::getExtensionString(bool b) {
-	if(b){
-		int sz=m_vExtension.size(),i=0;
+	if (b) {
+		int sz = m_vExtension.size(), i = 0;
 		std::string s;
-		for(auto& e:m_vExtension){
-			if(i){
-				s+=i==sz/2?'\n':' ';
+		for (auto &e : m_vExtension) {
+			if (i) {
+				s += i == sz / 2 ? '\n' : ' ';
 			}
-			s+=e;
+			s += e;
 			i++;
 		}
 		return s;
-	}
-	else{
+	} else {
 		return joinV(m_vExtension, ' ');
 	}
+}
+
+bool Frame::isOneInstanceOnly() {
+	MapStringString m;
+	MapStringString::iterator it;
+	int j;
+	m_oneInstance = DEFAULT_ONE_INSTANCE;
+	if (loadConfig(m)
+			&& (it =
+					m.find(
+							CONFIG_TAGS[int(
+									ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE)]))
+					!= m.end()) {
+		if (parseString(it->second, j)) {
+			m_oneInstance = j;
+		}
+	}
+	return m_oneInstance;
 }
