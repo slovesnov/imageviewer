@@ -16,7 +16,7 @@
 #include "Image.h"
 
 enum class MODE {
-	NORMAL, FIT, LIST
+	ANY, NORMAL, FIT, LIST
 };
 
 enum class LANGUAGE {
@@ -85,6 +85,9 @@ enum class LANGUAGE {
 	LTOOLTIP18,
 	LTOOLTIP19,
 	LTOOLTIP20,
+	LTOOLTIP21,
+	LTOOLTIP22,
+	LTOOLTIP23,
 	HELP
 };
 
@@ -95,8 +98,11 @@ const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
 enum class TOOLBAR_INDEX {
-	MODE_NORMAL,
-	MODE_FIT,
+	ZOOM_IN,
+	ZOOM_OUT,
+	MODE_ZOOM_ANY,
+	MODE_ZOOM_100,
+	MODE_ZOOM_FIT,
 	MODE_LIST,
 	ROTATE_ANTICLOCKWISE,
 	ROTATE_180,

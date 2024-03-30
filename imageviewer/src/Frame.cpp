@@ -32,11 +32,11 @@ const int GOTO_END = INT_MAX;
 const int MIN_ICON_HEIGHT = 32;
 const int MAX_ICON_HEIGHT = 200;
 
-const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png", "sort_descending.png",
-		"arrow_in.png", "arrow_out.png" };
+const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png", "sort_descending.png" };
 
-const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
-		"magnifier_zoom_out.png", "application_view_columns.png",
+const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png","magnifier_zoom_out.png",
+
+		"zoomany.png","zoom1.png","zoomfit.png","large_tiles.png",
 
 		"arrow_rotate_anticlockwise.png", "arrow_refresh.png",
 		"arrow_rotate_clockwise.png", "leftright.png", "updown.png",
@@ -47,7 +47,8 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 
 		"folder.png", "cross.png", ADDITIONAL_IMAGES[0],
 
-		"fullscreen.png", "settings.png", "help.png" };
+		"fullscreen.png", "setting_tools.png", "help.png" };
+static_assert(SIZEI(TOOLBAR_IMAGES)==TOOLBAR_INDEX_SIZE);
 
 const TOOLBAR_INDEX IMAGE_MODIFY[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
 		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE,
@@ -57,12 +58,13 @@ const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 		TOOLBAR_INDEX::PAGE_UP, TOOLBAR_INDEX::PREVIOUS, TOOLBAR_INDEX::NEXT,
 		TOOLBAR_INDEX::PAGE_DOWN, TOOLBAR_INDEX::END };
 
-const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_NORMAL,
-		TOOLBAR_INDEX::MODE_FIT, TOOLBAR_INDEX::MODE_LIST };
+const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_ZOOM_ANY,TOOLBAR_INDEX::MODE_ZOOM_100,
+		TOOLBAR_INDEX::MODE_ZOOM_FIT, TOOLBAR_INDEX::MODE_LIST };
 
 const TOOLBAR_INDEX TOOLBAR_BUTTON_WITH_MARGIN[] = {
-		TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE, TOOLBAR_INDEX::HOME,
+		TOOLBAR_INDEX::MODE_ZOOM_ANY, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE, TOOLBAR_INDEX::HOME,
 		TOOLBAR_INDEX::OPEN };
+const int TOOLBAR_BUTTON_MARGIN=25;
 
 const std::string CONFIG_TAGS[] = { "mode", "order", "list icon height",
 		"language", "warning before delete", "delete option", "show popup",
@@ -195,19 +197,10 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 					break;
 				}
 				ct = ENUM_CONFIG_TAGS(i);
-				if (ct == ENUM_CONFIG_TAGS::CMODE) {
-					if (j < 0 || j > 2) {
-						printl("error")
-						;
-						break;
-					}
+				if (ct == ENUM_CONFIG_TAGS::CMODE && j>=0 && j<SIZEI(TMODE)) {
 					m_lastNonListMode = mode = MODE(j);
-				} else if (ct == ENUM_CONFIG_TAGS::ORDER) {
-					if (j < 0 || j > 1) {
-						printl("error")
-						;
-						break;
-					}
+				} else if (ct == ENUM_CONFIG_TAGS::ORDER && j >= 0
+						&& j < 2) {
 					m_ascendingOrder = j == 1;
 				} else if (ct
 						== ENUM_CONFIG_TAGS::CLANGUAGE&& j>=0 && j<SIZEI(LNG)) {
@@ -287,7 +280,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 				GP(i));
 		gtk_box_pack_start(GTK_BOX(m_toolbar), b, FALSE, FALSE, 0);
 		if (ONE_OF(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)) {
-			gtk_widget_set_margin_start(b, 15);
+			gtk_widget_set_margin_start(b, TOOLBAR_BUTTON_MARGIN);
 		}
 		i++;
 	}
@@ -348,8 +341,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 Frame::~Frame() {
 	g_object_unref(m_toolbar);
-
-	WRITE_CONFIG(CONFIG_TAGS, (int ) m_lastNonListMode, m_ascendingOrder,
+//	printl(int(mode))
+	WRITE_CONFIG(CONFIG_TAGS, (int ) mode/*m_lastNonListMode*/, m_ascendingOrder,
 			m_listIconHeight, m_languageIndex, m_warningBeforeDelete,
 			m_deleteOption, m_showPopup, m_oneInstance);
 	stopThreads();
@@ -394,7 +387,6 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz);
 		} else {
-//			printl(bool(m_pixScaled))
 			double scale = mode == MODE::NORMAL || !m_pixScaled ? 1:m_pixScaled.width() / double(pw);
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
@@ -636,8 +628,9 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	//printl(k, GDK_KEY_minus,GDK_KEY_equal,GDK_KEY_KP_Subtract, GDK_KEY_minus);
 	const bool plus = k == GDK_KEY_KP_Add || k == GDK_KEY_equal;
 	const bool minus = k == GDK_KEY_KP_Subtract || k == GDK_KEY_minus;
-	int i = indexOfV(true, plus, minus, hwkey == 'L', hwkey == 'E',
-			hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
+	std::vector<bool> v={ plus, minus, hwkey == '1', hwkey == '2', hwkey == '3', hwkey == 'L'
+
+			,hwkey == 'E',hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
 
 			, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
 			oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
@@ -647,11 +640,17 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 			oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
 
 			//english and russian keyboard layout (& caps lock)
-					, hwkey == 'O',
+			, hwkey == 'O',
 			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
 			false,		//no hotkey for order
 			hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape),
-			hwkey == 'H' || k == GDK_KEY_F1);
+			false,
+			hwkey == 'H' || k == GDK_KEY_F1};
+
+//	printl(TOOLBAR_INDEX_SIZE,std::size(v))
+//	assert(TOOLBAR_INDEX_SIZE==std::size(v));
+
+	int i = indexOf(true, v);
 
 	if (i != -1) {
 		if (mode == MODE::LIST && (plus || minus)) {
@@ -1270,16 +1269,15 @@ void Frame::setMode(MODE m, bool start) {
 		if (mode != MODE::LIST) {
 			m_lastNonListMode = mode;
 		}
-		int i = 0;
-		for (auto e : TMODE) {
-			setButtonState(e, i++ != int(m));
+		int i;
+		for (i = 0; i < SIZEI(TMODE); i++) {
+			setButtonState(i + int(TOOLBAR_INDEX::MODE_ZOOM_ANY), i != int(m));
 		}
 
-		for (auto e : { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
-				TOOLBAR_INDEX::FLIP_HORIZONTAL, TOOLBAR_INDEX::FLIP_VERTICAL,
-				TOOLBAR_INDEX::DELETE_FILE }) {
+		for (auto e :IMAGE_MODIFY){
 			setButtonState(e, mode != MODE::LIST);
 		}
+		setButtonState(TOOLBAR_INDEX::DELETE_FILE, mode != MODE::LIST);
 
 		setVariableImagesButtonsState();
 		updateNavigationButtonsState();
@@ -1335,18 +1333,19 @@ void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
 }
 
 void Frame::setVariableImagesButtonsState() {
-	int i = 0;
+//	int i = 0;
 	setButtonImage(int(TOOLBAR_INDEX::REORDER_FILE), true,
 			m_additionalImages[!m_ascendingOrder]);
-	TOOLBAR_INDEX t[] = { LIST_ZOOM_OUT, LIST_ZOOM_IN };
-	for (auto a : t) {
-		if (mode == MODE::LIST) {
-			setButtonImage(int(a), true, m_additionalImages[i + 2]);
-		} else {
-			setButtonState(a, true);
-		}
-		i++;
-	}
+	//TODO
+//	TOOLBAR_INDEX t[] = { LIST_ZOOM_OUT, LIST_ZOOM_IN };
+//	for (auto a : t) {
+//		if (mode == MODE::LIST) {
+//			setButtonImage(int(a), true, m_additionalImages[i + 2]);
+//		} else {
+//			setButtonState(a, true);
+//		}
+//		i++;
+//	}
 
 }
 
@@ -1497,16 +1496,10 @@ void Frame::updateOptions() {
 }
 
 void Frame::setPopups() {
-	int i, j;
-	std::string s;
-	VString v;
-	i = 0;
+	int i= 0;
 	for (auto e : m_button) {
 		if (m_showPopup && gtk_widget_get_sensitive(e)) {
-			v = split(getLanguageString(LANGUAGE::LTOOLTIP1, i), '|');
-			j = v.size() == 2 && mode == MODE::LIST;
-			s = v[j];
-			gtk_widget_set_tooltip_text(e, s.c_str());
+			gtk_widget_set_tooltip_text(e, getLanguageString(LANGUAGE::LTOOLTIP1, i).c_str());
 		} else {
 			gtk_widget_set_has_tooltip(e, 0);
 		}

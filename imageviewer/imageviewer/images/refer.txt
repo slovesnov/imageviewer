@@ -5,6 +5,8 @@ toolbar images{
 	one additional image previous.png from control_play_blue.png
 
 	updown.png & leftright.png created in photoshop from up.png & down.png
+	large_tiles.png
+	setting_tools.png
 }
 
 settings.png
@@ -12,3 +14,8 @@ http://www.iconarchive.com/show/ginux-icons-by-kyo-tux/Start-Menu-Run-icon.html
 
 fullscreen.png
 https://www.iconsdb.com/blue-icons/fullscreen-12-icon.html
+
+zoomfit,zoom1,zoomany
+https://www.iconfinder.com/icons/1090126/fit_fit_to_screen_zoom_icon
+https://www.iconfinder.com/icons/1090129/magnifying_glass_search_zoom_icon
+https://www.iconfinder.com/icons/1090127/actual_actual_size_fit_to_screen_size_zoom_icon
