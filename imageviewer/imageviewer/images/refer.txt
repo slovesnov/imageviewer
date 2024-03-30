@@ -3,7 +3,12 @@ D:\soft\иконы\Icons\Vista\Files\JPG Files.ico
 toolbar images{
 	all taken from downloaded collection and leave same names https://iconarchive.com/show/farm-fresh-icons-by-fatcow.html "download this iconset" 
 	one additional image previous.png from control_play_blue.png
+
+	updown.png & leftright.png created in photoshop from up.png & down.png
 }
 
 settings.png
 http://www.iconarchive.com/show/ginux-icons-by-kyo-tux/Start-Menu-Run-icon.html
+
+fullscreen.png
+https://www.iconsdb.com/blue-icons/fullscreen-12-icon.html

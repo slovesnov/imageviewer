@@ -12,18 +12,25 @@ https://slovesnov.users.sf.net?imageviewer
 author email
 aleksey slovesnov slovesnov@yandex.ru
 version
+yes
+no
 ok
 cancel
 reset
 open
 open file
 select
+question
+Do you really want to delete the image?
+scale
 image size 100%
 fit the image to the window size
 images list
 rotate by 90°|enlarge icons
 rotate by 180°|reduce icon size
 rotate by 90°
+flip horizontal
+flip vertical
 first image
 rewind several images
 previous image

@@ -34,12 +34,17 @@ enum class LANGUAGE {
 	AUTHOR,
 	AUTHOR1,
 	VERSION,
+	YES,
+	NO,
 	OK,
 	CANCEL,
 	RESET,
 	OPEN,
 	OPEN_FILE,
 	SELECT,
+	QUESTION,
+	DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE,
+	SCALE,
 	LTOOLTIP1,
 	LTOOLTIP2,
 	LTOOLTIP3,
@@ -58,6 +63,8 @@ enum class LANGUAGE {
 	LTOOLTIP16,
 	LTOOLTIP17,
 	LTOOLTIP18,
+	LTOOLTIP19,
+	LTOOLTIP20,
 	HELP
 };
 
@@ -66,6 +73,7 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
+//if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP..
 enum class TOOLBAR_INDEX {
 	MODE_NORMAL,
 	MODE_FIT,
@@ -73,6 +81,8 @@ enum class TOOLBAR_INDEX {
 	ROTATE_ANTICLOCKWISE,
 	ROTATE_180,
 	ROTATE_CLOCKWISE,
+	FLIP_HORIZONTAL,
+	FLIP_VERTICAL,
 	HOME,
 	PAGE_UP,
 	PREVIOUS,
@@ -102,7 +112,7 @@ const double IMAGE_VIEWER_VERSION = 1.0;
 
 class Frame {
 public:
-	GtkWidget *m_window, *area, *box, *toolbar, *button[TOOLBAR_INDEX_SIZE],
+	GtkWidget *m_window, *m_area, *m_box, *m_toolbar, *m_button[TOOLBAR_INDEX_SIZE],
 			*m_options[SIZE_OPTIONS], *m_modal;
 	int m_lastWidth, m_lastHeight;
 	int posh, posv;
@@ -132,7 +142,6 @@ public:
 	VString m_language;
 	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
 	const static bool filenameFontBold = true;
-	static const int MAX_BUFF_LEN = 2048;
 
 	Frame(GtkApplication *application, std::string const path = "");
 	virtual ~Frame();
@@ -157,8 +166,9 @@ public:
 
 	void setSmallImage();
 	void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
+	void flipPixbuf(Pixbuf &p, bool horizontal);
 
-	int showConfirmation(const std::string text);
+	int showConfirmation(const std::string& text);
 	void startThreads();
 	void thumbnailThread(int n);
 	void stopThreads();
@@ -168,9 +178,7 @@ public:
 	void scrollList(int v);
 
 	void buttonClicked(TOOLBAR_INDEX t);
-	void buttonClicked(int t) {
-		buttonClicked(TOOLBAR_INDEX(t));
-	}
+	void buttonClicked(int t);
 	void optionsButtonClicked(LANGUAGE l);
 	void showHelp();
 	void showSettings();

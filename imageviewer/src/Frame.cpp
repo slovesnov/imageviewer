@@ -45,6 +45,7 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 
 		"arrow_rotate_anticlockwise.png", "arrow_refresh.png",
 		"arrow_rotate_clockwise.png",
+		"leftright.png","updown.png",
 
 		"control_start_blue.png", "control_rewind_blue.png", "previous.png",
 		"control_play_blue.png", "control_fastforward_blue.png",
@@ -52,10 +53,12 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 
 		"folder.png", "cross.png", ADDITIONAL_IMAGES[0],
 
-		"transform_move.png", "settings.png", "help.png" };
+		"fullscreen.png", "settings.png", "help.png" };
 
-const TOOLBAR_INDEX ROTATE[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
-		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE };
+const TOOLBAR_INDEX IMAGE_MODIFY[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
+		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE
+		,TOOLBAR_INDEX::FLIP_HORIZONTAL,TOOLBAR_INDEX::FLIP_VERTICAL
+};
 
 const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 		TOOLBAR_INDEX::PAGE_UP, TOOLBAR_INDEX::PREVIOUS, TOOLBAR_INDEX::NEXT,
@@ -64,8 +67,12 @@ const TOOLBAR_INDEX NAVIGATION[] = { TOOLBAR_INDEX::HOME,
 const TOOLBAR_INDEX TMODE[] = { TOOLBAR_INDEX::MODE_NORMAL,
 		TOOLBAR_INDEX::MODE_FIT, TOOLBAR_INDEX::MODE_LIST };
 
+const TOOLBAR_INDEX TOOLBAR_BUTTON_WITH_MARGIN[] = {
+		TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE, TOOLBAR_INDEX::HOME,
+		TOOLBAR_INDEX::OPEN };
+
 const std::string CONFIG_TAGS[] = { "mode", "order", "list icon height",
-		"language", "ask before delete", "delete option", "show popup" };
+		"language", "warning before delete", "delete option", "show popup" };
 enum class ENUM_CONFIG_TAGS {
 	CMODE,
 	ORDER,
@@ -246,12 +253,11 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	g_slist_free(formats);
 
 	m_window = gtk_application_window_new(GTK_APPLICATION(application));
-	area = gtk_drawing_area_new();
-	//auto box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-	gtk_widget_set_halign(toolbar, GTK_ALIGN_CENTER);
+	m_area = gtk_drawing_area_new();
+	m_toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+	gtk_widget_set_halign(m_toolbar, GTK_ALIGN_CENTER);
 	//prevents destroy after gtk_container_remove
-	g_object_ref(toolbar);
+	g_object_ref(m_toolbar);
 
 	//before setButtonState
 	for (auto a : ADDITIONAL_IMAGES) {
@@ -260,7 +266,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	i = 0;
 	for (auto a : TOOLBAR_IMAGES) {
-		auto b = button[i] = gtk_button_new();
+		auto b = m_button[i] = gtk_button_new();
 
 		buttonPixbuf[i][1] = pixbuf(a);
 
@@ -272,18 +278,18 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 		g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked),
 				GP(i));
-		gtk_box_pack_start(GTK_BOX(toolbar), b, FALSE, FALSE, 0);
-		if (oneOf(i, 3, 6, 12)) {
+		gtk_box_pack_start(GTK_BOX(m_toolbar), b, FALSE, FALSE, 0);
+		if (ONE_OF(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)) {
 			gtk_widget_set_margin_start(b, 15);
 		}
 		i++;
 	}
 
-	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_box_pack_start(GTK_BOX(box), area, TRUE, TRUE, 0);
-	gtk_container_add(GTK_CONTAINER(box), toolbar);
+	m_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_box_pack_start(GTK_BOX(m_box), m_area, TRUE, TRUE, 0);
+	gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
 
-	gtk_container_add(GTK_CONTAINER(m_window), box);
+	gtk_container_add(GTK_CONTAINER(m_window), m_box);
 
 	gtk_window_maximize(GTK_WINDOW(m_window));
 	gtk_widget_show_all(m_window);
@@ -308,7 +314,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	g_signal_connect(m_window, OPEN_FILE_SIGNAL_NAME, G_CALLBACK(open_files),
 			NULL);
 
-	g_signal_connect(G_OBJECT (area), "draw", G_CALLBACK (draw_callback), NULL);
+	g_signal_connect(G_OBJECT (m_area), "draw", G_CALLBACK (draw_callback), NULL);
 
 	setDragDrop(m_window);
 
@@ -329,7 +335,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 }
 
 Frame::~Frame() {
-	g_object_unref(toolbar);
+	g_object_unref(m_toolbar);
 
 	WRITE_CONFIG(CONFIG_TAGS, (int ) m_lastNonListMode, m_ascendingOrder,
 			m_listIconHeight, m_languageIndex, m_warningBeforeDelete, m_deleteOption,
@@ -383,7 +389,7 @@ void Frame::setTitle() {
 			}
 		} else {
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
-			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + "scale"
+			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + getLanguageString(LANGUAGE::SCALE)
 					+ (scale == 1 || mode == MODE::NORMAL ?
 							"1" : format("%.2lf", scale)) + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
@@ -447,7 +453,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 	if (vp.empty()) {
 		setNoImage();
 	} else {
-		//if was no image, need to set toolbar buttons enabled
+		//if was no image, need to set m_toolbar buttons enabled
 		for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
 			setButtonState(i, i != int(mode));
 		}
@@ -630,7 +636,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	const bool plus = k == GDK_KEY_KP_Add || k == GDK_KEY_equal;
 	const bool minus = k == GDK_KEY_KP_Subtract || k == GDK_KEY_minus;
 	int i = indexOfV(true, plus, minus, hwkey == 'L', hwkey == 'E',
-			hwkey == 'R', hwkey == 'T'
+			hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
 
 			, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7),
 			oneOf(k, GDK_KEY_Page_Up, GDK_KEY_KP_9),
@@ -642,6 +648,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 			//english and russian keyboard layout (& caps lock)
 					, hwkey == 'O',
 			oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal),
+			false,//no hotkey for order
 			hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape),
 			hwkey == 'H' || k == GDK_KEY_F1);
 
@@ -757,26 +764,23 @@ void Frame::rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
 	}
 }
 
-int Frame::showConfirmation(const std::string text) {
+void Frame::flipPixbuf(Pixbuf &p, bool horizontal){
+	p=gdk_pixbuf_flip(p,horizontal);
+}
+
+
+int Frame::showConfirmation(const std::string &text) {
 	GtkWidget *dialog;
-	dialog = gtk_message_dialog_new(GTK_WINDOW(m_window),
-			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
-			GTK_BUTTONS_YES_NO, text.c_str());
-	gtk_window_set_title(GTK_WINDOW(dialog), "Question");
+	dialog = gtk_dialog_new_with_buttons(
+			getLanguageString(LANGUAGE::QUESTION).c_str(), GTK_WINDOW(m_window),
+			GTK_DIALOG_MODAL, getLanguageString(LANGUAGE::YES).c_str(), GTK_RESPONSE_YES, getLanguageString(LANGUAGE::NO).c_str(), GTK_RESPONSE_NO,
+			NULL);
+	auto content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+	gtk_container_add(GTK_CONTAINER(content_area),
+			gtk_label_new(getLanguageString(LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE).c_str()));
+	gtk_widget_show_all(dialog);
 	auto r = gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
-
-//files are bigger
-//	for(std::string ext:{"jpeg","png"}){
-//		auto path=format("C:\\slovesno\\1.%s",ext.c_str());
-//		if (ext == "jpeg") {
-//			gdk_pixbuf_save(pix, path.c_str(), ext.c_str(), NULL, "quality",
-//					"100", NULL);
-//		}
-//		else {
-//			gdk_pixbuf_save(pix, path.c_str(), ext.c_str(), NULL, NULL);
-//		}
-//	}
 
 	return r;
 }
@@ -966,10 +970,10 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		GdkWindow *gdk_window = gtk_widget_get_window(m_window);
 		GdkWindowState state = gdk_window_get_state(gdk_window);
 		if (state & GDK_WINDOW_STATE_FULLSCREEN) {
-			gtk_container_add(GTK_CONTAINER(box), toolbar);
+			gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
 			gtk_window_unfullscreen(GTK_WINDOW(m_window));
 		} else {
-			gtk_container_remove(GTK_CONTAINER(box), toolbar);
+			gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
 			gtk_window_fullscreen(GTK_WINDOW(m_window));
 		}
 		return;
@@ -1036,7 +1040,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	if (t == TOOLBAR_INDEX::DELETE_FILE) {//mode!=MODE::LIST can be called from keyboard
 		if (mode!=MODE::LIST && (!m_warningBeforeDelete
 				|| showConfirmation(
-						"Do you really want to delete current image?")
+						getLanguageString(LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE))
 						== GTK_RESPONSE_YES)) {
 
 			//not need full reload
@@ -1074,7 +1078,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
-	i = INDEX_OF(t, ROTATE);
+	i = INDEX_OF(t, IMAGE_MODIFY);
 	if (i != -1) {
 		if (mode == MODE::LIST) {
 			if (t == LIST_ZOOM_IN || t == LIST_ZOOM_OUT) {
@@ -1095,13 +1099,22 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				}
 			}
 		} else {
-			rotatePixbuf(pix, pw, ph, 90 * (i + 1));
+			if(i>=3){
+				flipPixbuf(pix, i==3);
+			}
+			else{
+				rotatePixbuf(pix, pw, ph, 90 * (i + 1));
+			}
 			//small image angle should match with big image, so always call setSmallImage
 			setSmallImage();
 			drawImage();
 		}
 		return;
 	}
+}
+
+void Frame::buttonClicked(int t) {
+	buttonClicked(TOOLBAR_INDEX(t));
 }
 
 void Frame::showSettings() {
@@ -1280,7 +1293,6 @@ int Frame::size() {
 }
 
 void Frame::listTopLeftIndexChanged() {
-//	printi
 	updateNavigationButtonsState();
 	redraw();
 }
@@ -1317,7 +1329,7 @@ int Frame::getFirstListIndex() {
 }
 
 void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
-	auto b = button[i];
+	auto b = m_button[i];
 	gtk_widget_set_sensitive(b, enable);
 	gtk_widget_set_has_tooltip(b, enable);
 	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(p));
@@ -1343,7 +1355,7 @@ void Frame::redraw(bool withTitle) {
 	if (withTitle) {
 		setTitle();
 	}
-	gtk_widget_queue_draw(area);
+	gtk_widget_queue_draw(m_area);
 	//gtk_widget_queue_draw_area(widget, x, y, width, height)
 }
 
@@ -1365,6 +1377,7 @@ void Frame::setIconHeightWidth(int height) {
 }
 
 void Frame::loadLanguage() {
+	static const int MAX_BUFF_LEN = 2048;
 	FILE *f;
 	char buff[MAX_BUFF_LEN];
 	std::string s, s1;
@@ -1421,6 +1434,9 @@ std::string Frame::getTitleVersion() {
 }
 
 std::string& Frame::getLanguageString(LANGUAGE l, int add) {
+//	if(int(l) + add>=m_language.size()){
+//		printi;
+//	}
 	return m_language[int(l) + add];
 }
 
@@ -1482,7 +1498,7 @@ void Frame::setPopups() {
 	std::string s;
 	VString v;
 	i = 0;
-	for (auto e : button) {
+	for (auto e : m_button) {
 		if (m_showPopup && gtk_widget_get_sensitive(e)) {
 			v = split(getLanguageString(LANGUAGE::LTOOLTIP1, i), '|');
 			j = v.size() == 2 && mode == MODE::LIST;
