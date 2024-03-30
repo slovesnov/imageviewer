@@ -35,7 +35,7 @@ open file
 select
 question
 Do you really want to delete the image?
-scale
+zoom
 Mb
 Kb
 b

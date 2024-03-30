@@ -93,7 +93,7 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::SHOW_POPUP_TIPS,LANGUAGE::ONE_APPLICATION_INSTANCE, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,LANGUAGE::SUPPORTED_FORMATS };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
-//if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP..
+//if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
 enum class TOOLBAR_INDEX {
 	MODE_NORMAL,
 	MODE_FIT,
@@ -136,9 +136,8 @@ public:
 			*m_options[SIZE_OPTIONS], *m_modal;
 	int m_lastWidth, m_lastHeight;
 	int posh, posv;
-	Pixbuf pix, pixs;
+	Pixbuf pix;
 	int pw, ph, aw, ah, pws, phs;
-	double scale;
 	int pi;
 	MODE mode;
 	VImage vp;
@@ -185,7 +184,6 @@ public:
 	void openDirectory();
 	void switchImage(int v, bool add);
 
-	void setSmallImage();
 	void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
 	void flipPixbuf(Pixbuf &p, bool horizontal);
 

@@ -393,6 +393,7 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz);
 		} else {
+			double scale=double(pws) / pw;
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
@@ -505,10 +506,6 @@ void Frame::loadImage() {
 		pw = pix.width();
 		ph = pix.height();
 
-		if (mode == MODE::FIT && m_lastWidth > 0) {
-			setSmallImage();
-		}
-
 		updateNavigationButtonsState();
 	}
 
@@ -583,10 +580,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		}
 
 	} else {
+		GdkPixbuf*pixs=NULL;
 		if (mode == MODE::FIT) {
-			if (windowSizeChanged) {
-				setSmallImage(); //set pws,phs
-			}
+			setTitle();		//scale changed
+			pixs = scaleFit(pix, m_lastWidth, m_lastHeight, pws, phs);
 			w = pws;
 			h = phs;
 		} else {
@@ -605,12 +602,9 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 		if (windowSizeChanged) {
 			adjustPos();
-			if (mode == MODE::FIT) {
-				setTitle();		//scale changed
-			}
 		}
 
-		copy(mode == MODE::FIT ? pixs : pix, cr, destx, desty, aw, ah, posh,
+		copy(mode == MODE::FIT ? pixs : (GdkPixbuf*)pix, cr, destx, desty, aw, ah, posh,
 				posv);
 	}
 
@@ -752,11 +746,6 @@ void Frame::switchImage(int v, bool add) {
 	if (i != pi) {
 		loadImage();
 	}
-}
-
-void Frame::setSmallImage() {
-	pixs = scaleFit(pix, m_lastWidth, m_lastHeight, pws, phs);
-	scale = double(pws) / pw;
 }
 
 void Frame::rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
@@ -1002,9 +991,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				//setListTopLeftIndexStartValue();
 				redraw();
 			} else {
-				if (mode == MODE::FIT) {
-					setSmallImage();
-				}
 				drawImage();
 			}
 		}
@@ -1115,8 +1101,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			} else {
 				rotatePixbuf(pix, pw, ph, 90 * (i + 1));
 			}
-			//small image angle should match with big image, so always call setSmallImage
-			setSmallImage();
 			drawImage();
 		}
 		return;
