@@ -27,11 +27,6 @@ const MODE INITIAL_MODE=MODE::FIT;
 const MODE INITIAL_MODE=MODE::LIST;
 #endif
 
-const char *MONTH[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug",
-		"sep", "oct", "nov", "dec" };
-//const char *MONTH[] = { "January", "February", "March", "April", "May", "June",
-//		"July", "August", "September", "October", "November", "December" };
-const char LOADING[] = "loading...";
 const int GOTO_BEGIN = INT_MIN;
 const int GOTO_END = INT_MAX;
 const int MIN_ICON_HEIGHT = 32;
@@ -403,7 +398,7 @@ void Frame::setTitle() {
 			if (g_regex_match(r, n.c_str(), GRegexMatchFlags(0), NULL)) {
 				i = stoi(n.substr(8, 2)) - 1;
 				t += SEPARATOR + n.substr(10, 2)
-						+ (i >= 0 && i < 12 ? MONTH[i] : "???")
+						+ (i >= 0 && i < 12 ? getLanguageString(LANGUAGE::JAN, i) : "???")
 						+ n.substr(4, 4);
 				for (i = 0; i < 3; i++) {
 					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
@@ -467,7 +462,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 		setMode(mode, true);
 #else
 		setMode(INITIAL_MODE,true);
-	#endif
+#endif
 	} else {
 		if (!d && mode == MODE::LIST) {
 			setMode(MODE::NORMAL);
@@ -500,14 +495,6 @@ void Frame::loadImage() {
 		}
 
 		updateNavigationButtonsState();
-//		if (mode != MODE::LIST) {
-//			printi
-//			if (m_ascendingOrder) {
-//				setNavigationButtonsState(pi != 0, pi != size() - 1);
-//			} else {
-//				setNavigationButtonsState(pi != size() - 1, pi != 0);
-//			}
-//		}
 	}
 
 	drawImage();
@@ -537,7 +524,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	}
 
 	if (!m_loadingFontHeight) {
-		m_loadingFontHeight = countFontMaxHeight(LOADING, false, cr);
+		m_loadingFontHeight = countFontMaxHeight(getLanguageString(LANGUAGE::LOADING).c_str(), false, cr);
 		filenameFontHeight = countFontMaxHeight("IMG_20211004_093339",
 				filenameFontBold, cr);
 
@@ -558,6 +545,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j = l / listx * m_listIconHeight + listdy;
 			auto &o = vp[k];
 			GdkPixbuf *p = o.m_thumbnail;
+//			printl(k,sz,bool(p),m_ascendingOrder)
 			if (p) {
 				w = gdk_pixbuf_get_width(p);
 				h = gdk_pixbuf_get_height(p);
@@ -569,7 +557,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			} else {
-				drawTextToCairo(cr, LOADING, m_loadingFontHeight, false, i, j,
+				drawTextToCairo(cr, getLanguageString(LANGUAGE::LOADING).c_str(), m_loadingFontHeight, false, i, j,
 						m_listIconWidth, m_listIconHeight, true, 2, BLACK_COLOR);
 			}
 		}
@@ -768,7 +756,6 @@ void Frame::flipPixbuf(Pixbuf &p, bool horizontal){
 	p=gdk_pixbuf_flip(p,horizontal);
 }
 
-
 int Frame::showConfirmation(const std::string &text) {
 	GtkWidget *dialog;
 	dialog = gtk_dialog_new_with_buttons(
@@ -781,13 +768,11 @@ int Frame::showConfirmation(const std::string &text) {
 	gtk_widget_show_all(dialog);
 	auto r = gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
-
 	return r;
 }
 
 void Frame::startThreads() {
 	int i;
-
 	for (i = getFirstListIndex(); vp[i].m_thumbnail != nullptr;
 			i += m_ascendingOrder ? 1 : -1) {
 		if ((m_ascendingOrder && i >= size()) || (!m_ascendingOrder && i < 0)) {
@@ -820,8 +805,10 @@ void Frame::thumbnailThread(int n) {
 		g_mutex_unlock(&m_mutex);
 	}
 
+
 	while ((m_ascendingOrder && (v = m_threadNumber++) < max)
 			|| (!m_ascendingOrder && (v = m_threadNumber--) >= 0)) {
+
 
 		if (g_atomic_int_get(&m_endThreads)) {
 #ifdef SHOW_THREAD_TIME
@@ -842,7 +829,7 @@ void Frame::thumbnailThread(int n) {
 	}
 
 #ifdef SHOW_THREAD_TIME
-	println("t%d%s %.2lf",n,stopped?" user stop":"",((double) (clock() - start)) / CLOCKS_PER_SEC)
+	println("t%d%s %.2lf %d",n,stopped?" user stop":"",((double) (clock() - start)) / CLOCKS_PER_SEC,max)
 #endif
 }
 
@@ -1055,14 +1042,26 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			} else {
 				deleteFileToRecycleBin(a.m_path);
 			}
-			int sz = size();
 			vp.erase(vp.begin() + pi);
-			if (sz == 1) {
+			int sz = size();
+			if (sz == 0) {
 				setNoImage();
 			} else {
-				if (pi == sz - 1) { //cann't call size() here because vp.size() is changed after erase()
-					pi = 0;
-				}
+				adjust(m_listTopLeftIndex,0,sz-1);
+				adjust(pi,0,sz-1);
+//				if (m_listTopLeftIndex >= sz) {
+//					m_listTopLeftIndex = sz - 1;
+//				}
+//
+//				if(m_ascendingOrder){
+//					if (pi == sz) { //cann't call size() here because vp.size() is changed after erase()
+//						pi = 0;
+//					}
+//				}
+//				else{
+//					//TODO bookmark
+//					pi = pi == 0 ? sz - 1 : pi - 1;
+//				}
 				recountListParameters();
 				loadImage();
 
@@ -1236,7 +1235,6 @@ void Frame::recountListParameters() {
 void Frame::updateNavigationButtonsState(){
 	const int sz = size();
 	if(mode==MODE::LIST){
-//		printi
 		if (sz <= listxy) {					//all images in screen
 			setNavigationButtonsState(0, 0);
 		}
@@ -1244,18 +1242,15 @@ void Frame::updateNavigationButtonsState(){
 			int min, max;
 			getListMinMaxIndex(min, max);
 			if (m_ascendingOrder) {
-	//			printl(m_listTopLeftIndex,min,max)
 				setNavigationButtonsState(m_listTopLeftIndex > min,
 						m_listTopLeftIndex < max);
 			} else {
-	//			printl(m_listTopLeftIndex,min,max)
 				setNavigationButtonsState(m_listTopLeftIndex < max,
 						m_listTopLeftIndex > min);
 			}
 		}
 	}
 	else{
-//		printi
 		if (m_ascendingOrder) {
 			setNavigationButtonsState(pi != 0, pi != size() - 1);
 		} else {
@@ -1275,12 +1270,14 @@ void Frame::setMode(MODE m, bool start) {
 			m_lastNonListMode = mode;
 		}
 		int i = 0;
-		for (auto a : TMODE) {
-			setButtonState(a, i++ != int(m));
+		for (auto e : TMODE) {
+			setButtonState(e, i++ != int(m));
 		}
 
-		setButtonState(TOOLBAR_INDEX::ROTATE_CLOCKWISE, mode != MODE::LIST);
-		setButtonState(TOOLBAR_INDEX::DELETE_FILE, mode != MODE::LIST);
+		for(auto e:{TOOLBAR_INDEX::ROTATE_CLOCKWISE,TOOLBAR_INDEX::FLIP_HORIZONTAL,
+			TOOLBAR_INDEX::FLIP_VERTICAL,TOOLBAR_INDEX::DELETE_FILE}){
+			setButtonState(e, mode != MODE::LIST);
+		}
 
 		setVariableImagesButtonsState();
 		updateNavigationButtonsState();

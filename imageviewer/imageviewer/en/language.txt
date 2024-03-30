@@ -17,6 +17,19 @@ no
 ok
 cancel
 reset
+loading...
+jan
+feb
+mar
+apr
+may
+jun
+jul
+aug
+sep
+oct
+nov
+dec
 open
 open file
 select
@@ -68,9 +81,10 @@ If dropped file isn't supported then viewer starts from 1st supported image. One
 	NORMAL MODE scroll image left/right if image wider than window
 }
 <b>F11</b> or <b>F</b> or <b>Escape</b> switch full screen mode
-<b>+</b>, <b>-</b> for LIST_MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
+<b>+</b>, <b>-</b> for LIST MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
 <b>L</b> - switch to LIST MODE
 <b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90, 180, 270 degrees
+<b>H</b>, <b>V</b> - flip image horizontally or vertically
 <b>Delete</b> or <b>KP_Decimal</b> {
 	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in directory
 	LIST MODE - change ascending/descending list order
