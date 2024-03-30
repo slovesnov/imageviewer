@@ -43,11 +43,14 @@ average
 total
 run a single instance of the application
 application restart required
+zoom in (+ key)
+zoom out (- key)
+image size any
 image size 100%
 fit the image to the window size
-images list
-rotate by 90°|enlarge icons
-rotate by 180°|reduce icon size
+images list (L key)
+rotate by 90°
+rotate by 180°
 rotate by 90°
 flip horizontal
 flip vertical
@@ -90,10 +93,10 @@ If dropped file isn't supported then viewer starts from 1st supported image. One
 <b>F11</b> or <b>F</b> or <b>Escape</b> switch full screen mode
 <b>+</b>, <b>-</b> for LIST MODE increase/decrease icon size otherwise switch to NORMAL MODE/FIT MODE
 <b>L</b> - switch to LIST MODE
-<b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90, 180, 270 degrees
+<b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90&#176;, 180&#176;, 270&#176;
 <b>H</b>, <b>V</b> - flip image horizontally or vertically
 <b>Delete</b> or <b>KP_Decimal</b> {
 	NORMAL, FIT MODES - remove current image with confirm dialog and goes to next image in directory
 	LIST MODE - change ascending/descending list order
 }
-<b>H</b> or <b>F1</b> - show help
+<b>F1</b> - show help
