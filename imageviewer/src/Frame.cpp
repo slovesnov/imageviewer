@@ -50,6 +50,8 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png","magnifier_zoom_out.png
 		"fullscreen.png", "setting_tools.png", "help.png" };
 static_assert(SIZEI(TOOLBAR_IMAGES)==TOOLBAR_INDEX_SIZE);
 
+const TOOLBAR_INDEX ZOOM_INOUT[] = {TOOLBAR_INDEX::ZOOM_IN,TOOLBAR_INDEX::ZOOM_OUT};
+
 const TOOLBAR_INDEX IMAGE_MODIFY[] = { TOOLBAR_INDEX::ROTATE_CLOCKWISE,
 		TOOLBAR_INDEX::ROTATE_180, TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE,
 		TOOLBAR_INDEX::FLIP_HORIZONTAL, TOOLBAR_INDEX::FLIP_VERTICAL };
@@ -101,7 +103,6 @@ static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
 static void drag_and_drop_received(GtkWidget*, GdkDragContext *context, gint x,
 		gint y, GtkSelectionData *data, guint ttype, guint time, gpointer) {
-
 	gint l = gtk_selection_data_get_length(data);
 	gint a = gtk_selection_data_get_format(data);
 	if (l >= 0 && a == 8) {
@@ -165,6 +166,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	ENUM_CONFIG_TAGS ct;
 	m_loadid = -1;
 	m_timer = 0;
+	m_zoom=1;
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -390,7 +392,7 @@ void Frame::setTitle() {
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
-					+ format("%.1lf", scale*100)+"%" + SEPARATOR
+					+ (scale==1?"100":format("%.1lf", scale*100))+"%" + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
@@ -458,7 +460,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 	} else {
 		//if was no image, need to set m_toolbar buttons enabled
 		for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
-			setButtonState(i, i != int(mode));
+			setButtonState(i, i != int(mode)+int(TOOLBAR_INDEX::MODE_ZOOM_ANY));
 		}
 
 		startThreads();
@@ -570,15 +572,19 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		}
 
 	} else {
-		if (mode == MODE::FIT) {
+		if(mode == MODE::ANY){
+			w = m_zoom*pw;
+			h = m_zoom*ph;
+			m_pixScaled=gdk_pixbuf_scale_simple(m_pix, w, h, GDK_INTERP_BILINEAR);
+		}
+		else if (mode == MODE::FIT) {
 			//w, h are changed in scaleFit
 //			clock_t begin=clock();
 			m_pixScaled = scaleFit(m_pix, m_lastWidth, m_lastHeight, w, h);
 //			printl(timeElapse(begin));
 			setTitle();//scale is changed
 		} else {
-			w = pw;
-			h = ph;
+			m_pixScaled = scaleFit(m_pix, pw, ph, w, h);
 		}
 
 		destx = (width - w) / 2;
@@ -594,8 +600,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			adjustPos();
 		}
 
-		copy(mode == MODE::FIT ? m_pixScaled : m_pix, cr, destx, desty, aw, ah, posh,
+		copy( m_pixScaled, cr, destx, desty, aw, ah, posh,
 				posv);
+//		copy(mode == MODE::FIT ? m_pixScaled : m_pix, cr, destx, desty, aw, ah, posh,
+//				posv);
 	}
 
 	/*
@@ -647,13 +655,13 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 			hwkey == 'H' || k == GDK_KEY_F1};
 
 //	printl(TOOLBAR_INDEX_SIZE,std::size(v))
-//	assert(TOOLBAR_INDEX_SIZE==std::size(v));
+	assert(TOOLBAR_INDEX_SIZE==std::size(v));
 
 	int i = indexOf(true, v);
 
 	if (i != -1) {
 		if (mode == MODE::LIST && (plus || minus)) {
-			buttonClicked(plus ? LIST_ZOOM_IN : LIST_ZOOM_OUT);
+			buttonClicked(plus ? TOOLBAR_INDEX::ZOOM_IN : TOOLBAR_INDEX::ZOOM_OUT);
 		} else {
 			buttonClicked(i);
 		}
@@ -980,6 +988,38 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		return;
 	}
 
+	i=INDEX_OF(t,ZOOM_INOUT);
+	if(i!=-1){
+		if(mode==MODE::LIST){
+			i = m_listIconHeight + (t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1) * 5;
+			if (i >= MIN_ICON_HEIGHT && i <= MAX_ICON_HEIGHT) {
+				stopThreads();
+				setIconHeightWidth(i);
+				recountListParameters();
+				m_filenameFontHeight = 0;//to recount font
+				m_loadid++;
+				for (auto &o : vp) {
+					o.free();
+					o.m_thumbnail = nullptr;
+					o.m_loadid = m_loadid;
+				}
+				startThreads();
+				redraw(false);
+			}
+		}
+		else{
+			const double ZOOM_STEP=1.1;
+			if(t == TOOLBAR_INDEX::ZOOM_IN){
+				m_zoom*=ZOOM_STEP;
+			}
+			else{
+				m_zoom/=ZOOM_STEP;
+			}
+			redraw();
+		}
+		return;
+	}
+
 	i = INDEX_OF(t, TMODE);
 	if (i != -1) {
 		MODE m = MODE(i);
@@ -1074,25 +1114,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 
 	i = INDEX_OF(t, IMAGE_MODIFY);
 	if (i != -1) {
-		if (mode == MODE::LIST) {
-			if (t == LIST_ZOOM_IN || t == LIST_ZOOM_OUT) {
-				i = m_listIconHeight + (t == LIST_ZOOM_IN ? 1 : -1) * 5;
-				if (i >= MIN_ICON_HEIGHT && i <= MAX_ICON_HEIGHT) {
-					stopThreads();
-					setIconHeightWidth(i);
-					recountListParameters();
-					m_filenameFontHeight = 0;				//to recount font
-					m_loadid++;
-					for (auto &o : vp) {
-						o.free();
-						o.m_thumbnail = nullptr;
-						o.m_loadid = m_loadid;
-					}
-					startThreads();
-					redraw(false);
-				}
-			}
-		} else {
+		if (mode != MODE::LIST) {
 			if (i >= 3) {
 				flipPixbuf(m_pix, i == 3);
 			} else {

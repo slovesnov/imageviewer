@@ -125,9 +125,6 @@ enum class TOOLBAR_INDEX {
 };
 const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
 
-const TOOLBAR_INDEX LIST_ZOOM_OUT = TOOLBAR_INDEX::ROTATE_ANTICLOCKWISE; //increase size
-const TOOLBAR_INDEX LIST_ZOOM_IN = TOOLBAR_INDEX::ROTATE_180; //decrease size
-
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
 //all system constants
@@ -166,6 +163,7 @@ public:
 	VString m_language;
 	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
 	guint m_timer;
+	double m_zoom;
 	static int m_oneInstance;
 	const static bool filenameFontBold = true;
 
