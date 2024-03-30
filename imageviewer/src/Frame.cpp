@@ -395,9 +395,9 @@ void Frame::setTitle() {
 		} else {
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
-					+ getLanguageString(LANGUAGE::SCALE) + " "
+					+ getLanguageString(LANGUAGE::ZOOM) + " "
 					+ (scale == 1 || mode == MODE::NORMAL ?
-							"1" : format("%.2lf", scale)) + SEPARATOR
+							"100" : format("%.1lf", scale*100))+"%" + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
@@ -527,9 +527,11 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
 
+	const GdkRGBA BACKGROUND_COLOR = { 31./255, 31./255, 31./255, 1 };
+	const GdkRGBA WHITE_COLOR = { 1, 1, 1, 1 };
 	//1920 959
 	//printl(width,height)
-	cairo_set_source_rgb (cr, 31./255, 31./255, 31./255);
+	gdk_cairo_set_source_rgba(cr, &BACKGROUND_COLOR);
 	cairo_rectangle (cr, 0, 0, width, height);
 	cairo_fill (cr);
 
@@ -552,9 +554,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			setTitle(); //now lisx, listy counted so need to set title
 		}
 	}
-
-	const GdkRGBA BLACK_COLOR = { 0, 0, 0, 1 };
-	const GdkRGBA WHITE_COLOR = { 1, 1, 1, 1 };
 
 	if (mode == MODE::LIST) {
 		for (k = m_listTopLeftIndex, l = 0;
@@ -579,7 +578,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				drawTextToCairo(cr,
 						getLanguageString(LANGUAGE::LOADING).c_str(),
 						m_loadingFontHeight, false, i, j, m_listIconWidth,
-						m_listIconHeight, true, 2, BLACK_COLOR);
+						m_listIconHeight, true, 2, BACKGROUND_COLOR);
 			}
 		}
 
