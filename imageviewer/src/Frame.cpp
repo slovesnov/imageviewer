@@ -529,6 +529,9 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 	//1920 959
 	//printl(width,height)
+	cairo_set_source_rgb (cr, 31./255, 31./255, 31./255);
+	cairo_rectangle (cr, 0, 0, width, height);
+	cairo_fill (cr);
 
 	bool windowSizeChanged = m_lastWidth != width || m_lastHeight != height; //size of m_window is changed
 
@@ -569,7 +572,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
 
 				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
-						filenameFontHeight, filenameFontBold, i, j,
+						filenameFontHeight, filenameFontBold, i, j+1,
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			} else {
