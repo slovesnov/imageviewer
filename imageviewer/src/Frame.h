@@ -136,8 +136,8 @@ public:
 			*m_options[SIZE_OPTIONS], *m_modal;
 	int m_lastWidth, m_lastHeight;
 	int posh, posv;
-	Pixbuf pix;
-	int pw, ph, aw, ah, pws, phs;
+	Pixbuf m_pix,m_pixScaled;
+	int pw, ph, aw, ah;
 	int pi;
 	MODE mode;
 	VImage vp;
@@ -150,7 +150,8 @@ public:
 	std::atomic_int m_threadNumber;
 	int m_loadid;
 	gint m_endThreads; //already have function stopThreads
-	int m_loadingFontHeight, filenameFontHeight, m_listTopLeftIndex, totalFileSize;
+	/*int m_loadingFontHeight not show loading message because of blinking*/
+	int m_filenameFontHeight, m_listTopLeftIndex, totalFileSize;
 	int listx, listy, listdx, listdy, listxy;
 	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;

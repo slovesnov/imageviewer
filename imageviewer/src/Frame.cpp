@@ -172,7 +172,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	g_mutex_init(&m_mutex);
 
 	m_lastWidth = m_lastHeight = posh = posv = 0;
-	m_loadingFontHeight = 0;
+	m_filenameFontHeight = 0;
 
 	//begin readConfig
 	m_ascendingOrder = true;
@@ -340,6 +340,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		}
 	}
 
+//	printi
 	setTitle();
 
 	gtk_main();
@@ -393,12 +394,12 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz);
 		} else {
-			double scale=double(pws) / pw;
+//			printl(bool(m_pixScaled))
+			double scale = mode == MODE::NORMAL || !m_pixScaled ? 1:m_pixScaled.width() / double(pw);
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
-					+ (scale == 1 || mode == MODE::NORMAL ?
-							"100" : format("%.1lf", scale*100))+"%" + SEPARATOR
+					+ format("%.1lf", scale*100)+"%" + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
@@ -495,7 +496,7 @@ void Frame::loadImage() {
 		GError *err = NULL;
 		/* Create pixbuf */
 		//here full path
-		pix = gdk_pixbuf_new_from_file(vp[pi].m_path.c_str(), &err);
+		m_pix = gdk_pixbuf_new_from_file(vp[pi].m_path.c_str(), &err);
 
 		if (err) {
 			println("Error : %s", err->message);
@@ -503,8 +504,8 @@ void Frame::loadImage() {
 			setNoImage();
 			return;
 		}
-		pw = pix.width();
-		ph = pix.height();
+		pw = m_pix.width();
+		ph = m_pix.height();
 
 		updateNavigationButtonsState();
 	}
@@ -540,16 +541,15 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		recountListParameters();
 	}
 
-	if (!m_loadingFontHeight) {
-		m_loadingFontHeight = countFontMaxHeight(
-				getLanguageString(LANGUAGE::LOADING).c_str(), false, cr);
-		filenameFontHeight = countFontMaxHeight("IMG_20211004_093339",
+	if (!m_filenameFontHeight) {
+//		m_loadingFontHeight = countFontMaxHeight(
+//				getLanguageString(LANGUAGE::LOADING).c_str(), false, cr);
+		m_filenameFontHeight = countFontMaxHeight("IMG_20211004_093339",
 				filenameFontBold, cr);
 
-		//printl(fontHeight)
-		if (mode == MODE::LIST) {
-			setTitle(); //now lisx, listy counted so need to set title
-		}
+//		if (mode == MODE::LIST) {
+//			setTitle(); //now lisx, listy counted so need to set title
+//		}
 	}
 
 	if (mode == MODE::LIST) {
@@ -560,7 +560,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j = l / listx * m_listIconHeight + listdy;
 			auto &o = vp[k];
 			GdkPixbuf *p = o.m_thumbnail;
-//			printl(k,sz,bool(p),m_ascendingOrder)
 			if (p) {
 				w = gdk_pixbuf_get_width(p);
 				h = gdk_pixbuf_get_height(p);
@@ -568,24 +567,24 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
 
 				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
-						filenameFontHeight, filenameFontBold, i, j+1,
+						m_filenameFontHeight, filenameFontBold, i, j+1,
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			} else {
-				drawTextToCairo(cr,
-						getLanguageString(LANGUAGE::LOADING).c_str(),
-						m_loadingFontHeight, false, i, j, m_listIconWidth,
-						m_listIconHeight, true, 2, BACKGROUND_COLOR);
+//				drawTextToCairo(cr,
+//						getLanguageString(LANGUAGE::LOADING).c_str(),
+//						m_loadingFontHeight, false, i, j, m_listIconWidth,
+//						m_listIconHeight, true, 2, BACKGROUND_COLOR);
 			}
 		}
 
 	} else {
-		GdkPixbuf*pixs=NULL;
 		if (mode == MODE::FIT) {
-			setTitle();		//scale changed
-			pixs = scaleFit(pix, m_lastWidth, m_lastHeight, pws, phs);
-			w = pws;
-			h = phs;
+			//w, h are changed in scaleFit
+//			clock_t begin=clock();
+			m_pixScaled = scaleFit(m_pix, m_lastWidth, m_lastHeight, w, h);
+//			printl(timeElapse(begin));
+			setTitle();//scale is changed
 		} else {
 			w = pw;
 			h = ph;
@@ -604,7 +603,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			adjustPos();
 		}
 
-		copy(mode == MODE::FIT ? pixs : (GdkPixbuf*)pix, cr, destx, desty, aw, ah, posh,
+		copy(mode == MODE::FIT ? m_pixScaled : m_pix, cr, destx, desty, aw, ah, posh,
 				posv);
 	}
 
@@ -705,6 +704,7 @@ bool Frame::noImage() {
 
 void Frame::setNoImage() {
 	vp.clear();
+	printi
 	setTitle();
 
 	for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
@@ -988,7 +988,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		if (mode != m) {
 			setMode(m);
 			if (mode == MODE::LIST) {
-				//setListTopLeftIndexStartValue();
 				redraw();
 			} else {
 				drawImage();
@@ -1084,7 +1083,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					stopThreads();
 					setIconHeightWidth(i);
 					recountListParameters();
-					m_loadingFontHeight = 0;				//to recount font
+					m_filenameFontHeight = 0;				//to recount font
 					m_loadid++;
 					for (auto &o : vp) {
 						o.free();
@@ -1097,9 +1096,9 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			}
 		} else {
 			if (i >= 3) {
-				flipPixbuf(pix, i == 3);
+				flipPixbuf(m_pix, i == 3);
 			} else {
-				rotatePixbuf(pix, pw, ph, 90 * (i + 1));
+				rotatePixbuf(m_pix, pw, ph, 90 * (i + 1));
 			}
 			drawImage();
 		}
@@ -1353,6 +1352,7 @@ void Frame::setVariableImagesButtonsState() {
 
 void Frame::redraw(bool withTitle) {
 	if (withTitle) {
+//		printi
 		setTitle();
 	}
 	gtk_widget_queue_draw(m_area);
@@ -1468,6 +1468,7 @@ void Frame::optionsButtonClicked(LANGUAGE l) {
 	gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_OK);
 	if (m_languageIndex != oldLanguage) {
 		loadLanguage();
+		printi
 		setTitle();					//update title after dialog is closed
 	}
 	if (m_languageIndex != oldLanguage || m_showPopup != oldShowPopup) {
