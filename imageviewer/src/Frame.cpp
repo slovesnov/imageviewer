@@ -178,7 +178,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	//begin readConfig
 	m_ascendingOrder = true;
-	m_lastNonListMode = mode = MODE::NORMAL;
+	mode = MODE::NORMAL;
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
 	setIconHeightWidth(95);
@@ -198,7 +198,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 				}
 				ct = ENUM_CONFIG_TAGS(i);
 				if (ct == ENUM_CONFIG_TAGS::CMODE && j>=0 && j<SIZEI(TMODE)) {
-					m_lastNonListMode = mode = MODE(j);
+					mode = MODE(j);
 				} else if (ct == ENUM_CONFIG_TAGS::ORDER && j >= 0
 						&& j < 2) {
 					m_ascendingOrder = j == 1;
@@ -341,8 +341,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 Frame::~Frame() {
 	g_object_unref(m_toolbar);
-//	printl(int(mode))
-	WRITE_CONFIG(CONFIG_TAGS, (int ) mode/*m_lastNonListMode*/, m_ascendingOrder,
+	WRITE_CONFIG(CONFIG_TAGS, (int ) mode, m_ascendingOrder,
 			m_listIconHeight, m_languageIndex, m_warningBeforeDelete,
 			m_deleteOption, m_showPopup, m_oneInstance);
 	stopThreads();
@@ -1266,9 +1265,6 @@ void Frame::setButtonState(int i, bool enable) {
 void Frame::setMode(MODE m, bool start) {
 	if (mode != m || start) {
 		mode = m;
-		if (mode != MODE::LIST) {
-			m_lastNonListMode = mode;
-		}
 		int i;
 		for (i = 0; i < SIZEI(TMODE); i++) {
 			setButtonState(i + int(TOOLBAR_INDEX::MODE_ZOOM_ANY), i != int(m));

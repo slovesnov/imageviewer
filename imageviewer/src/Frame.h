@@ -162,7 +162,6 @@ public:
 	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
-	MODE m_lastNonListMode;
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
 	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
