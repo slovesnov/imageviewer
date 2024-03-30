@@ -88,7 +88,7 @@ enum class LANGUAGE {
 
 const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR };
+		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,LANGUAGE::SUPPORTED_FORMATS };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP..
@@ -141,8 +141,7 @@ public:
 	MODE mode;
 	VImage vp;
 	//lower cased allowable files extension
-	VString vLowerExtension;
-	std::string extensionString;
+	VString m_vLowerExtension,m_vExtension;
 	std::string dir;
 	guint32 lastScroll;
 	std::vector<GThread*> pThread;
@@ -159,6 +158,7 @@ public:
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
 	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
+	guint m_timer;
 	const static bool filenameFontBold = true;
 
 	Frame(GtkApplication *application, std::string const path = "");
@@ -224,7 +224,7 @@ public:
 	GtkWidget* createLanguageCombo(int n);
 	std::string getTitleVersion();
 	std::string& getLanguageString(LANGUAGE l, int add = 0);
-	GtkWidget* createTextCombo(int n, VString v, int active);
+	GtkWidget* createTextCombo(int n, VString& v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
@@ -232,6 +232,9 @@ public:
 	std::string getSizeMbKbB(double v);
 	void addMonitor(std::string& path);
 	void directoryChanged();
+	void addEvent();
+	void stopTimer(guint& t);
+	std::string getExtensionString(bool b);
 };
 
 #endif /* FRAME_H_ */

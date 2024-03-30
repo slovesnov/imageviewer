@@ -78,6 +78,7 @@ enum class ENUM_CONFIG_TAGS {
 	SHOW_POPUP
 };
 const std::string SEPARATOR = "       ";
+static const int EVENT_TIME = 1000;//milliseconds, may be problems with small timer
 
 static gpointer thumbnail_thread(gpointer data) {
 	frame->thumbnailThread(GP2INT(data));
@@ -149,10 +150,12 @@ void directory_changed (GFileMonitor     *monitor,
                GFile            *other_file,
                GFileMonitorEvent event_type,
                gpointer          user_data){
-	if (oneOf(event_type, G_FILE_MONITOR_EVENT_DELETED,
-			G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)) {
-		frame->directoryChanged();
-	}
+	frame->addEvent();
+}
+
+static gboolean timer_animation_handler(gpointer data) {
+	frame->directoryChanged();
+	return G_SOURCE_REMOVE;
 }
 
 Frame::Frame(GtkApplication *application, std::string const path) {
@@ -161,6 +164,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	int i, j;
 	ENUM_CONFIG_TAGS ct;
 	m_loadid = -1;
+	m_timer=0;
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
 	pThread.resize(getNumberOfCores());
@@ -244,14 +248,12 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		pf = (GdkPixbufFormat*) elem->data;
 		//p = gdk_pixbuf_format_get_name(pf);
 		extension_list = gdk_pixbuf_format_get_extensions(pf);
+
 		for (i = 0; (c = extension_list[i]) != 0; i++) {
 			if (i == 0) {
-				if (!extensionString.empty()) {
-					extensionString += ' ';
-				}
-				extensionString += c;
+				m_vExtension.push_back(c);
 			}
-			vLowerExtension.push_back(c);
+			m_vLowerExtension.push_back(c);
 		}
 		g_strfreev(extension_list);
 
@@ -296,6 +298,9 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
 
 	gtk_container_add(GTK_CONTAINER(m_window), m_box);
+
+	//set min size
+	gtk_widget_set_size_request(m_window, 800, 600);
 
 	gtk_window_maximize(GTK_WINDOW(m_window));
 	gtk_widget_show_all(m_window);
@@ -419,8 +424,9 @@ void Frame::load(const std::string &p, int index, bool start) {
 	std::string s;
 	GDir *di;
 	const gchar *filename;
-
+//	printi
 	stopThreads(); //endThreads=0 after
+//	printi
 	m_loadid++;
 	vp.clear();
 	const bool d = isDir(p);
@@ -708,7 +714,7 @@ void Frame::setNoImage() {
 }
 
 bool Frame::isSupportedImage(const std::string &p) {
-	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION), vLowerExtension);
+	return oneOf(getFileInfo(p, FILEINFO::LOWER_EXTENSION), m_vLowerExtension);
 }
 
 void Frame::adjustPos() {
@@ -1128,12 +1134,14 @@ void Frame::showSettings() {
 		auto e = OPTIONS[i];
 		if (e == LANGUAGE::LANGUAGE) {
 			w = createLanguageCombo(i);
+			gtk_widget_set_halign (w,GTK_ALIGN_START);//not stretch
 		} else if (e == LANGUAGE::REMOVE_FILE_OPTION) {
 			for (auto e : { LANGUAGE::REMOVE_FILES_TO_RECYCLE_BIN,
 					LANGUAGE::REMOVE_FILES_PERMANENTLY }) {
 				v.push_back(getLanguageString(e));
 			}
 			w = createTextCombo(i, v, 0);
+			gtk_widget_set_halign (w,GTK_ALIGN_START);//not stretch
 		} else if (e == LANGUAGE::ASK_BEFORE_DELETING_A_FILE
 				|| e == LANGUAGE::SHOW_POPUP_TIPS) {
 			w = m_options[i] = gtk_check_button_new();
@@ -1141,21 +1149,20 @@ void Frame::showSettings() {
 			s=getLanguageString(e, 1);
 			w = gtk_label_new(NULL);
 			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
-					s.c_str(), LNG_LONG[m_languageIndex].c_str(),s.c_str(), LNG_LONG[m_languageIndex].c_str());
+					s.c_str(), LNG_LONG[m_languageIndex].c_str(),s.substr(s.find("slo")).c_str(), LNG_LONG[m_languageIndex].c_str());
 			gtk_label_set_markup(GTK_LABEL(w), markup);
 			g_free(markup);
 			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
 					gpointer(s.c_str()));
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
+		}else if(e==LANGUAGE::SUPPORTED_FORMATS){
+			w=gtk_label_new(getExtensionString(true).c_str());
 		} else {
 			w = gtk_label_new(getLanguageString(e, 1).c_str());
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
 		}
 		gtk_grid_attach(GTK_GRID(grid), w, 1, i, 1, 1);
 	}
-	s =  getLanguageString(LANGUAGE::SUPPORTED_FORMATS) + " "
-			+ extensionString;
-	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i++, 2, 1);
 
 	s = getBuildVersionString(false) + ", "
 			+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
@@ -1167,7 +1174,7 @@ void Frame::showSettings() {
 void Frame::showHelp() {
 	auto s = getLanguageString(LANGUAGE::HELP) + "\n"
 			+ getLanguageString(LANGUAGE::SUPPORTED_FORMATS) + " "
-			+ extensionString;
+			+ getExtensionString(false);
 	auto l = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(l), s.c_str());
 	showModalDialog(l, 0);
@@ -1430,7 +1437,7 @@ std::string& Frame::getLanguageString(LANGUAGE l, int add) {
 	return m_language[int(l) + add];
 }
 
-GtkWidget* Frame::createTextCombo(int n, VString v, int active) {
+GtkWidget* Frame::createTextCombo(int n, VString& v, int active) {
 	GtkWidget *w = m_options[n] = gtk_combo_box_text_new();
 	for (auto &a : v) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(w), a.c_str());
@@ -1555,9 +1562,40 @@ void Frame::addMonitor(std::string& path) {
 					 G_CALLBACK (directory_changed),
 					 NULL, G_CONNECT_AFTER);
 	}
-
 }
 
 void Frame::directoryChanged() {
+	m_timer=0;
 	load(dir);
+}
+
+void Frame::addEvent() {
+	//if delete several files then got many delete events, the same if copy file to folder so just proceed last signal
+	stopTimer(m_timer);
+	m_timer=g_timeout_add(EVENT_TIME, timer_animation_handler, gpointer(0));
+}
+
+void Frame::stopTimer(guint& t){
+	if(t){
+		g_source_remove(t);
+		t=0;
+	}
+}
+
+std::string Frame::getExtensionString(bool b) {
+	if(b){
+		int sz=m_vExtension.size(),i=0;
+		std::string s;
+		for(auto& e:m_vExtension){
+			if(i){
+				s+=i==sz/2?'\n':' ';
+			}
+			s+=e;
+			i++;
+		}
+		return s;
+	}
+	else{
+		return joinV(m_vExtension, ' ');
+	}
 }
