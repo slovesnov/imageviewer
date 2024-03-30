@@ -144,6 +144,17 @@ static gboolean label_clicked(GtkWidget *label, const gchar *uri, gpointer) {
 	return TRUE;
 }
 
+void directory_changed (GFileMonitor     *monitor,
+               GFile            *file,
+               GFile            *other_file,
+               GFileMonitorEvent event_type,
+               gpointer          user_data){
+	if (oneOf(event_type, G_FILE_MONITOR_EVENT_DELETED,
+			G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)) {
+		frame->directoryChanged();
+	}
+}
+
 Frame::Frame(GtkApplication *application, std::string const path) {
 	frame = this;
 
@@ -372,19 +383,12 @@ void Frame::setTitle() {
 					m_ascendingOrder ?
 							MIN(m_listTopLeftIndex + listxy, sz) :
 							MAX(m_listTopLeftIndex + 2 - listxy, 1), sz)
-					+ SEPARATOR + format("total %.2lfMb avg ", ts);
-			double avg = ts / sz; //mb
-			const std::string P[] = { "Mb", "Kb", "b" };
-			for (i = 0; i < 3; i++, avg *= 1024) {
-				s = format("%.2lf", avg);
-				if (s != "0.00" || i == 2) {
-					t += s + P[i];
-					break;
-				}
-			}
+					+ SEPARATOR + getLanguageString(LANGUAGE::TOTAL)
+					+ " "+getSizeMbKbB(ts) + ", "
+					+ getLanguageString(LANGUAGE::AVERAGE) + " "+getSizeMbKbB(ts/sz);
 		} else {
 			const std::string n = getFileInfo(vp[pi].m_path, FILEINFO::NAME);
-			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + getLanguageString(LANGUAGE::SCALE)
+			t += n + SEPARATOR + format("%dx%d", pw, ph) + SEPARATOR + getLanguageString(LANGUAGE::SCALE)+" "
 					+ (scale == 1 || mode == MODE::NORMAL ?
 							"1" : format("%.2lf", scale)) + SEPARATOR
 					+ format("%d/%d", pi + 1, size());
@@ -442,6 +446,8 @@ void Frame::load(const std::string &p, int index, bool start) {
 			}
 		}
 	}
+
+	addMonitor(dir);
 
 	recountListParameters();
 
@@ -1047,21 +1053,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			if (sz == 0) {
 				setNoImage();
 			} else {
-				adjust(m_listTopLeftIndex,0,sz-1);
-				adjust(pi,0,sz-1);
-//				if (m_listTopLeftIndex >= sz) {
-//					m_listTopLeftIndex = sz - 1;
-//				}
-//
-//				if(m_ascendingOrder){
-//					if (pi == sz) { //cann't call size() here because vp.size() is changed after erase()
-//						pi = 0;
-//					}
-//				}
-//				else{
-//					//TODO bookmark
-//					pi = pi == 0 ? sz - 1 : pi - 1;
-//				}
+				adjust(m_listTopLeftIndex, 0, sz - 1);
+				adjust(pi, 0, sz - 1);
 				recountListParameters();
 				loadImage();
 
@@ -1541,3 +1534,30 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 	return s;
 }
 
+std::string Frame::getSizeMbKbB(double v){
+	std::string s;
+	for (int i = 0; i < 3; i++, v *= 1024) {
+		s = format("%.2lf", v);
+		if (s != "0.00" || i == 2) {
+			return s + getLanguageString(LANGUAGE::MEGABYTES,i);
+		}
+	}
+	return "";
+}
+
+void Frame::addMonitor(std::string& path) {
+	GFileMonitor *monitor;
+	GFile *directory = g_file_new_for_path (path.c_str());
+	monitor = g_file_monitor_directory (directory, G_FILE_MONITOR_SEND_MOVED, NULL, NULL);
+	if (monitor != NULL) {
+		g_signal_connect_object (G_OBJECT (monitor),
+					 "changed",
+					 G_CALLBACK (directory_changed),
+					 NULL, G_CONNECT_AFTER);
+	}
+
+}
+
+void Frame::directoryChanged() {
+	load(dir);
+}

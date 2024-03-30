@@ -58,6 +58,11 @@ enum class LANGUAGE {
 	QUESTION,
 	DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE,
 	SCALE,
+	MEGABYTES,
+	KILOBYTES,
+	BYTES,
+	AVERAGE,
+	TOTAL,
 	LTOOLTIP1,
 	LTOOLTIP2,
 	LTOOLTIP3,
@@ -224,6 +229,9 @@ public:
 	void updateOptions();
 	void setPopups();
 	std::string filechooser(GtkWidget *parent, const std::string &dir);
+	std::string getSizeMbKbB(double v);
+	void addMonitor(std::string& path);
+	void directoryChanged();
 };
 
 #endif /* FRAME_H_ */

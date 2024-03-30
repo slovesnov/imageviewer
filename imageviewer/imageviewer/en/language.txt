@@ -36,6 +36,11 @@ select
 question
 Do you really want to delete the image?
 scale
+Mb
+Kb
+b
+average
+total
 image size 100%
 fit the image to the window size
 images list
