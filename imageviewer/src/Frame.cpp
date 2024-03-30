@@ -276,9 +276,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	i = 0;
 	for (auto a : TOOLBAR_IMAGES) {
 		auto b = m_button[i] = gtk_button_new();
-
 		buttonPixbuf[i][1] = pixbuf(a);
-
 		buttonPixbuf[i][0] = gdk_pixbuf_copy(buttonPixbuf[i][1]);
 		gdk_pixbuf_saturate_and_pixelate(buttonPixbuf[i][1], buttonPixbuf[i][0],
 				.3f, false);
@@ -1158,6 +1156,11 @@ void Frame::showSettings() {
 				LANGUAGE::SHOW_POPUP_TIPS,
 				LANGUAGE::ONE_APPLICATION_INSTANCE)) {
 			w = m_options[i] = gtk_check_button_new();
+			if(e==LANGUAGE::ONE_APPLICATION_INSTANCE){
+				w= gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+				gtk_container_add(GTK_CONTAINER(w), m_options[i]);
+				gtk_container_add(GTK_CONTAINER(w),gtk_label_new(getLanguageString(LANGUAGE::REQUIRES_RESTARTING).c_str()));
+			}
 		} else if (e == LANGUAGE::HOMEPAGE) {
 			s = getLanguageString(e, 1);
 			w = gtk_label_new(NULL);
