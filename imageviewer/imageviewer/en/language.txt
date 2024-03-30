@@ -42,6 +42,7 @@ b
 average
 total
 run a single instance of the application
+application restart required
 image size 100%
 fit the image to the window size
 images list
