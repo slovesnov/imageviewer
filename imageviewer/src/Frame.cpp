@@ -1448,9 +1448,6 @@ std::string Frame::getTitleVersion() {
 }
 
 std::string& Frame::getLanguageString(LANGUAGE l, int add) {
-//	if(int(l) + add>=m_language.size()){
-//		printi;
-//	}
 	return m_language[int(l) + add];
 }
 
