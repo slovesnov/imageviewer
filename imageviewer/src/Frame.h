@@ -233,10 +233,9 @@ public:
 	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
 	void setIconHeightWidth(int height);
 	void loadLanguage();
-	GtkWidget* createLanguageCombo(int n);
 	std::string getTitleVersion();
 	std::string& getLanguageString(LANGUAGE l, int add = 0);
-	GtkWidget* createTextCombo(int n, VString &v, int active);
+	GtkWidget* createTextCombo(VString &v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
@@ -244,11 +243,12 @@ public:
 	std::string getSizeMbKbB(double v);
 	void addMonitor(std::string &path);
 	void directoryChanged();
-	void addEvent();
+	void directoryChangedAddEvent();
 	void stopTimer(guint &t);
 	std::string getExtensionString(bool b);
 	static bool isOneInstanceOnly();
 	void setDefaultZoom();
+	GtkWidget* createLanguageCombo();
 };
 
 #endif /* FRAME_H_ */

@@ -89,6 +89,11 @@ enum class ENUM_CONFIG_TAGS {
 	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	LAST_OPEN_DIRECTORY, //not show in options
 };
+
+enum {
+	PIXBUF_COL, TEXT_COL
+};
+
 const std::string SEPARATOR = "       ";
 static const int EVENT_TIME = 1000; //milliseconds, may be problems with small timer
 int Frame::m_oneInstance;
@@ -160,10 +165,10 @@ static gboolean label_clicked(GtkWidget *label, const gchar *uri, gpointer) {
 
 void directory_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
 		GFileMonitorEvent event_type, gpointer user_data) {
-	frame->addEvent();
+	frame->directoryChangedAddEvent();
 }
 
-static gboolean timer_animation_handler(gpointer data) {
+static gboolean directory_changed_timer(gpointer data) {
 	frame->directoryChanged();
 	return G_SOURCE_REMOVE;
 }
@@ -271,6 +276,10 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	}
 	g_slist_free(formats);
+	//alphabet order
+	std::sort(m_vExtension.begin(),m_vExtension.end());
+
+	loadCSS();
 
 	m_window = gtk_application_window_new(GTK_APPLICATION(application));
 	m_area = gtk_drawing_area_new();
@@ -1009,15 +1018,18 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
 
 			//this code leave center point in center after zoom (first part)
-			int x,y;
-			x=(m_aw/2+m_posh)/m_zoom;
-			y=(m_ah/2+m_posv)/m_zoom;
+//			int x,y;
+//			x=(m_aw/2+m_posh)/m_zoom;
+//			y=(m_ah/2+m_posv)/m_zoom;
 
 			m_zoom *=k;
 
 			//this code leave center point in center after zoom (second part)
-			m_posh=x*m_zoom-m_aw/2;
-			m_posv=y*m_zoom-m_ah/2;
+//			m_posh=x*m_zoom-m_aw/2;
+//			m_posv=y*m_zoom-m_ah/2;
+
+			m_posh=(m_aw/2+m_posh)*k-m_aw/2;
+			m_posv=(m_ah/2+m_posv)*k-m_ah/2;
 
 			redraw();
 		}
@@ -1158,14 +1170,14 @@ void Frame::showSettings() {
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
 		auto e = OPTIONS[i];
 		if (e == LANGUAGE::LANGUAGE) {
-			w = createLanguageCombo(i);
+			w = m_options[i]=createLanguageCombo();
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::REMOVE_FILE_OPTION) {
 			for (auto e : { LANGUAGE::REMOVE_FILES_TO_RECYCLE_BIN,
 					LANGUAGE::REMOVE_FILES_PERMANENTLY }) {
 				v.push_back(getLanguageString(e));
 			}
-			w = createTextCombo(i, v, 0);
+			w = m_options[i]= createTextCombo(v, 0);
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::HOMEPAGE) {
 			s = getLanguageString(e, 1);
@@ -1418,27 +1430,6 @@ void Frame::loadLanguage() {
 	m_language.push_back(s1);
 }
 
-GtkWidget* Frame::createLanguageCombo(int n) {
-	int i;
-	GtkTreeIter iter;
-	GtkCellRenderer *renderer;
-	const char *image[] = { "en.gif", "ru.gif" };
-
-	GtkListStore *gls = gtk_list_store_new(1, GDK_TYPE_PIXBUF);
-	for (i = 0; i < 2; i++) {
-		gtk_list_store_append(gls, &iter);
-		gtk_list_store_set(gls, &iter, 0, pixbuf(image[i]), -1);
-	}
-	auto w = m_options[n] = gtk_combo_box_new_with_model(GTK_TREE_MODEL(gls));
-	renderer = gtk_cell_renderer_pixbuf_new();
-	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer,
-	TRUE);
-	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer, "pixbuf", 0,
-	NULL);
-	gtk_combo_box_set_active(GTK_COMBO_BOX(w), m_languageIndex);
-	return w;
-}
-
 std::string Frame::getTitleVersion() {
 	return getLanguageString(LANGUAGE::IMAGE_VIEWER) + " "
 			+ getLanguageString(LANGUAGE::VERSION)
@@ -1449,8 +1440,8 @@ std::string& Frame::getLanguageString(LANGUAGE l, int add) {
 	return m_language[int(l) + add];
 }
 
-GtkWidget* Frame::createTextCombo(int n, VString &v, int active) {
-	GtkWidget *w = m_options[n] = gtk_combo_box_text_new();
+GtkWidget* Frame::createTextCombo(VString &v, int active) {
+	GtkWidget *w  = gtk_combo_box_text_new();
 	for (auto &a : v) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(w), a.c_str());
 	}
@@ -1580,10 +1571,10 @@ void Frame::directoryChanged() {
 	load(m_dir);
 }
 
-void Frame::addEvent() {
+void Frame::directoryChangedAddEvent() {
 	//if delete several files then got many delete events, the same if copy file to folder so just proceed last signal
 	stopTimer(m_timer);
-	m_timer = g_timeout_add(EVENT_TIME, timer_animation_handler, gpointer(0));
+	m_timer = g_timeout_add(EVENT_TIME, directory_changed_timer, gpointer(0));
 }
 
 void Frame::stopTimer(guint &t) {
@@ -1633,7 +1624,31 @@ void Frame::setDefaultZoom() {
 		m_zoom = 1;
 	} else if (m_mode == MODE::FIT) {
 		m_zoom = MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
-		//m_zoom=MIN(double(m_pw)/m_lastWidth,double(m_ph)/m_lastHeight);
-//		printl(m_zoom)
 	}
+}
+
+GtkWidget* Frame::createLanguageCombo() {
+	GdkPixbuf *pb;
+	GtkTreeIter iter;
+	GtkTreeStore *store;
+	guint i;
+	store = gtk_tree_store_new(2, GDK_TYPE_PIXBUF, G_TYPE_STRING);
+	for (i = 0; i < SIZE(LNG); i++) {
+		pb = pixbuf((LNG[i] + ".gif").c_str());
+		gtk_tree_store_append(store, &iter, NULL);
+		gtk_tree_store_set(store, &iter, PIXBUF_COL, pb, TEXT_COL,
+				(" " + LNG_LONG[i]).c_str(), -1);
+		g_object_unref(pb);
+	}
+
+	auto w=gtk_combo_box_new_with_model(GTK_TREE_MODEL(store));
+	auto renderer = gtk_cell_renderer_pixbuf_new();
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer, FALSE);
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer,
+			"pixbuf", PIXBUF_COL, NULL);
+	renderer = gtk_cell_renderer_text_new();
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer, FALSE);
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer, "text",
+			TEXT_COL, NULL);
+	return w;
 }

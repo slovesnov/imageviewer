@@ -1,0 +1,12 @@
+dialog {
+	background-image: url('imageviewer/images/bg0.jpg');
+}
+
+dialog label link {
+	color: #2a76c6;
+}
+
+label,
+combobox {
+	font-size: 12pt;
+}

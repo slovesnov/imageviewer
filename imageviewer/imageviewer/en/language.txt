@@ -43,12 +43,12 @@ average
 total
 run a single instance of the application
 application restart required
-zoom in (+ key)
-zoom out (- key)
+zoom in
+zoom out
 image size any
 image size 100%
 fit the image to the window size
-images list (L key)
+images list
 rotate by 90°
 rotate by 180°
 rotate by 90°
@@ -66,11 +66,11 @@ change file order
 fullscreen
 settings
 help
-Drag &amp; drop file to view directory which includes dropped file, starts from dropped file if file is supported.
-If dropped file isn't supported then viewer starts from 1st supported image. One can drop directory to view it.
+Drag and drop a file to browse the directory that includes the file. If the file is unsupported, 
+browsing starts from the first supported image. You can also drag and drop catalogs.
 <i>Shortcuts list.</i>
 <b>+</b>, <b>-</b> for <i>list mode</i> increase/decrease icons size otherwise increase/decrease zoom 
-<b>0</b>, <b>1</b>, <b>2</b>, (<b>3</b> or <b>L</b>) - switch to <i>mode any</i>, <i>mode 1:1</i>, <i>mode fit window</i>, <i>list mode</i> respectively
+<b>0</b>, <b>1</b>, <b>2</b>, (<b>3</b> or <b>L</b>) - switch to mode any, 1:1, fit window or list respectively
 <b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90&#176;, 180&#176;, 270&#176;
 <b>H</b>, <b>V</b> - flip image horizontally or vertically
 <b>arrow right</b> or <b>KP_6</b> / <b>arrow left</b> or <b>KP_4</b> {
@@ -82,9 +82,8 @@ If dropped file isn't supported then viewer starts from 1st supported image. One
 	FIT/NORMAL MODES +/-sqrt (number of images in directory)
 }
 <b>Home</b> or <b>KP_7</b> / <b>End</b> or <b>KP_1</b> go to first/last image in directory
-<b>mouse right button</b> or <b>O</b> { 
-	open file/folder, use <i>select</i> button in dialog to open file or folder, <i>open</i> button works only with files
-}
+<b>mouse right button</b> or <b>O</b> - open file/folder, use <i>select</i> button in 
+dialog to open file or folder, <i>open</i> button works only with files
 <b>horizontal/vertical mouse scrolling</b> - scrolling an image or list
 <b>Delete</b> or <b>KP_Decimal</b> remove current image for non list mode
 <b>F11</b> or <b>F</b> or <b>Escape</b> switch full screen mode
