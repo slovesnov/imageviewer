@@ -23,12 +23,8 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 		bool centerx, int oy,const GdkRGBA&color,bool blackBackground=false);
 
 void adjust(int &v, int min,int max = INT_MAX);
-
-GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
-		int &w, int &h);
-
+GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH);
 bool deleteFileToRecycleBin(const std::string& path);
-
 FILE* open(int i, std::string s);
 
 #endif /* HELP_H_ */

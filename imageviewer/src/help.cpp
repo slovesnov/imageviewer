@@ -19,8 +19,8 @@ void adjust(int &v, int min,int max /*= INT_MAX*/) {
 	}
 }
 
-GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH,
-		int &w, int &h) {
+GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH) {
+	int w,h;
 	int pw = gdk_pixbuf_get_width(src);
 	int ph = gdk_pixbuf_get_height(src);
 	if (pw <= destW && ph <= destH) { //image smaller than screen

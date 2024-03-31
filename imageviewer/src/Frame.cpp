@@ -628,17 +628,18 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 	bool v[] = { k == GDK_KEY_KP_Add || k == GDK_KEY_equal, k
 			== GDK_KEY_KP_Subtract || k == GDK_KEY_minus
 
-	, hwkey == '1', hwkey == '2', hwkey == '3', hwkey == 'L', hwkey == 'E',
-			hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
+	, hwkey == '0', hwkey == '1', hwkey == '2', hwkey == 'L'
 
-			, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7), oneOf(k, GDK_KEY_Page_Up,
-					GDK_KEY_KP_9), oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4), oneOf(
-					k, GDK_KEY_Right, GDK_KEY_KP_6), oneOf(k, GDK_KEY_Page_Down,
-					GDK_KEY_KP_3), oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
+	, hwkey == 'E', hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
 
-			//english and russian keyboard layout (& caps lock)
-					, hwkey == 'O', oneOf(k, GDK_KEY_Delete,
-					GDK_KEY_KP_Decimal), false,		//no hotkey for order
+	, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7), oneOf(k, GDK_KEY_Page_Up,
+	GDK_KEY_KP_9), oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4), oneOf(k, GDK_KEY_Right,
+			GDK_KEY_KP_6), oneOf(k, GDK_KEY_Page_Down,
+	GDK_KEY_KP_3), oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
+
+	//english and russian keyboard layout (& caps lock)
+			, hwkey == 'O', oneOf(k, GDK_KEY_Delete,
+	GDK_KEY_KP_Decimal), false,		//no hotkey for order
 			hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape), false, hwkey
 					== 'H' || k == GDK_KEY_F1 };
 
@@ -787,7 +788,7 @@ void Frame::startThreads() {
 }
 
 void Frame::thumbnailThread(int n) {
-	int w, h, v, max = 0;
+	int v, max = 0;
 	Pixbuf p;
 
 //#define SHOW_THREAD_TIME
@@ -818,8 +819,7 @@ void Frame::thumbnailThread(int n) {
 		if (!o.m_thumbnail) {
 			//full path
 			p = o.m_path;
-			o.m_thumbnail = scaleFit(p, m_listIconWidth, m_listIconHeight, w,
-					h);
+			o.m_thumbnail = scaleFit(p, m_listIconWidth, m_listIconHeight);
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
