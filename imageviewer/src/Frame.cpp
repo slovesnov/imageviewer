@@ -592,24 +592,43 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 
 		adjustPos();
 
-//		printl(destx, desty, aw, ah, m_posh,
-//				m_posv)
-
 		copy(m_pixScaled, cr, destx, desty, m_aw, m_ah, m_posh, m_posv);
+
+//		int x,y;
+//		x=(m_aw/2+m_posh)/m_zoom;
+//		y=(m_ah/2+m_posv)/m_zoom;
+//		copy(m_pix, cr, B, 0, A, A, x-A/2, y-A/2);
+
 	}
 
-	/*
-	 GdkRectangle r={0,0,width,height};
-	 gdk_cairo_get_clip_rectangle(cr,&r);
-	 double ko=(double(r.height)/r.width);
-	 cairo_translate(cr, r.x+r.width/2, r.y+r.height/2);
-	 cairo_scale(cr, 1, ko);
-	 gdk_cairo_set_source_rgba(cr, &RED_COLOR);
-	 cairo_set_line_width(cr, 3);
-	 cairo_move_to(cr,r.width/2,0);//angle 0
-	 cairo_arc(cr, 0, 0, r.width/2, 0, 2 * G_PI);
-	 cairo_stroke_preserve(cr);
-	 */
+/*
+ 	const int A=200;
+	const int B=1920/2-A/2;
+
+	const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
+	GdkRectangle r = { 0, 0, width, height };
+	gdk_cairo_get_clip_rectangle(cr, &r);
+	gdk_cairo_set_source_rgba(cr, &RED_COLOR);
+
+	cairo_arc(cr, A/2, A/2, 6, 0, 2*G_PI);
+	cairo_fill(cr);
+
+	cairo_arc(cr, B+A/2, A/2, 6, 0, 2*G_PI);
+	cairo_fill(cr);
+
+	cairo_translate(cr, r.x + r.width / 2, r.y + r.height / 2);
+	cairo_arc(cr, 0, 0, 6, 0, 2*G_PI);
+	cairo_fill(cr);
+
+//	double ko = (double(r.height) / r.width);
+//	cairo_scale(cr, 1, ko);
+//	cairo_set_line_width(cr, 3);
+//	cairo_move_to(cr, r.width / 2, 0); //angle 0
+//	cairo_arc(cr, 0, 0, r.width / 2, 0, 2 * G_PI);
+//	cairo_stroke_preserve(cr);
+
+*/
+
 }
 
 void Frame::drawImage() {
@@ -986,10 +1005,20 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			}
 		} else {
 			const double ZOOM_MULTIPLIER = 1.1;
-			m_zoom *=
-					t == TOOLBAR_INDEX::ZOOM_IN ?
-							ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
-			//TODO
+			const double k=t == TOOLBAR_INDEX::ZOOM_IN ?
+					ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
+
+			//this code leave center point in center after zoom (first part)
+			int x,y;
+			x=(m_aw/2+m_posh)/m_zoom;
+			y=(m_ah/2+m_posv)/m_zoom;
+
+			m_zoom *=k;
+
+			//this code leave center point in center after zoom (second part)
+			m_posh=x*m_zoom-m_aw/2;
+			m_posv=y*m_zoom-m_ah/2;
+
 			redraw();
 		}
 		return;
@@ -1095,7 +1124,11 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			if (i >= 3) {
 				flipPixbuf(m_pix, i == 3);
 			} else {
-				rotatePixbuf(m_pix, m_pw, m_ph, 90 * (i + 1));
+				int a=90 * (i + 1);
+				rotatePixbuf(m_pix, m_pw, m_ph, a);
+				if(a!=180 && m_mode!=MODE::ANY){//rescale after rotate
+					setDefaultZoom();
+				}
 			}
 			drawImage();
 		}

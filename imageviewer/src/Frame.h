@@ -141,7 +141,12 @@ public:
 			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE_OPTIONS], *m_modal;
 	int m_lastWidth, m_lastHeight;
 	Pixbuf m_pix, m_pixScaled;
-	int m_posh, m_posv, m_pw, m_ph, m_aw, m_ah, m_pi;//m_pw,m_ph-image width & height
+	/*
+	 * m_pw, m_ph - image width, height
+	 * m_posh, m_posv - source image copy x,y
+	 * m_aw, m_ah - image copy width, height
+	 */
+	int m_pw, m_ph, m_posh, m_posv, m_aw, m_ah, m_pi;
 	MODE m_mode, m_lastNonListMode; //m_lastNonListMode need when user click on image
 	VImage m_vp;
 	//lower cased allowable files extension
