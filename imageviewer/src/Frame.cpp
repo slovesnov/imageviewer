@@ -610,7 +610,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	 cairo_arc(cr, 0, 0, r.width/2, 0, 2 * G_PI);
 	 cairo_stroke_preserve(cr);
 	 */
-
 }
 
 void Frame::drawImage() {
@@ -990,6 +989,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			m_zoom *=
 					t == TOOLBAR_INDEX::ZOOM_IN ?
 							ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
+			//TODO
 			redraw();
 		}
 		return;

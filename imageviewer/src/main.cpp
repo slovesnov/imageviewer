@@ -8,11 +8,7 @@
  *         Homepage: slovesnov.users.sourceforge.net
  */
 
-/* TODO
- *
- * redraw only part in showThumbnail()
- * scroll mouse list multiplier, delay time
- *
+/*
  * run configurations
  * c:\downloads\fatcow-hosting-icons-3000\32x32\alitalk.png
  * c:\slovesno\2\IMG_20200728_173825_279.jpg
