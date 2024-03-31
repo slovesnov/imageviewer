@@ -660,13 +660,13 @@ void Frame::setDragDrop(GtkWidget *widget) {
 
 void Frame::scroll(GdkEventScroll *event) {
 	//printl(event->delta_x,event->delta_y,event->time,event->type)
-	auto x = event->delta_x * WHEEL_MULTIPLIER;
-	auto y = event->delta_y * WHEEL_MULTIPLIER;
+	auto dx = event->delta_x * WHEEL_MULTIPLIER;
+	auto dy = event->delta_y * WHEEL_MULTIPLIER;
 
 	if (m_mode == MODE::LIST) {
 		scrollList(event->delta_y * 50);
-	} else if (x != 0 || y != 0) {
-		setPosRedraw(x, y, event->time);
+	} else if (dx != 0 || dy != 0) {
+		setPosRedraw(dx, dy, event->time);
 	}
 }
 
@@ -706,8 +706,8 @@ bool Frame::isSupportedImage(const std::string &p) {
 }
 
 void Frame::adjustPos() {
-	adjust(m_posh, 0, m_pw - m_aw);
-	adjust(m_posv, 0, m_ph - m_ah);
+	adjust(m_posh, 0, m_pw*m_zoom - m_aw);
+	adjust(m_posv, 0, m_ph*m_zoom - m_ah);
 }
 
 void Frame::openDirectory() {
