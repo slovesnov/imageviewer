@@ -91,17 +91,11 @@ enum class LANGUAGE {
 	HELP
 };
 
-const LANGUAGE OPTIONS[] = {
-		LANGUAGE::LANGUAGE,
-		LANGUAGE::ASK_BEFORE_DELETING_A_FILE,
-		LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::SHOW_POPUP_TIPS,
-		LANGUAGE::ONE_APPLICATION_INSTANCE,
-		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,
-		LANGUAGE::HOMEPAGE,
-		LANGUAGE::AUTHOR,
-		LANGUAGE::SUPPORTED_FORMATS
-};
+const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
+		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
+		LANGUAGE::SHOW_POPUP_TIPS, LANGUAGE::ONE_APPLICATION_INSTANCE,
+		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY, LANGUAGE::HOMEPAGE,
+		LANGUAGE::AUTHOR, LANGUAGE::SUPPORTED_FORMATS };
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
@@ -143,33 +137,31 @@ const double IMAGE_VIEWER_VERSION = 1.0;
 
 class Frame {
 public:
-	GtkWidget *m_window, *m_area, *m_box, *m_toolbar, *m_button[TOOLBAR_INDEX_SIZE],
-			*m_options[SIZE_OPTIONS], *m_modal;
+	GtkWidget *m_window, *m_area, *m_box, *m_toolbar,
+			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE_OPTIONS], *m_modal;
 	int m_lastWidth, m_lastHeight;
-	int posh, posv;
-	Pixbuf m_pix,m_pixScaled;
-	int pw, ph, aw, ah;
-	int pi;
-	MODE m_mode;
-	VImage vp;
+	Pixbuf m_pix, m_pixScaled;
+	int m_posh, m_posv, m_pw, m_ph, m_aw, m_ah, m_pi;//m_pw,m_ph-image width & height
+	MODE m_mode, m_lastNonListMode; //m_lastNonListMode need when user click on image
+	VImage m_vp;
 	//lower cased allowable files extension
-	VString m_vLowerExtension,m_vExtension;
-	std::string dir;
-	guint32 lastScroll;
-	std::vector<GThread*> pThread;
+	VString m_vLowerExtension, m_vExtension;
+	std::string m_dir;
+	guint32 m_lastScroll;
+	std::vector<GThread*> m_pThread;
 	GMutex m_mutex;
 	std::atomic_int m_threadNumber;
 	int m_loadid;
 	gint m_endThreads; //already have function stopThreads
-	/*int m_loadingFontHeight not show loading message because of blinking*/
 	int m_filenameFontHeight, m_listTopLeftIndex, totalFileSize;
-	int listx, listy, listdx, listdy, listxy;
-	Pixbuf buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
+	int m_listx, m_listy, m_listdx, m_listdy, m_listxy;
+	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
-	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup,m_rememberLastOpenDirectory;
+	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup,
+			m_rememberLastOpenDirectory;
 	guint m_timer;
 	double m_zoom;
 	std::vector<int*> m_optionsPointer;
@@ -201,7 +193,7 @@ public:
 	void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
 	void flipPixbuf(Pixbuf &p, bool horizontal);
 
-	int showConfirmation(const std::string& text);
+	int showConfirmation(const std::string &text);
 	void startThreads();
 	void thumbnailThread(int n);
 	void stopThreads();
@@ -239,18 +231,19 @@ public:
 	GtkWidget* createLanguageCombo(int n);
 	std::string getTitleVersion();
 	std::string& getLanguageString(LANGUAGE l, int add = 0);
-	GtkWidget* createTextCombo(int n, VString& v, int active);
+	GtkWidget* createTextCombo(int n, VString &v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
 	std::string filechooser(GtkWidget *parent, const std::string &dir);
 	std::string getSizeMbKbB(double v);
-	void addMonitor(std::string& path);
+	void addMonitor(std::string &path);
 	void directoryChanged();
 	void addEvent();
-	void stopTimer(guint& t);
+	void stopTimer(guint &t);
 	std::string getExtensionString(bool b);
 	static bool isOneInstanceOnly();
+	void setDefaultZoom();
 };
 
 #endif /* FRAME_H_ */
