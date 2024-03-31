@@ -11,6 +11,7 @@ homepage
 https://slovesnov.users.sf.net?imageviewer
 author email
 aleksey slovesnov slovesnov@yandex.ru
+remember the last open directory
 version
 yes
 no

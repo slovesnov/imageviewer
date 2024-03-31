@@ -1,0 +1,4 @@
+support drag & drop files/folders
+monitor directory while view (can add/remove/rename files in current dir)
+allow delete files
+multilanguage support

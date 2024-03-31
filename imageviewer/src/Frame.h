@@ -33,6 +33,7 @@ enum class LANGUAGE {
 	HOMEPAGE1,
 	AUTHOR,
 	AUTHOR1,
+	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	VERSION,
 	YES,
 	NO,
@@ -90,9 +91,17 @@ enum class LANGUAGE {
 	HELP
 };
 
-const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
-		LANGUAGE::ASK_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::SHOW_POPUP_TIPS,LANGUAGE::ONE_APPLICATION_INSTANCE, LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR,LANGUAGE::SUPPORTED_FORMATS };
+const LANGUAGE OPTIONS[] = {
+		LANGUAGE::LANGUAGE,
+		LANGUAGE::ASK_BEFORE_DELETING_A_FILE,
+		LANGUAGE::REMOVE_FILE_OPTION,
+		LANGUAGE::SHOW_POPUP_TIPS,
+		LANGUAGE::ONE_APPLICATION_INSTANCE,
+		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,
+		LANGUAGE::HOMEPAGE,
+		LANGUAGE::AUTHOR,
+		LANGUAGE::SUPPORTED_FORMATS
+};
 const int SIZE_OPTIONS = SIZE(OPTIONS);
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
@@ -141,7 +150,7 @@ public:
 	Pixbuf m_pix,m_pixScaled;
 	int pw, ph, aw, ah;
 	int pi;
-	MODE mode;
+	MODE m_mode;
 	VImage vp;
 	//lower cased allowable files extension
 	VString m_vLowerExtension,m_vExtension;
@@ -160,9 +169,11 @@ public:
 	bool m_ascendingOrder;
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
-	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup;
+	int m_languageIndex, m_warningBeforeDelete, m_deleteOption, m_showPopup,m_rememberLastOpenDirectory;
 	guint m_timer;
 	double m_zoom;
+	std::vector<int*> m_optionsPointer;
+	static std::vector<int> m_optionsDefalutValue;
 	static int m_oneInstance;
 	const static bool filenameFontBold = true;
 
