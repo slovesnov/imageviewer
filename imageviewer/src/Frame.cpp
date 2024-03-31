@@ -33,7 +33,7 @@ const int MIN_ICON_HEIGHT = 32;
 const int MAX_ICON_HEIGHT = 200;
 
 const char *ADDITIONAL_IMAGES[] =
-		{ "sort_ascending.png", "sort_descending.png" };
+		{ "sort_ascending.png", "sort_descending.png","save.png" };
 
 const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"magnifier_zoom_out.png",
@@ -173,7 +173,7 @@ static gboolean directory_changed_timer(gpointer data) {
 	return G_SOURCE_REMOVE;
 }
 
-Frame::Frame(GtkApplication *application, std::string const path) {
+Frame::Frame(GtkApplication *application, std::string path) {
 	frame = this;
 
 	int i, j;
@@ -208,7 +208,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	m_mode = MODE::NORMAL;
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-	setIconHeightWidth(95);
+	m_listIconHeight=95;
 
 	resetOptions();
 
@@ -226,7 +226,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 					m_ascendingOrder = j == 1;
 				} else if (ct == ENUM_CONFIG_TAGS::LIST_ICON_HEIGHT
 						&& j >= MIN_ICON_HEIGHT && j <= MAX_ICON_HEIGHT) {
-					setIconHeightWidth(j);
+					m_listIconHeight=j;
 				} else if (ct
 						== ENUM_CONFIG_TAGS::CLANGUAGE&& j>=0 && j<SIZEI(LNG)) {
 					m_languageIndex = j;
@@ -247,6 +247,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 						&& j >= 0 && j < 2) {
 					m_rememberLastOpenDirectory = j;
 				} else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
+//					printl(m_dir)
 					m_dir = it->second;
 				}
 			}
@@ -255,6 +256,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	}
 	//end readConfig
 	loadLanguage();
+
+	setIconHeightWidth(m_listIconHeight);
 
 	GSList *formats;
 	GSList *elem;
@@ -277,7 +280,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	}
 	g_slist_free(formats);
 	//alphabet order
-	std::sort(m_vExtension.begin(),m_vExtension.end());
+	std::sort(m_vExtension.begin(), m_vExtension.end());
 
 	loadCSS();
 
@@ -288,7 +291,7 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 	//prevents destroy after gtk_container_remove
 	g_object_ref(m_toolbar);
 
-	//before setButtonState
+	//before setAscendingOrder
 	for (auto a : ADDITIONAL_IMAGES) {
 		m_additionalImages.push_back(pixbuf(a));
 	}
@@ -298,8 +301,8 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		auto b = m_button[i] = gtk_button_new();
 		m_buttonPixbuf[i][1] = pixbuf(a);
 		m_buttonPixbuf[i][0] = gdk_pixbuf_copy(m_buttonPixbuf[i][1]);
-		gdk_pixbuf_saturate_and_pixelate(m_buttonPixbuf[i][1], m_buttonPixbuf[i][0],
-				.3f, false);
+		gdk_pixbuf_saturate_and_pixelate(m_buttonPixbuf[i][1],
+				m_buttonPixbuf[i][0], .3f, false);
 
 		setButtonState(i, true);
 
@@ -351,12 +354,13 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 
 	m_lastScroll = 0;
 
+	if(path.empty() && m_rememberLastOpenDirectory){
+		path=m_dir;
+//		printl(m_dir)
+	}
+
 	if (path.empty()) {
-		if (m_rememberLastOpenDirectory) {
-			load(m_dir, 0, true);
-		} else {
-			setNoImage();
-		}
+		setNoImage();
 	} else {
 		load(path, 0, true); //after area is created
 		if (m_mode == MODE::LIST) { //after vp is loading in load() function
@@ -364,14 +368,15 @@ Frame::Frame(GtkApplication *application, std::string const path) {
 		}
 	}
 
-//	printi
 	setTitle();
+	setAscendingOrder(m_ascendingOrder);//after toolbar is created
 
 	gtk_main();
 }
 
 Frame::~Frame() {
 	g_object_unref(m_toolbar);
+//	printl(m_dir)
 	WRITE_CONFIG(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int ) m_mode,
 			m_ascendingOrder, m_listIconHeight, m_languageIndex,
 			m_warningBeforeDelete, m_deleteOption, m_showPopup, m_oneInstance,
@@ -411,7 +416,8 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz);
 		} else {
-			const std::string n = getFileInfo(m_vp[m_pi].m_path, FILEINFO::NAME);
+			const std::string n = getFileInfo(m_vp[m_pi].m_path,
+					FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", m_pw, m_ph) + SEPARATOR
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
 					+ std::to_string(int(m_zoom * 100)) + "%" + SEPARATOR
@@ -456,7 +462,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 	 */
 	m_pi = index;
 	m_dir = d ? p : getFileInfo(p, FILEINFO::DIRECTORY);
-
+//	printl(m_dir,p)
 	totalFileSize = 0;
 
 	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
@@ -588,7 +594,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	} else {
 		w = m_zoom * m_pw;
 		h = m_zoom * m_ph;
-//		printl(m_pw,m_ph,w,h,m_zoom)
 		m_pixScaled = gdk_pixbuf_scale_simple(m_pix, w, h, GDK_INTERP_BILINEAR);
 		destx = (width - w) / 2;
 		desty = (height - h) / 2;
@@ -602,41 +607,35 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		adjustPos();
 
 		copy(m_pixScaled, cr, destx, desty, m_aw, m_ah, m_posh, m_posv);
-
-//		int x,y;
-//		x=(m_aw/2+m_posh)/m_zoom;
-//		y=(m_ah/2+m_posv)/m_zoom;
-//		copy(m_pix, cr, B, 0, A, A, x-A/2, y-A/2);
-
 	}
 
-/*
- 	const int A=200;
-	const int B=1920/2-A/2;
+	/*
+	 const int A=200;
+	 const int B=1920/2-A/2;
 
-	const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
-	GdkRectangle r = { 0, 0, width, height };
-	gdk_cairo_get_clip_rectangle(cr, &r);
-	gdk_cairo_set_source_rgba(cr, &RED_COLOR);
+	 const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
+	 GdkRectangle r = { 0, 0, width, height };
+	 gdk_cairo_get_clip_rectangle(cr, &r);
+	 gdk_cairo_set_source_rgba(cr, &RED_COLOR);
 
-	cairo_arc(cr, A/2, A/2, 6, 0, 2*G_PI);
-	cairo_fill(cr);
+	 cairo_arc(cr, A/2, A/2, 6, 0, 2*G_PI);
+	 cairo_fill(cr);
 
-	cairo_arc(cr, B+A/2, A/2, 6, 0, 2*G_PI);
-	cairo_fill(cr);
+	 cairo_arc(cr, B+A/2, A/2, 6, 0, 2*G_PI);
+	 cairo_fill(cr);
 
-	cairo_translate(cr, r.x + r.width / 2, r.y + r.height / 2);
-	cairo_arc(cr, 0, 0, 6, 0, 2*G_PI);
-	cairo_fill(cr);
+	 cairo_translate(cr, r.x + r.width / 2, r.y + r.height / 2);
+	 cairo_arc(cr, 0, 0, 6, 0, 2*G_PI);
+	 cairo_fill(cr);
 
-//	double ko = (double(r.height) / r.width);
-//	cairo_scale(cr, 1, ko);
-//	cairo_set_line_width(cr, 3);
-//	cairo_move_to(cr, r.width / 2, 0); //angle 0
-//	cairo_arc(cr, 0, 0, r.width / 2, 0, 2 * G_PI);
-//	cairo_stroke_preserve(cr);
+	 //	double ko = (double(r.height) / r.width);
+	 //	cairo_scale(cr, 1, ko);
+	 //	cairo_set_line_width(cr, 3);
+	 //	cairo_move_to(cr, r.width / 2, 0); //angle 0
+	 //	cairo_arc(cr, 0, 0, r.width / 2, 0, 2 * G_PI);
+	 //	cairo_stroke_preserve(cr);
 
-*/
+	 */
 
 }
 
@@ -661,7 +660,7 @@ gboolean Frame::keyPress(GdkEventKey *event) {
 
 	, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7), oneOf(k, GDK_KEY_Page_Up,
 	GDK_KEY_KP_9), oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4), oneOf(k, GDK_KEY_Right,
-			GDK_KEY_KP_6), oneOf(k, GDK_KEY_Page_Down,
+	GDK_KEY_KP_6), oneOf(k, GDK_KEY_Page_Down,
 	GDK_KEY_KP_3), oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
 
 	//english and russian keyboard layout (& caps lock)
@@ -702,7 +701,8 @@ void Frame::setPosRedraw(double dx, double dy, guint32 time) {
 	/* if no horizontal scroll then switch next/previous image
 	 * if no vertical scroll then switch next/previous image
 	 */
-	if (((m_pw <= m_aw && dx != 0 && dy == 0) || (m_ph <= m_ah && dx == 0 && dy != 0))
+	if (((m_pw <= m_aw && dx != 0 && dy == 0)
+			|| (m_ph <= m_ah && dx == 0 && dy != 0))
 			&& time > SCROLL_DELAY_MILLISECONDS + m_lastScroll) {
 		m_lastScroll = time;
 //		switchImage(1, dx > 0 || dy > 0);
@@ -734,8 +734,8 @@ bool Frame::isSupportedImage(const std::string &p) {
 }
 
 void Frame::adjustPos() {
-	adjust(m_posh, 0, m_pw*m_zoom - m_aw);
-	adjust(m_posv, 0, m_ph*m_zoom - m_ah);
+	adjust(m_posh, 0, m_pw * m_zoom - m_aw);
+	adjust(m_posv, 0, m_ph * m_zoom - m_ah);
 }
 
 void Frame::openDirectory() {
@@ -1014,23 +1014,15 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			}
 		} else {
 			const double ZOOM_MULTIPLIER = 1.1;
-			const double k=t == TOOLBAR_INDEX::ZOOM_IN ?
-					ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
+			const double k =
+					t == TOOLBAR_INDEX::ZOOM_IN ?
+							ZOOM_MULTIPLIER : 1 / ZOOM_MULTIPLIER;
 
-			//this code leave center point in center after zoom (first part)
-//			int x,y;
-//			x=(m_aw/2+m_posh)/m_zoom;
-//			y=(m_ah/2+m_posv)/m_zoom;
-
-			m_zoom *=k;
-
-			//this code leave center point in center after zoom (second part)
-//			m_posh=x*m_zoom-m_aw/2;
-//			m_posv=y*m_zoom-m_ah/2;
-
-			m_posh=(m_aw/2+m_posh)*k-m_aw/2;
-			m_posv=(m_ah/2+m_posv)*k-m_ah/2;
-
+			m_zoom *= k;
+			//this code leave center point in center after zoom
+			m_posh = (m_aw / 2 + m_posh) * k - m_aw / 2;
+			m_posv = (m_ah / 2 + m_posv) * k - m_ah / 2;
+			updateSaveDeleteButton();
 			redraw();
 		}
 		return;
@@ -1075,16 +1067,12 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	}
 
 	if (t == TOOLBAR_INDEX::REORDER_FILE) {
-		m_ascendingOrder = !m_ascendingOrder;
+		setAscendingOrder(!m_ascendingOrder);
+		m_listTopLeftIndex = getFirstListIndex();
 		if (m_mode == MODE::LIST) {
 			stopThreads();
-			m_listTopLeftIndex = getFirstListIndex();
-			startThreads();
-			setVariableImagesButtonsState();
+			startThreads();//new m_listTopLeftIndex
 			redraw();
-		} else {
-			m_listTopLeftIndex = getFirstListIndex();
-			setVariableImagesButtonsState();
 		}
 	}
 
@@ -1136,9 +1124,9 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			if (i >= 3) {
 				flipPixbuf(m_pix, i == 3);
 			} else {
-				int a=90 * (i + 1);
+				int a = 90 * (i + 1);
 				rotatePixbuf(m_pix, m_pw, m_ph, a);
-				if(a!=180 && m_mode!=MODE::ANY){//rescale after rotate
+				if (a != 180 && m_mode != MODE::ANY) {	//rescale after rotate
 					setDefaultZoom();
 				}
 			}
@@ -1170,14 +1158,14 @@ void Frame::showSettings() {
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
 		auto e = OPTIONS[i];
 		if (e == LANGUAGE::LANGUAGE) {
-			w = m_options[i]=createLanguageCombo();
+			w = m_options[i] = createLanguageCombo();
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::REMOVE_FILE_OPTION) {
 			for (auto e : { LANGUAGE::REMOVE_FILES_TO_RECYCLE_BIN,
 					LANGUAGE::REMOVE_FILES_PERMANENTLY }) {
 				v.push_back(getLanguageString(e));
 			}
-			w = m_options[i]= createTextCombo(v, 0);
+			w = m_options[i] = createTextCombo(v, 0);
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::HOMEPAGE) {
 			s = getLanguageString(e, 1);
@@ -1321,8 +1309,6 @@ void Frame::setMode(MODE m, bool start) {
 			setButtonState(e, m_mode != MODE::LIST);
 		}
 		setButtonState(TOOLBAR_INDEX::DELETE_FILE, m_mode != MODE::LIST);
-
-		setVariableImagesButtonsState();
 		updateNavigationButtonsState();
 		setPopups();
 	}
@@ -1373,11 +1359,6 @@ void Frame::setButtonImage(int i, bool enable, GdkPixbuf *p) {
 	gtk_widget_set_sensitive(b, enable);
 	gtk_widget_set_has_tooltip(b, enable);
 	gtk_button_set_image(GTK_BUTTON(b), gtk_image_new_from_pixbuf(p));
-}
-
-void Frame::setVariableImagesButtonsState() {
-	setButtonImage(int(TOOLBAR_INDEX::REORDER_FILE), true,
-			m_additionalImages[!m_ascendingOrder]);
 }
 
 void Frame::redraw(bool withTitle) {
@@ -1441,7 +1422,7 @@ std::string& Frame::getLanguageString(LANGUAGE l, int add) {
 }
 
 GtkWidget* Frame::createTextCombo(VString &v, int active) {
-	GtkWidget *w  = gtk_combo_box_text_new();
+	GtkWidget *w = gtk_combo_box_text_new();
 	for (auto &a : v) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(w), a.c_str());
 	}
@@ -1597,6 +1578,7 @@ std::string Frame::getExtensionString(bool b) {
 		}
 		return s;
 	} else {
+		//printl(joinV(m_vExtension, ' '))
 		return joinV(m_vExtension, ' ');
 	}
 }
@@ -1606,13 +1588,11 @@ bool Frame::isOneInstanceOnly() {
 	MapStringString::iterator it;
 	int j;
 	m_oneInstance = DEFAULT_ONE_INSTANCE;
-	if (loadConfig(m)
-			&& (it =
-					m.find(
-							CONFIG_TAGS[int(
-									ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE)]))
-					!= m.end()) {
-		if (parseString(it->second, j)) {
+	if (loadConfig(m)) {
+		it = m.find(
+				CONFIG_TAGS[int(ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE)]);
+		if (it!= m.end() && parseString(it->second, j) && j>=0 && j<2) {
+//			printl(j)
 			m_oneInstance = j;
 		}
 	}
@@ -1625,6 +1605,7 @@ void Frame::setDefaultZoom() {
 	} else if (m_mode == MODE::FIT) {
 		m_zoom = MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
 	}
+	updateSaveDeleteButton();
 }
 
 GtkWidget* Frame::createLanguageCombo() {
@@ -1641,14 +1622,33 @@ GtkWidget* Frame::createLanguageCombo() {
 		g_object_unref(pb);
 	}
 
-	auto w=gtk_combo_box_new_with_model(GTK_TREE_MODEL(store));
-	auto renderer = gtk_cell_renderer_pixbuf_new();
-	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer, FALSE);
-	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer,
-			"pixbuf", PIXBUF_COL, NULL);
-	renderer = gtk_cell_renderer_text_new();
-	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer, FALSE);
-	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer, "text",
-			TEXT_COL, NULL);
+	auto w = gtk_combo_box_new_with_model(GTK_TREE_MODEL(store));
+	GtkCellRenderer *renderer;
+	for (i = 0; i < 2; i++) {
+		renderer =
+				i ? gtk_cell_renderer_text_new() : gtk_cell_renderer_pixbuf_new();
+		gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(w), renderer, FALSE);
+		gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(w), renderer,
+				i ? "text" : "pixbuf", i, NULL);
+	}
 	return w;
+}
+
+void Frame::setAscendingOrder(bool b){
+	m_ascendingOrder=b;
+	setButtonImage(int(TOOLBAR_INDEX::REORDER_FILE), true,
+			m_additionalImages[!m_ascendingOrder]);
+}
+
+void Frame::updateSaveDeleteButton(){
+	bool save=m_zoom!=1;
+	auto e=TOOLBAR_INDEX::DELETE_FILE;
+	int i=int(e);
+//	if(save){
+//		setButtonImage(i, true,m_additionalImages[2] );
+//	}
+//	else{
+//		setButtonState(e, true);
+//	}
+
 }

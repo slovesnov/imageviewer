@@ -1,4 +1,10 @@
+view files in several modes zoom 1:1, fit to window, or any scale
+View all images in a folder as a list of resizable icons
+support image file formats ani bmp emf gif icns ico jpeg png pnm qtif svg tga tiff wmf xbm xpm
 support drag & drop files/folders
-monitor directory while view (can add/remove/rename files in current dir)
-allow delete files
+monitor directory while view (can add/remove/rename files in current directory)
+allow rotate/flip images
+allow delete files from image viewer to recycle bin or permanently
 multilanguage support
+
+просмотр всех изображений в папке в виде списка иконок с изменяемым размером

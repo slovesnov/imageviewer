@@ -69,18 +69,13 @@ help
 Drag and drop a file to browse the directory that includes the file. If the file is unsupported, 
 browsing starts from the first supported image. You can also drag and drop catalogs.
 <i>Shortcuts list.</i>
-<b>+</b>, <b>-</b> for <i>list mode</i> increase/decrease icons size otherwise increase/decrease zoom 
+<b>+</b>, <b>-</b> for list mode increase/decrease icons size otherwise increase/decrease zoom 
 <b>0</b>, <b>1</b>, <b>2</b>, (<b>3</b> or <b>L</b>) - switch to mode any, 1:1, fit window or list respectively
 <b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90&#176;, 180&#176;, 270&#176;
 <b>H</b>, <b>V</b> - flip image horizontally or vertically
-<b>arrow right</b> or <b>KP_6</b> / <b>arrow left</b> or <b>KP_4</b> {
-	LIST MODE scroll one row
-	FIT/NORMAL MODES next/previous image in directory
-}
-<b>Page_Down</b> or <b>KP_3</b> / <b>Page_Up</b> or <b>KP_9</b> {
-	LIST MODE scroll screen
-	FIT/NORMAL MODES +/-sqrt (number of images in directory)
-}
+<b>&#8592;</b> or <b>KP_4</b> / <b>&#8594;</b> or <b>KP_6</b> - scrolls one line in list mode, otherwise goes to the previous/next image
+<b>Page_Down</b> or <b>KP_3</b> / <b>Page_Up</b> or <b>KP_9</b> - scroll by screen in list mode, otherwise
+moving by several images in the catalog
 <b>Home</b> or <b>KP_7</b> / <b>End</b> or <b>KP_1</b> go to first/last image in directory
 <b>mouse right button</b> or <b>O</b> - open file/folder, use <i>select</i> button in 
 dialog to open file or folder, <i>open</i> button works only with files

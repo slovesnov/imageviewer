@@ -11,6 +11,7 @@ toolbar images{
 	zoom_actual.png
 zoom_fit.png
 
+zoom.png created from zoom_actual.png+zoom_last.png
 }
 
 settings.png
@@ -18,3 +19,6 @@ http://www.iconarchive.com/show/ginux-icons-by-kyo-tux/Start-Menu-Run-icon.html
 
 fullscreen.png
 https://www.iconsdb.com/blue-icons/fullscreen-12-icon.html
+
+save.png (url from bridge project)
+https://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Actions-document-save-icon.html

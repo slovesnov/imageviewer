@@ -174,7 +174,7 @@ public:
 	static int m_oneInstance;
 	const static bool filenameFontBold = true;
 
-	Frame(GtkApplication *application, std::string const path = "");
+	Frame(GtkApplication *application, std::string path = "");
 	virtual ~Frame();
 
 	void setTitle();
@@ -228,7 +228,6 @@ public:
 	int getFirstListIndex();
 
 	void setButtonImage(int i, bool enable, GdkPixbuf *p);
-	void setVariableImagesButtonsState();
 	void redraw(bool withTitle = true);
 	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
 	void setIconHeightWidth(int height);
@@ -249,6 +248,8 @@ public:
 	static bool isOneInstanceOnly();
 	void setDefaultZoom();
 	GtkWidget* createLanguageCombo();
+	void setAscendingOrder(bool b);
+	void updateSaveDeleteButton();
 };
 
 #endif /* FRAME_H_ */
