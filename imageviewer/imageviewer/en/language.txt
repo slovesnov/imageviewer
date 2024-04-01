@@ -38,12 +38,15 @@ open
 open file
 select
 question
+error
+Cannot save file.
 Do you really want to delete the image?
 Do you really want to save the image?
+Unable to save the image in this format, please select\none of the writable formats to save the image.
 zoom
-Mb
-Kb
 b
+Kb
+Mb
 average
 total
 run a single instance of the application
@@ -79,7 +82,7 @@ browsing starts from the first supported image. You can also drag and drop catal
 <b>0</b>, <b>1</b>, <b>2</b>, (<b>3</b> or <b>L</b>) - switch to mode any, 1:1, fit window or list respectively
 <b>E</b>, <b>R</b>, <b>T</b> - rotate image by 90&#176;, 180&#176;, 270&#176;
 <b>H</b>, <b>V</b> - flip image horizontally or vertically
-<b>&#8592;</b> or <b>KP_4</b> / <b>&#8594;</b> or <b>KP_6</b> - scrolls one line in list mode, otherwise goes to the previous/next image
+<b>&#8592;</b> or <b>KP_4</b> / <b>&#8594;</b> or <b>KP_6</b> - scrolls one line in list mode, else goes to the previous/next image
 <b>Page_Down</b> or <b>KP_3</b> / <b>Page_Up</b> or <b>KP_9</b> - scroll by screen in list mode, otherwise
 moving by several images in the catalog
 <b>Home</b> or <b>KP_7</b> / <b>End</b> or <b>KP_1</b> go to first/last image in directory

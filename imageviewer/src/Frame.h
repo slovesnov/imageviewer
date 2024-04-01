@@ -20,7 +20,7 @@ enum class MODE {
 };
 
 enum class DIALOG {
-	HELP, SETTINGS, DELETE, SAVE
+	HELP, SETTINGS, DELETE, SAVE, ERROR
 };
 
 enum class LANGUAGE {
@@ -64,12 +64,15 @@ enum class LANGUAGE {
 	OPEN_FILE,
 	SELECT,
 	QUESTION,
+	ERROR,
+	CANNOT_SAVE_FILE,
 	DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE,
 	DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE,
+	SAVE_ERROR_MESSAGE,
 	ZOOM,
-	MEGABYTES,
-	KILOBYTES,
 	BYTES,
+	KILOBYTES,
+	MEGABYTES,
 	AVERAGE,
 	TOTAL,
 	ONE_APPLICATION_INSTANCE,
@@ -238,10 +241,11 @@ public:
 	void buttonClicked(TOOLBAR_INDEX t);
 	void buttonClicked(int t);
 	void optionsButtonClicked(LANGUAGE l);
-	void showHelp();
+	void showDialog(DIALOG d, std::string s);
 	void showSettings();
 	gint showDeleteDialog();
-	gint showSaveDialog();
+	gint showSaveDialog(bool error = false);
+	void showError();
 	gint showModalDialog(GtkWidget *w, DIALOG o);
 
 	void recountListParameters();

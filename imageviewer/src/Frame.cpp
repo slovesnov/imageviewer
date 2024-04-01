@@ -298,6 +298,43 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	//alphabet order
 	std::sort(m_supported.begin(), m_supported.end());
 
+	//begin inno script generator do not remove
+	printi
+	const char *p;
+	std::string s,s1;
+	const char gn[]="g";
+	const char tn[]="t";
+	for(i=0;i<2;i++){
+		j=-1;
+	for(auto& a:m_supported){
+		j++;
+		s1=a.extension;
+		p=s1.c_str();
+		if(i){
+			printf("Root: HKCR; Subkey: \".%s\"; ValueType: string; ValueName: \"\"; ValueData: \"{#APPNAME}\"; Flags: uninsdeletevalue; Tasks: %s\\%s%d\n",p,gn,tn,j);
+
+		}
+		else{
+			printf("Name: %s\\%s%d; Description: \"*.%s\"; Flags: unchecked\n",gn,tn,j,p);
+			if(!s.empty()){
+				s+=" or ";
+			}
+			s+=gn+("\\"+(tn+std::to_string(j)));
+		}
+	}
+		if(!i){
+			printf("\n[Registry]\n");
+		}
+	}
+	const char* A[]={
+			R"(Root: HKCR; Subkey: {#APPNAME}; ValueType: string; ValueName: ""; ValueData: {#APPNAME}; Flags: uninsdeletekey; Tasks:)",
+			R"(Root: HKCR; Subkey: "{#APPNAME}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\bin\{#APPNAME}.exe,0"; Tasks:)",
+			R"(Root: HKCR; Subkey: "{#APPNAME}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\bin\{#APPNAME}.exe"" ""%1"""; Tasks:)"
+	};
+	for(auto a:A){
+		printf("%s%s\n",a,s.c_str());
+	}
+
 	loadCSS();
 
 	m_window = gtk_application_window_new(GTK_APPLICATION(application));
@@ -415,7 +452,7 @@ void Frame::setTitle() {
 		t = m_dir + SEPARATOR;
 		const int sz = size();
 		if (m_mode == MODE::LIST) {
-			double ts = totalFileSize / double(1 << 20);
+			double ts = totalFileSize;
 			/* format("%d-%d/%d" a-b/size
 			 * a=m_listTopLeftIndex + 1
 			 * if LIST_ASCENDING_ORDER=1 a<b & b-a+1=m_listxy => b=a-1+m_listxy=m_listTopLeftIndex + m_listxy
@@ -430,12 +467,14 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz);
 		} else {
-			const std::string n = getFileInfo(m_vp[m_pi].m_path,
-					FILEINFO::NAME);
+			auto &f = m_vp[m_pi];
+			const std::string n = getFileInfo(f.m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + format("%dx%d", m_pw, m_ph) + SEPARATOR
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
 					+ std::to_string(int(m_zoom * 100)) + "%" + SEPARATOR
-					+ format("%d/%d", m_pi + 1, size());
+					+ format("%d/%d", m_pi + 1, size()) + SEPARATOR
+					+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
+					+ getSizeMbKbB(f.m_size);
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
 			 * compress images online https://compressjpeg.com/ru/
@@ -991,7 +1030,10 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		showSettings();
 		return;
 	} else if (t == TOOLBAR_INDEX::HELP) {
-		showHelp();
+		showDialog(DIALOG::HELP,
+				getLanguageString(LANGUAGE::HELP) + "\n"
+						+ getLanguageString(LANGUAGE::SUPPORTED_FORMATS) + ": "
+						+ getExtensionString(0));
 		return;
 	} else if (t == TOOLBAR_INDEX::FULLSCREEN) {
 		GdkWindow *gdk_window = gtk_widget_get_window(m_window);
@@ -1134,15 +1176,29 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	if (t == TOOLBAR_INDEX::SAVE_FILE) { //m_mode==MODE::LIST can be called from keyboard
 		if (m_mode != MODE::LIST
 				&& (!m_warnBeforeSave || showSaveDialog() == GTK_RESPONSE_YES)) {
-
-			s = m_modalDialogEntryText;
+			bool b = false;
+			s = m_warnBeforeSave ? m_modalDialogEntryText : m_vp[m_pi].m_path;
+//			printl(s)
 			auto it = supportedIterator(s, true);
-			assert(it!=m_supported.end());
-			//int r =
-			gdk_pixbuf_save((GdkPixbuf*) m_pixScaled,
-					m_modalDialogEntryText.c_str(), it->type.c_str(), NULL,
-					NULL);
-			//printl(r)
+			if (it == m_supported.end()) { //user click save non writable file m_warnBeforeSave=false
+				if (showSaveDialog(true) == GTK_RESPONSE_YES) {
+					it = supportedIterator(m_modalDialogEntryText, true);
+					b = it != m_supported.end();
+				}
+			} else {
+				b = true;
+			}
+			if (b) {
+				GError *error = NULL;
+				if (!gdk_pixbuf_save((GdkPixbuf*) m_pixScaled,
+						m_modalDialogEntryText.c_str(), it->type.c_str(),
+						&error,
+						NULL)) {
+					showDialog(DIALOG::ERROR,
+							std::to_string(error->code) + " " + error->message);
+					g_error_free(error);
+				}
+			}
 		}
 		return;
 	}
@@ -1233,13 +1289,10 @@ void Frame::showSettings() {
 	showModalDialog(grid, DIALOG::SETTINGS);
 }
 
-void Frame::showHelp() {
-	auto s = getLanguageString(LANGUAGE::HELP) + "\n"
-			+ getLanguageString(LANGUAGE::SUPPORTED_FORMATS) + ": "
-			+ getExtensionString(0);
+void Frame::showDialog(DIALOG d, std::string s) {
 	auto l = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(l), s.c_str());
-	showModalDialog(l, DIALOG::HELP);
+	showModalDialog(l, d);
 }
 
 gint Frame::showDeleteDialog() {
@@ -1250,13 +1303,18 @@ gint Frame::showDeleteDialog() {
 	return showModalDialog(w, DIALOG::DELETE);
 }
 
-gint Frame::showSaveDialog() {
+gint Frame::showSaveDialog(bool error) {
 	GtkWidget *w, *grid;
 	std::string s;
 	int i, j;
 	grid = gtk_grid_new();
 	i = 0;
-
+	if (error) {
+		s = getLanguageString(LANGUAGE::SAVE_ERROR_MESSAGE);
+		s = replaceAll(s, "\\n", "\n");
+		w = gtk_label_new(s.c_str());
+		gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
+	}
 	w =
 			gtk_label_new(
 					getLanguageString(
@@ -1301,11 +1359,15 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(m_window));
 
 	bool sd = oneOf(o, DIALOG::DELETE, DIALOG::SAVE);
-	auto s = sd ? getLanguageString(LANGUAGE::QUESTION) : getTitleVersion();
+	auto s =
+			o == DIALOG::ERROR || sd ?
+					getLanguageString(
+							sd ? LANGUAGE::QUESTION : LANGUAGE::ERROR) :
+					getTitleVersion();
 	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
 	gtk_window_set_resizable(GTK_WINDOW(d), 1);
 
-	if (o == DIALOG::HELP) {
+	if (oneOf(o, DIALOG::HELP, DIALOG::ERROR)) {
 		b = w;
 	} else {
 		b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
@@ -1337,6 +1399,10 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	gtk_container_add(GTK_CONTAINER(ca), b);
 
 	gtk_widget_show_all(d);
+	if (o == DIALOG::SAVE) {
+		//if file format isn't writable disable yes button
+		entryChanged(m_modalDialogEntry);
+	}
 
 	auto r = gtk_dialog_run(GTK_DIALOG(d));
 	gtk_widget_destroy(d);
@@ -1632,13 +1698,14 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 
 std::string Frame::getSizeMbKbB(double v) {
 	std::string s;
-	for (int i = 0; i < 3; i++, v *= 1024) {
-		s = format("%.2lf", v);
-		if (s != "0.00" || i == 2) {
-			return s + getLanguageString(LANGUAGE::MEGABYTES, i);
-		}
+	std::size_t i, j;
+	for (j = 0; j < 2 && v >= 1024; j++) {
+		v /= 1024;
 	}
-	return "";
+	s = format("%.2lf", v);
+	for (i = s.size() - 1; i > 0 && strchr("0.", s[i]); i--)
+		;
+	return s.substr(0, i + 1) + getLanguageString(LANGUAGE::BYTES, j);
 }
 
 void Frame::addMonitor(std::string &path) {
