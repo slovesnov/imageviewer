@@ -42,6 +42,6 @@ void Image::assign(Image &o) {
 
 void Image::free() {
 	if (m_thumbnail) {
-		g_object_unref (m_thumbnail);
+		g_object_unref(m_thumbnail);
 	}
 }

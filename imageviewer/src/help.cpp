@@ -11,7 +11,7 @@
 #include "aslov.h"
 #include <windows.h>//deleteFileToRecycleBin
 
-void adjust(int &v, int min,int max /*= INT_MAX*/) {
+void adjust(int &v, int min, int max /*= INT_MAX*/) {
 	if (v < min) {
 		v = min;
 	} else if (v > max) {
@@ -19,8 +19,8 @@ void adjust(int &v, int min,int max /*= INT_MAX*/) {
 	}
 }
 
-GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH) {
-	int w,h;
+GdkPixbuf* scaleFit(GdkPixbuf *src, int destW, int destH) {
+	int w, h;
 	int pw = gdk_pixbuf_get_width(src);
 	int ph = gdk_pixbuf_get_height(src);
 	if (pw <= destW && ph <= destH) { //image smaller than screen
@@ -39,54 +39,56 @@ GdkPixbuf * scaleFit(GdkPixbuf *src, int destW, int destH) {
 	return gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
 }
 
-PangoLayout* createPangoLayout(std::string text,int height,bool bold,cairo_t *cr,bool withBackground=false) {
+PangoLayout* createPangoLayout(std::string text, int height, bool bold,
+		cairo_t *cr, bool withBackground = false) {
 	PangoLayout *layout = pango_cairo_create_layout(cr);
 	//not all heights supported for Times
 	//return pango_font_description_from_string(forma("Times New Roman Normal ",height).c_str());
-	std::string s="Arial ";
-	if(bold){
-		s+="bold ";
+	std::string s = "Arial ";
+	if (bold) {
+		s += "bold ";
 	}
-	s+=std::to_string(height);
-	PangoFontDescription*desc = pango_font_description_from_string(s.c_str());
+	s += std::to_string(height);
+	PangoFontDescription *desc = pango_font_description_from_string(s.c_str());
 	pango_layout_set_font_description(layout, desc);
 
-	if(withBackground){
-		s="<span background='#333333'>"+text+"</span>";
-	}
-	else{
-		s=text;
+	if (withBackground) {
+		s = "<span background='#333333'>" + text + "</span>";
+	} else {
+		s = text;
 	}
 	pango_layout_set_markup(layout, s.c_str(), -1);
 	pango_font_description_free(desc);
 	return layout;
 }
 
-void getTextExtents(std::string text,int height,bool bold,int&w,int&h,cairo_t *cr) {
-	PangoLayout *layout = createPangoLayout(text.c_str(),height,bold,cr);
+void getTextExtents(std::string text, int height, bool bold, int &w, int &h,
+		cairo_t *cr) {
+	PangoLayout *layout = createPangoLayout(text.c_str(), height, bold, cr);
 	pango_layout_get_pixel_size(layout, &w, &h);
 	g_object_unref(layout);
 }
 
-void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rleft,int rtop,int rwidth,int rheight,
-		bool centerx, int oy,const GdkRGBA&color,bool withBackground/*=false*/) {
+void drawTextToCairo(cairo_t *ct, std::string text, int height, bool bold,
+		int rleft, int rtop, int rwidth, int rheight, bool centerx, int oy,
+		const GdkRGBA &color, bool withBackground/*=false*/) {
 	int w, h;
 	gdk_cairo_set_source_rgba(ct, &color);
-	PangoLayout *layout = createPangoLayout(text,height,bold,ct,withBackground);
+	PangoLayout *layout = createPangoLayout(text, height, bold, ct,
+			withBackground);
 	pango_layout_get_pixel_size(layout, &w, &h);
 	double px = rleft;
 	double py = rtop;
 	if (centerx) {
 		px += (rwidth - w) / 2;
 	}
-	if (oy==1) {//centery
+	if (oy == 1) {	//centery
 		py += (rheight - h) / 2;
-	}
-	else if (oy==2) {//bottom
+	} else if (oy == 2) {	//bottom
 		py += rheight - h;
 	}
 
-	cairo_rectangle(ct,rleft, rtop, rwidth-1, rheight-1);
+	cairo_rectangle(ct, rleft, rtop, rwidth - 1, rheight - 1);
 	cairo_clip(ct);
 
 	pango_cairo_update_layout(ct, layout);
@@ -101,8 +103,8 @@ void drawTextToCairo(cairo_t* ct, std::string text,int height,bool bold, int rle
 /* deleteFileToRecycleBin support utf8 chars in file names
  * https://stackoverflow.com/questions/70257751/move-a-file-or-folder-to-the-recyclebin-trash-c17
  */
-bool deleteFileToRecycleBin(const std::string& path) {
-	auto p=utf8ToLocale(path)+'\0';
+bool deleteFileToRecycleBin(const std::string &path) {
+	auto p = utf8ToLocale(path) + '\0';
 	SHFILEOPSTRUCT fileOp;
 	fileOp.hwnd = NULL;
 	fileOp.wFunc = FO_DELETE;

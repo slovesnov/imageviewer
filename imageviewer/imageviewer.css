@@ -1,12 +1,13 @@
-dialog {
+/*only with bg class, not need for open dialog*/
+dialog.bg {
 	background-image: url('imageviewer/images/bg0.jpg');
 }
 
-dialog label link {
+dialog.bg label link {
 	color: #2a76c6;
 }
 
-label,
-combobox {
+dialog.bg label,
+dialog.bg combobox {
 	font-size: 12pt;
 }

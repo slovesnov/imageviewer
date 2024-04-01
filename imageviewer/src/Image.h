@@ -53,5 +53,4 @@ public:
 
 typedef std::vector<Image> VImage;
 
-
 #endif /* IMAGE_H_ */
