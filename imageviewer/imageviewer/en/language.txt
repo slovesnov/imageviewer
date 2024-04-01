@@ -1,12 +1,16 @@
 image viewer
 language
-warning before deleting a file
+warn before saving a file
+warn before deleting a file
 remove file option
 show popup tips
 remove files to recycle bin
 remove files permanently
+file
 file size
 supported formats
+writable formats
+writable extensions
 homepage
 https://slovesnov.users.sf.net?imageviewer
 author email
@@ -35,6 +39,7 @@ open file
 select
 question
 Do you really want to delete the image?
+Do you really want to save the image?
 zoom
 Mb
 Kb
@@ -62,6 +67,7 @@ fast forward
 last image
 open file/folder
 delete file
+save file
 change file order
 fullscreen
 settings
@@ -80,6 +86,7 @@ moving by several images in the catalog
 <b>mouse right button</b> or <b>O</b> - open file/folder, use <i>select</i> button in 
 dialog to open file or folder, <i>open</i> button works only with files
 <b>horizontal/vertical mouse scrolling</b> - scrolling an image or list
-<b>Delete</b> or <b>KP_Decimal</b> remove current image for non list mode
+<b>Delete</b> or <b>KP_Decimal</b> - remove current image for non list mode
+<b>S</b> - save current image for non list mode
 <b>F11</b> or <b>F</b> or <b>Escape</b> switch full screen mode
 <b>F1</b> - show help
