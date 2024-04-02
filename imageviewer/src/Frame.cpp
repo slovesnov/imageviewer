@@ -299,6 +299,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	std::sort(m_supported.begin(), m_supported.end());
 
 	//begin inno script generator do not remove
+	/*
 	printi
 	const char *p;
 	std::string s,s1;
@@ -333,7 +334,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	};
 	for(auto a:A){
 		printf("%s%s\n",a,s.c_str());
-	}
+	}*/
 
 	loadCSS();
 
@@ -794,11 +795,23 @@ void Frame::setNoImage() {
 
 std::vector<FileSupported>::const_iterator Frame::supportedIterator(
 		std::string const &p, bool writableOnly) {
-	auto ext = getFileInfo(p, FILEINFO::LOWER_EXTENSION);
-	return std::find_if(m_supported.begin(), m_supported.end(),
-			[&ext, &writableOnly](const auto &a) {
-				return a.extension == ext && (!writableOnly || a.writable);
-			});
+	/* cann't use getFileInfo(p, FILEINFO::LOWER_EXTENSION)
+	 * because get invalid extension for "svg.gz"
+	 */
+	std::vector<FileSupported>::const_iterator it;
+	int d;
+	std::string s=p;
+	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
+		return std::tolower(c);
+	});
+
+	for(it=m_supported.begin();it!= m_supported.end();it++){
+		d=int(s.length())-int(it->extension.length());
+		if(d>0 && s[d-1]=='.' && s.substr(d)==it->extension){
+			return !writableOnly || it->writable ? it : m_supported.end();
+		}
+	}
+	return it;
 }
 
 bool Frame::isSupportedImage(const std::string &p, bool writableOnly) {
@@ -1237,11 +1250,15 @@ void Frame::showSettings() {
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
 	gtk_widget_set_margin_bottom(grid, 5);
 
-	for (i = 0; i < SIZE_OPTIONS; i++) {
-		auto e = OPTIONS[i];
+	i=-1;
+//	for(i=0;i<SIZEI(OPTIONS);i++){
+	for (auto e:OPTIONS) {
+		i++;
+//		auto e=OPTIONS[i];
 		w = gtk_label_new(getLanguageString(e).c_str());
 		gtk_widget_set_halign(w, GTK_ALIGN_START);
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
+
 		if (e == LANGUAGE::LANGUAGE) {
 			w = m_options[i] = createLanguageCombo();
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
@@ -1264,8 +1281,8 @@ void Frame::showSettings() {
 			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
 					gpointer(s.c_str()));
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
-		} else if (e == LANGUAGE::SUPPORTED_FORMATS) {
-			w = gtk_label_new(getExtensionString(1).c_str());
+		} else if (oneOf(e, LANGUAGE::SUPPORTED_FORMATS,LANGUAGE::WRITABLE_FILE_FORMAT)) {
+			w = gtk_label_new(getExtensionString(e==LANGUAGE::SUPPORTED_FORMATS?1:2).c_str());
 		} else if (e == LANGUAGE::AUTHOR) {
 			w = gtk_label_new(getLanguageString(e, 1).c_str());
 			gtk_widget_set_halign(w, GTK_ALIGN_START);
@@ -1282,10 +1299,11 @@ void Frame::showSettings() {
 		gtk_grid_attach(GTK_GRID(grid), w, 1, i, 1, 1);
 	}
 
+	i++;
 	s = getBuildVersionString(false) + ", "
 			+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
 			+ toString(getApplicationFileSize(), ',');
-	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i++, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i, 2, 1);
 	showModalDialog(grid, DIALOG::SETTINGS);
 }
 

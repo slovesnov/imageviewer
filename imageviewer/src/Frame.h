@@ -109,8 +109,7 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
 		LANGUAGE::ONE_APPLICATION_INSTANCE,
 		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY, LANGUAGE::HOMEPAGE,
-		LANGUAGE::AUTHOR, LANGUAGE::SUPPORTED_FORMATS };
-const int SIZE_OPTIONS = SIZE(OPTIONS);
+		LANGUAGE::AUTHOR, LANGUAGE::SUPPORTED_FORMATS, LANGUAGE::WRITABLE_FILE_FORMAT };
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
 enum class TOOLBAR_INDEX {
@@ -162,7 +161,7 @@ struct FileSupported {
 class Frame {
 public:
 	GtkWidget *m_window, *m_area, *m_box, *m_toolbar,
-			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE_OPTIONS], *m_modal;
+			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE(OPTIONS)], *m_modal;
 
 	int m_lastWidth, m_lastHeight;
 	Pixbuf m_pix, m_pixScaled;
