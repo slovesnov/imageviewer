@@ -17,4 +17,8 @@
 /* https://stackoverflow.com/questions/44866035/make-gtk-entry-box-smaller */
 entry { 
 	min-height: 0px; 
-} 
+}
+
+.cerror{
+	color:rgb(255,0,0);
+}

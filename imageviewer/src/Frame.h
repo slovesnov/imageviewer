@@ -84,6 +84,8 @@ enum class LANGUAGE {
 	KEYS,
 	ABOUT,
 	CLICK_TO_SET_THE_KEY,
+	PRESS_ANY_KEY,
+	KEY_ALREADY_IN_USE,
 	TOOLTIP1
 	//other toolitps
 };
@@ -130,6 +132,7 @@ const int WHEEL_MULTIPLIER = 80;
 const int LIST_MULTIPLIER = 50;
 const int SCROLL_DELAY_MILLISECONDS = 500;
 const double IMAGE_VIEWER_VERSION = 1.0;
+const int MAX_HOTKEYS=3;
 
 struct FileSupported {
 	std::string extension, type;
@@ -138,11 +141,6 @@ struct FileSupported {
 	bool operator<(FileSupported const &a) const {
 		return extension < a.extension;
 	}
-};
-
-struct Key{
-	guint code;
-	bool keyval;
 };
 
 class Frame {
@@ -180,7 +178,7 @@ public:
 	guint m_timer;
 	double m_zoom;
 	std::vector<int*> m_optionsPointer;
-	std::vector<Key> m_key[TOOLBAR_INDEX_SIZE];
+	std::vector<guint> m_key[TOOLBAR_INDEX_SIZE];
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
@@ -199,7 +197,8 @@ public:
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
-	gboolean keyPress(GdkEventKey *event);
+	gboolean keyPress(GtkWidget *w,GdkEventKey *event,int n);
+	std::pair<int,int> keyIndex(GdkEventKey *event);
 	void setDragDrop(GtkWidget *widget);
 	void openUris(char **uris);
 	void scrollEvent(GdkEventScroll *event);
@@ -273,6 +272,8 @@ public:
 	GtkWidget* createLanguageCombo();
 	void setAscendingOrder(bool b);
 	void entryChanged(GtkWidget *entry);
+	void focusIn(GtkWidget *w);
+	void focusOut(GtkWidget *w);
 };
 
 #endif /* FRAME_H_ */

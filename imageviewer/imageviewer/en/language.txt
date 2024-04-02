@@ -13,7 +13,7 @@ readable extensions
 writable formats
 writable extensions
 homepage
-https://slovesnov.users.sf.net?imageviewer
+https://slovesnov.users.sourceforge.net?imageviewer
 author
 aleksey slovesnov
 email
@@ -58,6 +58,8 @@ options
 hotkeys
 about
 click to set the key
+press any key...
+key already in use
 zoom in
 zoom out
 image size any

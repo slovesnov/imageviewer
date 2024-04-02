@@ -76,7 +76,7 @@ const std::string CONFIG_TAGS[] = { "version", "mode", "order",
 		"list icon height", "language", "warning before delete",
 		"delete option", "warning before save", "show popup tips",
 		"one application instance", "remember the last open directory",
-		"last open directory" };
+		"last open directory", "keys" };
 enum class ENUM_CONFIG_TAGS {
 	CVERSION,
 	CMODE,
@@ -90,39 +90,27 @@ enum class ENUM_CONFIG_TAGS {
 	ONE_APPLICATION_INSTANCE,
 	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	LAST_OPEN_DIRECTORY, //not show in options
+	KEYS, //not show in options
 };
 
 enum {
 	PIXBUF_COL, TEXT_COL
 };
 
-std::vector<Key> key[]={
-		{ {GDK_KEY_KP_Add,1},{GDK_KEY_equal,1} }
-		,{ {GDK_KEY_KP_Subtract,1},{GDK_KEY_minus,1} }
-		,{ {'0',0} }
-		,{ {'1',0} }
-		,{ {'2',0} }
-		,{ {'3',0},{'L',0} }
+std::vector<guint> key[] = { { GDK_KEY_KP_Add, GDK_KEY_equal }, {
+		GDK_KEY_KP_Subtract, GDK_KEY_minus }
 
-		,{ {'E',0} }
-		,{ {'R',0} }
-		,{ {'T',0} }
-		,{ {'H',0} }
-		,{ {'V',0} }
+, { '0' }, { '1' }, { '2' }, { '3', 'L' }
 
-		,{ {GDK_KEY_Home,1},{GDK_KEY_KP_7,1} }
-		,{ {GDK_KEY_Page_Up,1},{GDK_KEY_KP_9,1} }
-		,{ {GDK_KEY_Left,1},{GDK_KEY_KP_4,1} }
-		,{ {GDK_KEY_Right,1},{GDK_KEY_KP_6,1} }
-		,{ {GDK_KEY_Page_Down,1},{GDK_KEY_KP_3,1} }
-		,{ {GDK_KEY_End,1},{GDK_KEY_KP_1,1} }
+, { 'E' }, { 'R' }, { 'T' }, { 'H' }, { 'V' }
 
-		,{ {'O',0} }
-		,{ {GDK_KEY_Delete,1},{GDK_KEY_KP_Decimal,1} }
-		,{ {'S',0} }
-		,{}
-		,{ {'F',0},{GDK_KEY_F11,1},{GDK_KEY_Escape,1} }
-		,{ {'H',0},{GDK_KEY_F1,1} }
+, { GDK_KEY_Home, GDK_KEY_KP_7 }, { GDK_KEY_Page_Up, GDK_KEY_KP_9 }, {
+		GDK_KEY_Left, GDK_KEY_KP_4 }, { GDK_KEY_Right, GDK_KEY_KP_6 }, {
+		GDK_KEY_Page_Down, GDK_KEY_KP_3 }, { GDK_KEY_End, GDK_KEY_KP_1 }
+
+, { 'O' }, { GDK_KEY_Delete, GDK_KEY_KP_Decimal }, { 'S' }, { }, { 'F',
+		GDK_KEY_F11, GDK_KEY_Escape }, { GDK_KEY_F1 } //H already is used
+
 };
 static_assert(TOOLBAR_INDEX_SIZE==SIZE(key));
 
@@ -136,10 +124,9 @@ static gpointer thumbnail_thread(gpointer data) {
 	return NULL;
 }
 
-static gboolean key_press(GtkWidget *widget, GdkEventKey *event,
-		gpointer data) {
+static gboolean key_press(GtkWidget *widget, GdkEventKey *event, int n) {
 	//println("%x %x %s",event->keyval,event->hardware_keycode,event->string)
-	return frame->keyPress(event);
+	return frame->keyPress(widget, event, n);
 }
 
 static gboolean draw_callback(GtkWidget *widget, cairo_t *cr, gpointer data) {
@@ -215,11 +202,25 @@ static void entry_delete(GtkWidget *entry, gint start_pos, gint end_pos,
 	frame->entryChanged(entry);
 }
 
+static gboolean entry_focus_in(GtkWidget *w, GdkEventFocus event,
+		gpointer user_data) {
+	frame->focusIn(w);
+	return true;
+}
+
+static gboolean entry_focus_out(GtkWidget *w, GdkEventFocus event,
+		gpointer user_data) {
+	frame->focusOut(w);
+	return true;
+}
+
 Frame::Frame(GtkApplication *application, std::string path) {
 	frame = this;
 
-	int i, j;
+	int i, j, k;
 	ENUM_CONFIG_TAGS ct;
+	std::string s;
+	VString v;
 	m_loadid = -1;
 	m_timer = 0;
 	m_zoom = 1;
@@ -295,9 +296,29 @@ Frame::Frame(GtkApplication *application, std::string path) {
 						&& j >= 0 && j < 2) {
 					m_rememberLastOpenDirectory = j;
 				} else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
-//					printl(m_dir)
 					m_dir = it->second;
+				} else if (ct == ENUM_CONFIG_TAGS::KEYS) {
+					s = it->second;
+					v = split(s);
+					if (v.size() == TOOLBAR_INDEX_SIZE) {
+						k = -1;
+						for (auto e : v) {
+							k++;
+							m_key[k].clear();
+							if (e.empty()) {
+								v.clear();
+							} else {
+								v = split(e, ',');
+							}
+							for (auto e : v) {
+								parseString(e, j);
+								//printl(k,j)
+								m_key[k].push_back(j);
+							}
+						}
+					}
 				}
+
 			}
 			i++;
 		}
@@ -414,7 +435,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	gtk_widget_add_events(m_window,
 			GDK_SCROLL_MASK | GDK_KEY_PRESS_MASK | GDK_BUTTON_PRESS_MASK);
 	g_signal_connect(m_window, "scroll-event", G_CALLBACK(mouse_scroll), NULL);
-	g_signal_connect(m_window, "key-press-event", G_CALLBACK (key_press), NULL);
+	g_signal_connect(m_window, "key-press-event", G_CALLBACK (key_press),
+			gpointer(-1));
 
 	g_signal_connect(m_window, "button-press-event", G_CALLBACK(button_press),
 			NULL);
@@ -459,10 +481,26 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
 Frame::~Frame() {
 	g_object_unref(m_toolbar);
+	std::string s;
+	int i = -1, j;
+	for (auto &v : m_key) {
+		i++;
+		if (i) {
+			s += ' ';
+		}
+		j = -1;
+		for (auto e : v) {
+			j++;
+			if (j) {
+				s += ',';
+			}
+			s += forma(e);
+		}
+	}
 	WRITE_CONFIG(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int ) m_mode,
 			m_ascendingOrder, m_listIconHeight, m_languageIndex,
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
-			m_oneInstance, m_rememberLastOpenDirectory, m_dir);
+			m_oneInstance, m_rememberLastOpenDirectory, m_dir, s);
 	stopThreads();
 	g_mutex_clear(&m_mutex);
 }
@@ -727,24 +765,56 @@ void Frame::drawImage() {
 	redraw();
 }
 
-gboolean Frame::keyPress(GdkEventKey *event) {
+gboolean Frame::keyPress(GtkWidget *w, GdkEventKey *event, int n) {
 	//	from gtk documentation return value
 	//	TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
-	const guint k = event->keyval;
-	const guint16 hwkey = event->hardware_keycode;
-	printl(k,hwkey,gdk_keyval_name (k))
-	;
-	int i = -1;
+	const char *p;
+	guint key = event->keyval;
+	guint16 hwkey = event->hardware_keycode;
+	auto pa = keyIndex(event);
+	int i=pa.first,j=pa.second;
+
+	if (n == -1) {
+		if (i != -1) {
+			buttonClicked(i);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	bool b=i == -1 || n==MAX_HOTKEYS*i+j;
+	//printl(i,j,n,MAX_HOTKEYS*i+j,b)
+	if (b) {
+		p = gdk_keyval_name(hwkey);
+		p = p && strlen(p) == 1 && *p >= 'A' && *p <= 'Z' ?
+				p : gdk_keyval_name(key);
+	} else {
+		p = getLanguageStringC(LANGUAGE::KEY_ALREADY_IN_USE);
+	}
+	addRemoveClass(w, "cerror", !b);
+	gtk_entry_set_text(GTK_ENTRY(w), p);
+	return true;
+}
+
+std::pair<int,int> Frame::keyIndex(GdkEventKey *event) {
+	guint key = event->keyval;
+	guint16 hwkey = event->hardware_keycode;
+	int i = -1,j;
 	for (auto v : m_key) {
 		i++;
+		j=-1;
 		for (auto e : v) {
-			if ((e.keyval && k == e.code) || (!e.keyval && hwkey == e.code)) {
-				buttonClicked(i);
-				return true;
+			j++;
+//			if(i==0){
+//				printl(i,"###", e,e>'Z',"##",key,hwkey)
+//			}
+			if ((e >= 'A' && e<='Z' ? hwkey:key ) == e) {
+				return {i,j};
 			}
 		}
 	}
-	return false;
+	return {-1,-1};
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -1309,26 +1379,25 @@ void Frame::showSettings() {
 		}
 		gtk_grid_attach(GTK_GRID(grid), w, j, k, 1, 1);
 
-/*
-		g=gtk_grid_new();
-		for (l = 0; l < 4; l++) {
-			w = gtk_entry_new();
-			gtk_entry_set_width_chars(GTK_ENTRY(w), 10);
-			gtk_entry_set_placeholder_text (GTK_ENTRY(w), "placeholder...");
-			gtk_grid_attach(GTK_GRID(g), w, l/2, l%2, 1, 1);
-		}
-		gtk_grid_attach(GTK_GRID(grid), g, j + 1, k, 1, 1);
-*/
-
 		box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-		for (l = 0; l < 3; l++) {
+		for (l = 0; l < MAX_HOTKEYS; l++) {
 			w = gtk_entry_new();
-			if(l<int(m_key[i].size())){
-				s=gdk_keyval_name(m_key[i][l].code)+ format(" %x",m_key[i][l].code);
-				gtk_entry_set_text(GTK_ENTRY(w), s.c_str());
+
+			gtk_widget_add_events(w, GDK_KEY_PRESS_MASK);
+			g_signal_connect(G_OBJECT (w), "key_press_event",
+					G_CALLBACK (key_press), GP(MAX_HOTKEYS*i+l));
+
+			g_signal_connect_after(G_OBJECT(w), "focus-in-event",
+					G_CALLBACK(entry_focus_in), 0);
+			g_signal_connect_after(G_OBJECT(w), "focus-out-event",
+					G_CALLBACK(entry_focus_out), 0);
+
+			if (l < int(m_key[i].size())) {
+				gtk_entry_set_text(GTK_ENTRY(w), gdk_keyval_name(m_key[i][l]));
 			}
 			gtk_entry_set_width_chars(GTK_ENTRY(w), 20);
-			gtk_entry_set_placeholder_text (GTK_ENTRY(w), getLanguageStringC(LANGUAGE::CLICK_TO_SET_THE_KEY));
+			gtk_entry_set_placeholder_text(GTK_ENTRY(w),
+					getLanguageStringC(LANGUAGE::CLICK_TO_SET_THE_KEY));
 			gtk_container_add(GTK_CONTAINER(box), w);
 		}
 		gtk_grid_attach(GTK_GRID(grid), box, j + 1, k, 1, 1);
@@ -1351,8 +1420,7 @@ void Frame::showSettings() {
 			s = getLanguageString(e, 1);
 			w = gtk_label_new(NULL);
 			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
-					s.c_str(), LNG_LONG[m_languageIndex].c_str(),
-					s.c_str(),
+					s.c_str(), LNG_LONG[m_languageIndex].c_str(), s.c_str(),
 					LNG_LONG[m_languageIndex].c_str());
 			gtk_label_set_markup(GTK_LABEL(w), markup);
 			g_free(markup);
@@ -1365,7 +1433,8 @@ void Frame::showSettings() {
 					LANGUAGE::WRITABLE_EXTENSIONS);
 			b1 = oneOf(e, LANGUAGE::READABLE_FORMATS,
 					LANGUAGE::WRITABLE_FORMATS);
-			k=e==LANGUAGE::READABLE_EXTENSIONS ? 2 :1+(e==LANGUAGE::READABLE_FORMATS);
+			k = e == LANGUAGE::READABLE_EXTENSIONS ?
+					2 : 1 + (e == LANGUAGE::READABLE_FORMATS);
 			w = gtk_label_new(getExtensionString(b, b1, k).c_str());
 		}
 		gtk_widget_set_halign(w, GTK_ALIGN_START);
@@ -1374,12 +1443,11 @@ void Frame::showSettings() {
 	}
 	i++;
 	s = getBuildVersionString(true) + ", file size "
-			//+ getLanguageString(LANGUAGE::SIZE)+ " "
+	//+ getLanguageString(LANGUAGE::SIZE)+ " "
 			+ toString(getApplicationFileSize(), ',');
 	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i, 2, 1);
 
 	auto m_notebook = gtk_notebook_new();
-
 	i = 0;
 	for (auto e : tab) {
 		addClass(e, "bg");
@@ -1389,7 +1457,6 @@ void Frame::showSettings() {
 	}
 
 	showModalDialog(m_notebook, DIALOG::SETTINGS);
-
 }
 
 void Frame::showDialog(DIALOG d, std::string s) {
@@ -1725,9 +1792,9 @@ void Frame::resetOptions() {
 	for (auto e : m_optionsPointer) {
 		*e = m_optionsDefalutValue[i++];
 	}
-	i=0;
-	for(auto&e:key){
-		m_key[i++]=e;
+	i = 0;
+	for (auto &e : key) {
+		m_key[i++] = e;
 	}
 }
 
@@ -1845,7 +1912,7 @@ std::string Frame::getExtensionString(bool writableOnly, bool onlyIndex0,
 			continue;
 		}
 		if (!s.empty()) {
-			s += i == sz / rows || i == 2*sz / rows ? '\n' : ' ';
+			s += i == sz / rows || i == 2 * sz / rows ? '\n' : ' ';
 		}
 		s += e.extension;
 	}
@@ -1912,4 +1979,13 @@ void Frame::entryChanged(GtkWidget *entry) {
 	auto s = gtk_entry_get_text(GTK_ENTRY(entry));
 	bool b = isSupportedImage(s, true);
 	gtk_widget_set_sensitive(m_showModalDialogButtonOK, b);
+}
+
+void Frame::focusIn(GtkWidget *w) {
+	gtk_entry_set_text(GTK_ENTRY(w),
+			getLanguageStringC(LANGUAGE::PRESS_ANY_KEY));
+}
+
+void Frame::focusOut(GtkWidget *w) {
+	//	printl(w)
 }
