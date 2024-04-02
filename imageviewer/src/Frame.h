@@ -85,6 +85,8 @@ enum class LANGUAGE {
 	ABOUT,
 	CLICK_TO_SET_THE_KEY,
 	PRESS_ANY_KEY,
+	HELP_TAB2,
+	SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,
 	KEY_ALREADY_IN_USE,
 	TOOLTIP1
 	//other toolitps
@@ -94,9 +96,9 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
 		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
 		LANGUAGE::ONE_APPLICATION_INSTANCE,
-		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY };
+		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE };
 
-//if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
+//if add TOOLBAR_INDEX enum need also add toopltip TOOLTIP.. also need change Frame::keyPress
 enum class TOOLBAR_INDEX {
 	ZOOM_IN,
 	ZOOM_OUT,
@@ -133,6 +135,7 @@ const int LIST_MULTIPLIER = 50;
 const int SCROLL_DELAY_MILLISECONDS = 500;
 const double IMAGE_VIEWER_VERSION = 1.0;
 const int MAX_HOTKEYS=3;
+const guint INVALID_KEY=0;
 
 struct FileSupported {
 	std::string extension, type;
@@ -174,16 +177,20 @@ public:
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
 	int m_languageIndex, m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave,
-			m_showPopup, m_rememberLastOpenDirectory;
+			m_showPopup, m_rememberLastOpenDirectory,m_showToolbarFullscreen;
 	guint m_timer;
 	double m_zoom;
 	std::vector<int*> m_optionsPointer;
-	std::vector<guint> m_key[TOOLBAR_INDEX_SIZE];
+	guint m_key[TOOLBAR_INDEX_SIZE*MAX_HOTKEYS];
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
-	GtkWidget *m_modalDialogEntry, *m_showModalDialogButtonOK;
+	GtkWidget *m_modalDialogEntry,*m_showModalDialogButtonOK;
 	std::string m_modalDialogEntryText;
+	//settings dialog variables
+	GtkWidget *m_notebook;
+	guint m_tmpkey[TOOLBAR_INDEX_SIZE*MAX_HOTKEYS];
+	bool m_modalDialogEntryOK;
 
 	static std::vector<int> m_optionsDefalutValue;
 	static int m_oneInstance;
@@ -198,7 +205,6 @@ public:
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
 	gboolean keyPress(GtkWidget *w,GdkEventKey *event,int n);
-	std::pair<int,int> keyIndex(GdkEventKey *event);
 	void setDragDrop(GtkWidget *widget);
 	void openUris(char **uris);
 	void scrollEvent(GdkEventScroll *event);
@@ -231,7 +237,6 @@ public:
 	void showSettings();
 	gint showDeleteDialog();
 	gint showSaveDialog(bool error = false);
-	void showError();
 	gint showModalDialog(GtkWidget *w, DIALOG o);
 
 	void recountListParameters();
@@ -254,6 +259,7 @@ public:
 	void loadLanguage();
 	std::string getTitleVersion();
 	std::string const& getLanguageString(LANGUAGE l, int add = 0);
+	std::string getLanguageStringMultiline(LANGUAGE l);
 	const char* getLanguageStringC(LANGUAGE l, int add = 0);
 	GtkWidget* createTextCombo(VString &v, int active);
 	void resetOptions();
@@ -272,8 +278,9 @@ public:
 	GtkWidget* createLanguageCombo();
 	void setAscendingOrder(bool b);
 	void entryChanged(GtkWidget *entry);
-	void focusIn(GtkWidget *w);
+	void focusIn(GtkWidget *w,int n);
 	void focusOut(GtkWidget *w);
+	bool isFullScreen();
 };
 
 #endif /* FRAME_H_ */

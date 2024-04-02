@@ -72,11 +72,6 @@ const TOOLBAR_INDEX TOOLBAR_BUTTON_WITH_MARGIN[] = {
 		TOOLBAR_INDEX::HOME, TOOLBAR_INDEX::OPEN };
 const int TOOLBAR_BUTTON_MARGIN = 25;
 
-const std::string CONFIG_TAGS[] = { "version", "mode", "order",
-		"list icon height", "language", "warning before delete",
-		"delete option", "warning before save", "show popup tips",
-		"one application instance", "remember the last open directory",
-		"last open directory", "keys" };
 enum class ENUM_CONFIG_TAGS {
 	CVERSION,
 	CMODE,
@@ -90,29 +85,44 @@ enum class ENUM_CONFIG_TAGS {
 	ONE_APPLICATION_INSTANCE,
 	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	LAST_OPEN_DIRECTORY, //not show in options
+	SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,
 	KEYS, //not show in options
 };
+const std::string CONFIG_TAGS[] = { "version", "mode", "order",
+		"list icon height", "language", "warning before delete",
+		"delete option", "warning before save", "show popup tips",
+		"one application instance", "remember the last open directory",
+		"last open directory","show the toolbar in full-screen mode", "keys" };
 
 enum {
 	PIXBUF_COL, TEXT_COL
 };
 
-std::vector<guint> key[] = { { GDK_KEY_KP_Add, GDK_KEY_equal }, {
-		GDK_KEY_KP_Subtract, GDK_KEY_minus }
+const guint KEY[] = {
+GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,
+		INVALID_KEY
 
-, { '0' }, { '1' }, { '2' }, { '3', 'L' }
+		, '0', INVALID_KEY, INVALID_KEY, '1', INVALID_KEY, INVALID_KEY, '2',
+		INVALID_KEY, INVALID_KEY, '3', 'L', INVALID_KEY
 
-, { 'E' }, { 'R' }, { 'T' }, { 'H' }, { 'V' }
+		, 'E', INVALID_KEY, INVALID_KEY, 'R', INVALID_KEY, INVALID_KEY, 'T',
+		INVALID_KEY, INVALID_KEY, 'H', INVALID_KEY, INVALID_KEY, 'V',
+		INVALID_KEY, INVALID_KEY
 
-, { GDK_KEY_Home, GDK_KEY_KP_7 }, { GDK_KEY_Page_Up, GDK_KEY_KP_9 }, {
-		GDK_KEY_Left, GDK_KEY_KP_4 }, { GDK_KEY_Right, GDK_KEY_KP_6 }, {
-		GDK_KEY_Page_Down, GDK_KEY_KP_3 }, { GDK_KEY_End, GDK_KEY_KP_1 }
+		, GDK_KEY_Home, GDK_KEY_KP_7, INVALID_KEY, GDK_KEY_Page_Up,
+		GDK_KEY_KP_9, INVALID_KEY,
+		GDK_KEY_Left, GDK_KEY_KP_4, INVALID_KEY, GDK_KEY_Right,
+		GDK_KEY_KP_6, INVALID_KEY,
+		GDK_KEY_Page_Down, GDK_KEY_KP_3, INVALID_KEY, GDK_KEY_End,
+		GDK_KEY_KP_1, INVALID_KEY
 
-, { 'O' }, { GDK_KEY_Delete, GDK_KEY_KP_Decimal }, { 'S' }, { }, { 'F',
-		GDK_KEY_F11, GDK_KEY_Escape }, { GDK_KEY_F1 } //H already is used
+		, 'O', INVALID_KEY, INVALID_KEY, GDK_KEY_Delete,
+		GDK_KEY_KP_Decimal, INVALID_KEY, 'S', INVALID_KEY, INVALID_KEY,
+		INVALID_KEY, INVALID_KEY, INVALID_KEY, 'F',
+		GDK_KEY_F11, GDK_KEY_Escape, GDK_KEY_F1, INVALID_KEY, INVALID_KEY //H already is used
 
-};
-static_assert(TOOLBAR_INDEX_SIZE==SIZE(key));
+		};
+static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==SIZE(KEY));
 
 const std::string SEPARATOR = "         ";
 static const int EVENT_TIME = 1000; //milliseconds, may be problems with small timer
@@ -203,8 +213,8 @@ static void entry_delete(GtkWidget *entry, gint start_pos, gint end_pos,
 }
 
 static gboolean entry_focus_in(GtkWidget *w, GdkEventFocus event,
-		gpointer user_data) {
-	frame->focusIn(w);
+		int n) {
+	frame->focusIn(w,n);
 	return true;
 }
 
@@ -219,7 +229,6 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
 	int i, j, k;
 	ENUM_CONFIG_TAGS ct;
-	std::string s;
 	VString v;
 	m_loadid = -1;
 	m_timer = 0;
@@ -227,7 +236,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_lastNonListMode = MODE::ANY;
 	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
 			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
-			&m_rememberLastOpenDirectory };
+			&m_rememberLastOpenDirectory,&m_showToolbarFullscreen };
 	m_optionsDefalutValue = { 0, //m_languageIndex
 			1, //m_warnBeforeDelete
 			0, //m_deleteOption
@@ -235,6 +244,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 			1, //m_showPopup
 			1, //m_oneInstance
 			1, //m_rememberLastOpenDirectory
+			0,//m_showToolbarFullscreen
 			};
 	//SIZE not working use std::size
 	assert(std::size(m_optionsPointer)==std::size(m_optionsDefalutValue));
@@ -297,24 +307,15 @@ Frame::Frame(GtkApplication *application, std::string path) {
 					m_rememberLastOpenDirectory = j;
 				} else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
 					m_dir = it->second;
+				} else if (ct == ENUM_CONFIG_TAGS::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE && j >= 0 && j < 2) {
+					m_showToolbarFullscreen = j;
 				} else if (ct == ENUM_CONFIG_TAGS::KEYS) {
-					s = it->second;
-					v = split(s);
-					if (v.size() == TOOLBAR_INDEX_SIZE) {
+					v = split(it->second);
+					if (v.size() == SIZE(m_key)) {
 						k = -1;
 						for (auto e : v) {
 							k++;
-							m_key[k].clear();
-							if (e.empty()) {
-								v.clear();
-							} else {
-								v = split(e, ',');
-							}
-							for (auto e : v) {
-								parseString(e, j);
-								//printl(k,j)
-								m_key[k].push_back(j);
-							}
+							parseString(e, m_key[k]);
 						}
 					}
 				}
@@ -482,21 +483,15 @@ Frame::Frame(GtkApplication *application, std::string path) {
 Frame::~Frame() {
 	g_object_unref(m_toolbar);
 	std::string s;
-	int i = -1, j;
-	for (auto &v : m_key) {
+	int i = -1;
+	for (auto e : m_key) {
 		i++;
 		if (i) {
 			s += ' ';
 		}
-		j = -1;
-		for (auto e : v) {
-			j++;
-			if (j) {
-				s += ',';
-			}
-			s += forma(e);
-		}
+		s += forma(e);
 	}
+//	printl(s)
 	WRITE_CONFIG(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int ) m_mode,
 			m_ascendingOrder, m_listIconHeight, m_languageIndex,
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
@@ -771,50 +766,36 @@ gboolean Frame::keyPress(GtkWidget *w, GdkEventKey *event, int n) {
 	const char *p;
 	guint key = event->keyval;
 	guint16 hwkey = event->hardware_keycode;
-	auto pa = keyIndex(event);
-	int i=pa.first,j=pa.second;
+	auto keys=n==-1?m_key:m_tmpkey;
+	int i;// = keyIndex(event,n==-1?m_key:m_tmpkey);
+	const int sz=TOOLBAR_INDEX_SIZE*MAX_HOTKEYS;
+	for(i=0;i<sz;i++,keys++){
+		auto e=*keys;
+		if ((e >= 'A' && e <= 'Z' ? hwkey : key) == e) {
+			break;
+		}
+	}
 
 	if (n == -1) {
-		if (i != -1) {
-			buttonClicked(i);
+		if (i != sz) {
+			buttonClicked(i / MAX_HOTKEYS);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	bool b=i == -1 || n==MAX_HOTKEYS*i+j;
-	//printl(i,j,n,MAX_HOTKEYS*i+j,b)
-	if (b) {
+	m_modalDialogEntryOK = i == sz || n == i;
+	if (m_modalDialogEntryOK) {
 		p = gdk_keyval_name(hwkey);
-		p = p && strlen(p) == 1 && *p >= 'A' && *p <= 'Z' ?
-				p : gdk_keyval_name(key);
+		m_tmpkey[n] = p && strlen(p) == 1 && *p >= 'A' && *p <= 'Z'? hwkey : key;
+		p = gdk_keyval_name(m_tmpkey[n]);
 	} else {
 		p = getLanguageStringC(LANGUAGE::KEY_ALREADY_IN_USE);
 	}
-	addRemoveClass(w, "cerror", !b);
+	addRemoveClass(w, "cerror", !m_modalDialogEntryOK);
 	gtk_entry_set_text(GTK_ENTRY(w), p);
 	return true;
-}
-
-std::pair<int,int> Frame::keyIndex(GdkEventKey *event) {
-	guint key = event->keyval;
-	guint16 hwkey = event->hardware_keycode;
-	int i = -1,j;
-	for (auto v : m_key) {
-		i++;
-		j=-1;
-		for (auto e : v) {
-			j++;
-//			if(i==0){
-//				printl(i,"###", e,e>'Z',"##",key,hwkey)
-//			}
-			if ((e >= 'A' && e<='Z' ? hwkey:key ) == e) {
-				return {i,j};
-			}
-		}
-	}
-	return {-1,-1};
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -1020,28 +1001,6 @@ void Frame::stopThreads() {
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
 
 	g_atomic_int_set(&m_endThreads, 0);
-
-//	int i=888;
-//	gboolean b=g_source_remove_by_user_data ( GP(i));
-//	if(b){
-//		printl("removed",i)
-//	}
-
-	/*
-	 bool r=false;
-	 int i;
-	 for(i=0;i<size();i++){
-	 gboolean b=g_source_remove_by_user_data ( GP(i));
-	 if(b){
-	 r=true;
-	 printl("removed",i)
-	 }
-	 }
-	 if(!r){
-	 printl("nothing to remove",size())
-	 }
-	 */
-
 }
 
 void Frame::buttonPress(GdkEventButton *event) {
@@ -1131,13 +1090,15 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		showSettings();
 		return;
 	} else if (t == TOOLBAR_INDEX::FULLSCREEN) {
-		GdkWindow *gdk_window = gtk_widget_get_window(m_window);
-		GdkWindowState state = gdk_window_get_state(gdk_window);
-		if (state & GDK_WINDOW_STATE_FULLSCREEN) {
-			gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
+		if (isFullScreen()) {
+			if(!m_showToolbarFullscreen){
+				gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
+			}
 			gtk_window_unfullscreen(GTK_WINDOW(m_window));
 		} else {
-			gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
+			if(!m_showToolbarFullscreen){
+				gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
+			}
 			gtk_window_fullscreen(GTK_WINDOW(m_window));
 		}
 		return;
@@ -1321,7 +1282,7 @@ void Frame::buttonClicked(int t) {
 }
 
 void Frame::showSettings() {
-	int i, j, k, l;
+	int i, j, k, l, m;
 	GtkWidget *grid, *w, *tab[3], *box;
 	VString v;
 	std::string s;
@@ -1364,6 +1325,7 @@ void Frame::showSettings() {
 	}
 
 	tab[1] = grid = gtk_grid_new();
+	std::copy(std::begin(m_key), std::end(m_key), std::begin(m_tmpkey));
 	j = k = 0;
 	for (i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
 		w = gtk_button_new();
@@ -1383,19 +1345,20 @@ void Frame::showSettings() {
 		for (l = 0; l < MAX_HOTKEYS; l++) {
 			w = gtk_entry_new();
 
+			m = i * MAX_HOTKEYS + l;
 			gtk_widget_add_events(w, GDK_KEY_PRESS_MASK);
 			g_signal_connect(G_OBJECT (w), "key_press_event",
-					G_CALLBACK (key_press), GP(MAX_HOTKEYS*i+l));
+					G_CALLBACK (key_press), GP(m));
 
 			g_signal_connect_after(G_OBJECT(w), "focus-in-event",
-					G_CALLBACK(entry_focus_in), 0);
+					G_CALLBACK(entry_focus_in), GP(m));
 			g_signal_connect_after(G_OBJECT(w), "focus-out-event",
-					G_CALLBACK(entry_focus_out), 0);
+					G_CALLBACK(entry_focus_out), GP(m));
 
-			if (l < int(m_key[i].size())) {
-				gtk_entry_set_text(GTK_ENTRY(w), gdk_keyval_name(m_key[i][l]));
+			if (m_key[m] != INVALID_KEY) {
+				gtk_entry_set_text(GTK_ENTRY(w), gdk_keyval_name(m_key[m]));
 			}
-			gtk_entry_set_width_chars(GTK_ENTRY(w), 20);
+			gtk_entry_set_width_chars(GTK_ENTRY(w), 18);
 			gtk_entry_set_placeholder_text(GTK_ENTRY(w),
 					getLanguageStringC(LANGUAGE::CLICK_TO_SET_THE_KEY));
 			gtk_container_add(GTK_CONTAINER(box), w);
@@ -1403,6 +1366,11 @@ void Frame::showSettings() {
 		gtk_grid_attach(GTK_GRID(grid), box, j + 1, k, 1, 1);
 		k++;
 	}
+	s=getLanguageStringMultiline(LANGUAGE::HELP_TAB2);
+	w=gtk_label_new(s.c_str());
+	gtk_widget_set_halign(w, GTK_ALIGN_START);
+	gtk_grid_attach(GTK_GRID(grid), w, 0, k, SIZE(TOOLBAR_BUTTON_WITH_MARGIN)*2, 1);
+
 
 	tab[2] = grid = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
@@ -1433,8 +1401,7 @@ void Frame::showSettings() {
 					LANGUAGE::WRITABLE_EXTENSIONS);
 			b1 = oneOf(e, LANGUAGE::READABLE_FORMATS,
 					LANGUAGE::WRITABLE_FORMATS);
-			k = e == LANGUAGE::READABLE_EXTENSIONS ?
-					2 : 1 + (e == LANGUAGE::READABLE_FORMATS);
+			k = 1 + (e == LANGUAGE::READABLE_EXTENSIONS);
 			w = gtk_label_new(getExtensionString(b, b1, k).c_str());
 		}
 		gtk_widget_set_halign(w, GTK_ALIGN_START);
@@ -1447,7 +1414,7 @@ void Frame::showSettings() {
 			+ toString(getApplicationFileSize(), ',');
 	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i, 2, 1);
 
-	auto m_notebook = gtk_notebook_new();
+	m_notebook = gtk_notebook_new();
 	i = 0;
 	for (auto e : tab) {
 		addClass(e, "bg");
@@ -1479,8 +1446,7 @@ gint Frame::showSaveDialog(bool error) {
 	grid = gtk_grid_new();
 	i = 0;
 	if (error) {
-		s = getLanguageString(LANGUAGE::SAVE_ERROR_MESSAGE);
-		s = replaceAll(s, "\\n", "\n");
+		s = getLanguageStringMultiline(LANGUAGE::SAVE_ERROR_MESSAGE);
 		w = gtk_label_new(s.c_str());
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 	}
@@ -1521,11 +1487,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	GtkWidget *b, *b1, *b2;
 	m_modalDialogIndex = o;
 	auto d = m_modal = gtk_dialog_new();
-	if (o == DIALOG::SETTINGS) {
-		addClass(d, "bf");
-	} else {
-		addClass(d, "bg");
-	}
+	addClass(d, o == DIALOG::SETTINGS ? "bf" : "bg");
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(m_window));
 
@@ -1740,6 +1702,10 @@ std::string const& Frame::getLanguageString(LANGUAGE l, int add) {
 	return m_language[int(l) + add];
 }
 
+std::string Frame::getLanguageStringMultiline(LANGUAGE l){
+	return replaceAll(getLanguageString(l), "\\n", "\n");
+}
+
 const char* Frame::getLanguageStringC(LANGUAGE l, int add) {
 	return m_language[int(l) + add].c_str();
 }
@@ -1754,6 +1720,8 @@ GtkWidget* Frame::createTextCombo(VString &v, int active) {
 }
 
 void Frame::optionsButtonClicked(LANGUAGE l) {
+	int i;
+
 	if (oneOf(m_modalDialogIndex, DIALOG::DELETE, DIALOG::SAVE)) {
 		if (m_modalDialogIndex == DIALOG::SAVE) {
 			m_modalDialogEntryText = gtk_entry_get_text(
@@ -1763,28 +1731,47 @@ void Frame::optionsButtonClicked(LANGUAGE l) {
 				l == LANGUAGE::YES ? GTK_RESPONSE_YES : GTK_RESPONSE_NO);
 		return;
 	}
-	int i = 0;
-	auto oldLanguage = m_languageIndex;
-	auto oldShowPopup = m_showPopup;
-	if (l == LANGUAGE::OK) {
-		for (auto e : m_optionsPointer) {
-			auto w = m_options[i++];
-			*e = GTK_IS_COMBO_BOX(w) ?
-					gtk_combo_box_get_active(GTK_COMBO_BOX(w)) :
-					gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
+
+	if (m_modalDialogIndex == DIALOG::SETTINGS) {
+		i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
+		auto oldLanguage = m_languageIndex;
+		auto oldShowPopup = m_showPopup;
+		auto oldFullscreen=m_showToolbarFullscreen;
+		if (l == LANGUAGE::RESET) {
+			resetOptions();
 		}
-	} else if (l == LANGUAGE::RESET) {
-		resetOptions();
-		updateOptions();
+		else if(l == LANGUAGE::OK){
+			if (i == 0) {
+				i = 0;
+				for (auto e : m_optionsPointer) {
+					auto w = m_options[i++];
+					*e = GTK_IS_COMBO_BOX(w) ?
+							gtk_combo_box_get_active(GTK_COMBO_BOX(w)) :
+							gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
+				}
+			} else if (i == 1) {
+				std::copy(std::begin(m_tmpkey), std::end(m_tmpkey), std::begin(m_key));
+			}
+		}
+		gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_OK);
+		if (m_languageIndex != oldLanguage) {
+			loadLanguage();
+			setTitle();				//update title after dialog is closed
+		}
+		if (m_languageIndex != oldLanguage || m_showPopup != oldShowPopup) {
+			setPopups();
+		}
+		if(m_showToolbarFullscreen!=oldFullscreen && isFullScreen()){
+			if(m_showToolbarFullscreen){
+				gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
+			}
+			else{
+				gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
+			}
+		}
+		return;
 	}
-	gtk_dialog_response(GTK_DIALOG(m_modal), GTK_RESPONSE_OK);
-	if (m_languageIndex != oldLanguage) {
-		loadLanguage();
-		setTitle();					//update title after dialog is closed
-	}
-	if (m_languageIndex != oldLanguage || m_showPopup != oldShowPopup) {
-		setPopups();
-	}
+
 }
 
 void Frame::resetOptions() {
@@ -1793,7 +1780,7 @@ void Frame::resetOptions() {
 		*e = m_optionsDefalutValue[i++];
 	}
 	i = 0;
-	for (auto &e : key) {
+	for (auto &e : KEY) {
 		m_key[i++] = e;
 	}
 }
@@ -1912,7 +1899,7 @@ std::string Frame::getExtensionString(bool writableOnly, bool onlyIndex0,
 			continue;
 		}
 		if (!s.empty()) {
-			s += i == sz / rows || i == 2 * sz / rows ? '\n' : ' ';
+			s += i == sz / rows ? '\n' : ' ';
 		}
 		s += e.extension;
 	}
@@ -1928,7 +1915,6 @@ bool Frame::isOneInstanceOnly() {
 		it = m.find(
 				CONFIG_TAGS[int(ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE)]);
 		if (it != m.end() && parseString(it->second, j) && j >= 0 && j < 2) {
-//			printl(j)
 			m_oneInstance = j;
 		}
 	}
@@ -1981,11 +1967,22 @@ void Frame::entryChanged(GtkWidget *entry) {
 	gtk_widget_set_sensitive(m_showModalDialogButtonOK, b);
 }
 
-void Frame::focusIn(GtkWidget *w) {
+void Frame::focusIn(GtkWidget *w,int n) {
+	m_modalDialogEntryOK=0;//need gtk_entry_set_text(GTK_ENTRY(w),"") on kill focus
+	m_tmpkey[n]=INVALID_KEY;//clear hotkey
 	gtk_entry_set_text(GTK_ENTRY(w),
 			getLanguageStringC(LANGUAGE::PRESS_ANY_KEY));
 }
 
 void Frame::focusOut(GtkWidget *w) {
-	//	printl(w)
+	if(!m_modalDialogEntryOK){
+		gtk_entry_set_text(GTK_ENTRY(w),"");
+		removeClass(w, "cerror");
+	}
+}
+
+bool Frame::isFullScreen() {
+	GdkWindow *gdk_window = gtk_widget_get_window(m_window);
+	GdkWindowState state = gdk_window_get_state(gdk_window);
+	return state & GDK_WINDOW_STATE_FULLSCREEN;
 }
