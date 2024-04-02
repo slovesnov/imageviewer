@@ -115,12 +115,7 @@ bool deleteFileToRecycleBin(const std::string &path) {
 	return !SHFileOperation(&fileOp);
 }
 
-static std::string getShortLanguageString(int i) {
+std::string getShortLanguageString(int i) {
 	return LNG[i];
-}
-
-FILE* open(int i, std::string s) {
-	return ::open(getResourcePath(getShortLanguageString(i) + "/" + s + ".txt"),
-			"r");
 }
 

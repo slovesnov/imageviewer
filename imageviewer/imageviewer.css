@@ -1,13 +1,20 @@
 /*only with bg class, not need for open dialog*/
-dialog.bg {
+.bg {
 	background-image: url('imageviewer/images/bg0.jpg');
 }
 
-dialog.bg label link {
+.bg label link {
 	color: #2a76c6;
 }
 
-dialog.bg label,
-dialog.bg combobox {
-	font-size: 12pt;
+.bg label,
+.bf label,
+.bg combobox {
+	font-family: /* Tahoma,'Times New Roman', */ Times, serif;
+	font-size: 13pt;
 }
+
+/* https://stackoverflow.com/questions/44866035/make-gtk-entry-box-smaller */
+entry { 
+	min-height: 0px; 
+} 

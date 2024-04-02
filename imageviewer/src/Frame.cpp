@@ -49,7 +49,7 @@ const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 
 		"folder.png", "cross.png", "save.png", ADDITIONAL_IMAGES[0],
 
-		"fullscreen.png", "setting_tools.png", "help.png" };
+		"fullscreen.png", "setting_tools.png" };
 static_assert(SIZEI(TOOLBAR_IMAGES)==TOOLBAR_INDEX_SIZE);
 
 const TOOLBAR_INDEX ZOOM_INOUT[] = { TOOLBAR_INDEX::ZOOM_IN,
@@ -96,7 +96,37 @@ enum {
 	PIXBUF_COL, TEXT_COL
 };
 
-const std::string SEPARATOR = "       ";
+std::vector<Key> key[]={
+		{ {GDK_KEY_KP_Add,1},{GDK_KEY_equal,1} }
+		,{ {GDK_KEY_KP_Subtract,1},{GDK_KEY_minus,1} }
+		,{ {'0',0} }
+		,{ {'1',0} }
+		,{ {'2',0} }
+		,{ {'3',0},{'L',0} }
+
+		,{ {'E',0} }
+		,{ {'R',0} }
+		,{ {'T',0} }
+		,{ {'H',0} }
+		,{ {'V',0} }
+
+		,{ {GDK_KEY_Home,1},{GDK_KEY_KP_7,1} }
+		,{ {GDK_KEY_Page_Up,1},{GDK_KEY_KP_9,1} }
+		,{ {GDK_KEY_Left,1},{GDK_KEY_KP_4,1} }
+		,{ {GDK_KEY_Right,1},{GDK_KEY_KP_6,1} }
+		,{ {GDK_KEY_Page_Down,1},{GDK_KEY_KP_3,1} }
+		,{ {GDK_KEY_End,1},{GDK_KEY_KP_1,1} }
+
+		,{ {'O',0} }
+		,{ {GDK_KEY_Delete,1},{GDK_KEY_KP_Decimal,1} }
+		,{ {'S',0} }
+		,{}
+		,{ {'F',0},{GDK_KEY_F11,1},{GDK_KEY_Escape,1} }
+		,{ {'H',0},{GDK_KEY_F1,1} }
+};
+static_assert(TOOLBAR_INDEX_SIZE==SIZE(key));
+
+const std::string SEPARATOR = "         ";
 static const int EVENT_TIME = 1000; //milliseconds, may be problems with small timer
 int Frame::m_oneInstance;
 std::vector<int> Frame::m_optionsDefalutValue;
@@ -300,41 +330,41 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
 	//begin inno script generator do not remove
 	/*
-	printi
-	const char *p;
-	std::string s,s1;
-	const char gn[]="g";
-	const char tn[]="t";
-	for(i=0;i<2;i++){
-		j=-1;
-	for(auto& a:m_supported){
-		j++;
-		s1=a.extension;
-		p=s1.c_str();
-		if(i){
-			printf("Root: HKCR; Subkey: \".%s\"; ValueType: string; ValueName: \"\"; ValueData: \"{#APPNAME}\"; Flags: uninsdeletevalue; Tasks: %s\\%s%d\n",p,gn,tn,j);
+	 printi
+	 const char *p;
+	 std::string s,s1;
+	 const char gn[]="g";
+	 const char tn[]="t";
+	 for(i=0;i<2;i++){
+	 j=-1;
+	 for(auto& a:m_supported){
+	 j++;
+	 s1=a.extension;
+	 p=s1.c_str();
+	 if(i){
+	 printf("Root: HKCR; Subkey: \".%s\"; ValueType: string; ValueName: \"\"; ValueData: \"{#APPNAME}\"; Flags: uninsdeletevalue; Tasks: %s\\%s%d\n",p,gn,tn,j);
 
-		}
-		else{
-			printf("Name: %s\\%s%d; Description: \"*.%s\"; Flags: unchecked\n",gn,tn,j,p);
-			if(!s.empty()){
-				s+=" or ";
-			}
-			s+=gn+("\\"+(tn+std::to_string(j)));
-		}
-	}
-		if(!i){
-			printf("\n[Registry]\n");
-		}
-	}
-	const char* A[]={
-			R"(Root: HKCR; Subkey: {#APPNAME}; ValueType: string; ValueName: ""; ValueData: {#APPNAME}; Flags: uninsdeletekey; Tasks:)",
-			R"(Root: HKCR; Subkey: "{#APPNAME}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\bin\{#APPNAME}.exe,0"; Tasks:)",
-			R"(Root: HKCR; Subkey: "{#APPNAME}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\bin\{#APPNAME}.exe"" ""%1"""; Tasks:)"
-	};
-	for(auto a:A){
-		printf("%s%s\n",a,s.c_str());
-	}*/
+	 }
+	 else{
+	 printf("Name: %s\\%s%d; Description: \"*.%s\"; Flags: unchecked\n",gn,tn,j,p);
+	 if(!s.empty()){
+	 s+=" or ";
+	 }
+	 s+=gn+("\\"+(tn+std::to_string(j)));
+	 }
+	 }
+	 if(!i){
+	 printf("\n[Registry]\n");
+	 }
+	 }
+	 const char* A[]={
+	 R"(Root: HKCR; Subkey: {#APPNAME}; ValueType: string; ValueName: ""; ValueData: {#APPNAME}; Flags: uninsdeletekey; Tasks:)",
+	 R"(Root: HKCR; Subkey: "{#APPNAME}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\bin\{#APPNAME}.exe,0"; Tasks:)",
+	 R"(Root: HKCR; Subkey: "{#APPNAME}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\bin\{#APPNAME}.exe"" ""%1"""; Tasks:)"
+	 };
+	 for(auto a:A){
+	 printf("%s%s\n",a,s.c_str());
+	 }*/
 
 	loadCSS();
 
@@ -470,12 +500,11 @@ void Frame::setTitle() {
 		} else {
 			auto &f = m_vp[m_pi];
 			const std::string n = getFileInfo(f.m_path, FILEINFO::NAME);
-			t += n + SEPARATOR + format("%dx%d", m_pw, m_ph) + SEPARATOR
-					+ getLanguageString(LANGUAGE::ZOOM) + " "
+			t += n + SEPARATOR + getLanguageString(LANGUAGE::SIZE)
+					+ format(" %dx%d ", m_pw, m_ph) + getSizeMbKbB(f.m_size)
+					+ SEPARATOR + getLanguageString(LANGUAGE::ZOOM) + " "
 					+ std::to_string(int(m_zoom * 100)) + "%" + SEPARATOR
-					+ format("%d/%d", m_pi + 1, size()) + SEPARATOR
-					+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
-					+ getSizeMbKbB(f.m_size);
+					+ format("%d/%d", m_pi + 1, size());
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
 			 * compress images online https://compressjpeg.com/ru/
@@ -699,38 +728,23 @@ void Frame::drawImage() {
 }
 
 gboolean Frame::keyPress(GdkEventKey *event) {
-//	from gtk documentation return value
-//	TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
-	const int k = event->keyval;
+	//	from gtk documentation return value
+	//	TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
+	const guint k = event->keyval;
 	const guint16 hwkey = event->hardware_keycode;
-
-	//printl(k, GDK_KEY_minus,GDK_KEY_equal,GDK_KEY_KP_Subtract, GDK_KEY_minus);
-	//english and russian keyboard layout (& caps lock)
-	bool v[] = { k == GDK_KEY_KP_Add || k == GDK_KEY_equal, k
-			== GDK_KEY_KP_Subtract || k == GDK_KEY_minus
-
-	, hwkey == '0', hwkey == '1', hwkey == '2', hwkey == '3' || hwkey == 'L'
-
-	, hwkey == 'E', hwkey == 'R', hwkey == 'T', hwkey == 'H', hwkey == 'V'
-
-	, oneOf(k, GDK_KEY_Home, GDK_KEY_KP_7), oneOf(k, GDK_KEY_Page_Up,
-	GDK_KEY_KP_9), oneOf(k, GDK_KEY_Left, GDK_KEY_KP_4), oneOf(k, GDK_KEY_Right,
-	GDK_KEY_KP_6), oneOf(k, GDK_KEY_Page_Down,
-	GDK_KEY_KP_3), oneOf(k, GDK_KEY_End, GDK_KEY_KP_1)
-
-	, hwkey == 'O', oneOf(k, GDK_KEY_Delete, GDK_KEY_KP_Decimal), hwkey == 'S'//save
-			,
-			false		//no hotkey for order
-			, hwkey == 'F' || oneOf(k, GDK_KEY_F11, GDK_KEY_Escape), false,
-			hwkey == 'H' || k == GDK_KEY_F1 };
-
-	assert(TOOLBAR_INDEX_SIZE==SIZE(v));
-
-	int i = INDEX_OF(true, v);
-	if (i != -1) {
-		buttonClicked(i);
+	printl(k,hwkey,gdk_keyval_name (k))
+	;
+	int i = -1;
+	for (auto v : m_key) {
+		i++;
+		for (auto e : v) {
+			if ((e.keyval && k == e.code) || (!e.keyval && hwkey == e.code)) {
+				buttonClicked(i);
+				return true;
+			}
+		}
 	}
-	return i != -1;
+	return false;
 }
 
 void Frame::setDragDrop(GtkWidget *widget) {
@@ -788,8 +802,7 @@ void Frame::setNoImage() {
 	for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
 		TOOLBAR_INDEX t = TOOLBAR_INDEX(i);
 		setButtonState(i,
-				oneOf(t, TOOLBAR_INDEX::OPEN, TOOLBAR_INDEX::SETTINGS,
-						TOOLBAR_INDEX::HELP));
+				oneOf(t, TOOLBAR_INDEX::OPEN, TOOLBAR_INDEX::SETTINGS));
 	}
 }
 
@@ -800,14 +813,14 @@ std::vector<FileSupported>::const_iterator Frame::supportedIterator(
 	 */
 	std::vector<FileSupported>::const_iterator it;
 	int d;
-	std::string s=p;
+	std::string s = p;
 	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
 		return std::tolower(c);
 	});
 
-	for(it=m_supported.begin();it!= m_supported.end();it++){
-		d=int(s.length())-int(it->extension.length());
-		if(d>0 && s[d-1]=='.' && s.substr(d)==it->extension){
+	for (it = m_supported.begin(); it != m_supported.end(); it++) {
+		d = int(s.length()) - int(it->extension.length());
+		if (d > 0 && s[d - 1] == '.' && s.substr(d) == it->extension) {
 			return !writableOnly || it->writable ? it : m_supported.end();
 		}
 	}
@@ -1036,17 +1049,16 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	int i;
 	std::string s;
 
+	//not proceed if button is disabled
+	if (!gtk_widget_get_sensitive(m_button[int(t)])) {
+		return;
+	}
+
 	if (t == TOOLBAR_INDEX::OPEN) {
 		openDirectory();
 		return;
 	} else if (t == TOOLBAR_INDEX::SETTINGS) {
 		showSettings();
-		return;
-	} else if (t == TOOLBAR_INDEX::HELP) {
-		showDialog(DIALOG::HELP,
-				getLanguageString(LANGUAGE::HELP) + "\n"
-						+ getLanguageString(LANGUAGE::SUPPORTED_FORMATS) + ": "
-						+ getExtensionString(0));
 		return;
 	} else if (t == TOOLBAR_INDEX::FULLSCREEN) {
 		GdkWindow *gdk_window = gtk_widget_get_window(m_window);
@@ -1239,23 +1251,21 @@ void Frame::buttonClicked(int t) {
 }
 
 void Frame::showSettings() {
-	int i;
-	GtkWidget *grid, *w;
+	int i, j, k, l;
+	GtkWidget *grid, *w, *tab[3], *box;
 	VString v;
 	std::string s;
 	char *markup;
+	bool b, b1;
 
-	grid = gtk_grid_new();
+	tab[0] = grid = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
-	gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
-	gtk_widget_set_margin_bottom(grid, 5);
+	gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
 
-	i=-1;
-//	for(i=0;i<SIZEI(OPTIONS);i++){
-	for (auto e:OPTIONS) {
+	i = -1;
+	for (auto e : OPTIONS) {
 		i++;
-//		auto e=OPTIONS[i];
-		w = gtk_label_new(getLanguageString(e).c_str());
+		w = gtk_label_new(getLanguageStringC(e));
 		gtk_widget_set_halign(w, GTK_ALIGN_START);
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
 
@@ -1269,23 +1279,6 @@ void Frame::showSettings() {
 			}
 			w = m_options[i] = createTextCombo(v, 0);
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
-		} else if (e == LANGUAGE::HOMEPAGE) {
-			s = getLanguageString(e, 1);
-			w = gtk_label_new(NULL);
-			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
-					s.c_str(), LNG_LONG[m_languageIndex].c_str(),
-					s.substr(s.find("slo")).c_str(),
-					LNG_LONG[m_languageIndex].c_str());
-			gtk_label_set_markup(GTK_LABEL(w), markup);
-			g_free(markup);
-			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
-					gpointer(s.c_str()));
-			gtk_widget_set_halign(w, GTK_ALIGN_START);
-		} else if (oneOf(e, LANGUAGE::SUPPORTED_FORMATS,LANGUAGE::WRITABLE_FILE_FORMAT)) {
-			w = gtk_label_new(getExtensionString(e==LANGUAGE::SUPPORTED_FORMATS?1:2).c_str());
-		} else if (e == LANGUAGE::AUTHOR) {
-			w = gtk_label_new(getLanguageString(e, 1).c_str());
-			gtk_widget_set_halign(w, GTK_ALIGN_START);
 		} else {
 			w = m_options[i] = gtk_check_button_new();
 			if (e == LANGUAGE::ONE_APPLICATION_INSTANCE) {
@@ -1293,18 +1286,110 @@ void Frame::showSettings() {
 				gtk_container_add(GTK_CONTAINER(w), m_options[i]);
 				gtk_container_add(GTK_CONTAINER(w),
 						gtk_label_new(
-								getLanguageString(LANGUAGE::REQUIRES_RESTARTING).c_str()));
+								getLanguageStringC(
+										LANGUAGE::REQUIRES_RESTARTING)));
 			}
 		}
 		gtk_grid_attach(GTK_GRID(grid), w, 1, i, 1, 1);
 	}
 
+	tab[1] = grid = gtk_grid_new();
+	j = k = 0;
+	for (i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
+		w = gtk_button_new();
+		gtk_button_set_image(GTK_BUTTON(w),
+				gtk_image_new_from_pixbuf(m_buttonPixbuf[i][1]));
+		if (ONE_OF(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)
+				&& TOOLBAR_INDEX(i) != TOOLBAR_BUTTON_WITH_MARGIN[0]) {
+			k = 0;
+			j += 2;
+		}
+		if (j) {
+			gtk_widget_set_margin_start(w, 6);
+		}
+		gtk_grid_attach(GTK_GRID(grid), w, j, k, 1, 1);
+
+/*
+		g=gtk_grid_new();
+		for (l = 0; l < 4; l++) {
+			w = gtk_entry_new();
+			gtk_entry_set_width_chars(GTK_ENTRY(w), 10);
+			gtk_entry_set_placeholder_text (GTK_ENTRY(w), "placeholder...");
+			gtk_grid_attach(GTK_GRID(g), w, l/2, l%2, 1, 1);
+		}
+		gtk_grid_attach(GTK_GRID(grid), g, j + 1, k, 1, 1);
+*/
+
+		box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+		for (l = 0; l < 3; l++) {
+			w = gtk_entry_new();
+			if(l<int(m_key[i].size())){
+				s=gdk_keyval_name(m_key[i][l].code)+ format(" %x",m_key[i][l].code);
+				gtk_entry_set_text(GTK_ENTRY(w), s.c_str());
+			}
+			gtk_entry_set_width_chars(GTK_ENTRY(w), 20);
+			gtk_entry_set_placeholder_text (GTK_ENTRY(w), getLanguageStringC(LANGUAGE::CLICK_TO_SET_THE_KEY));
+			gtk_container_add(GTK_CONTAINER(box), w);
+		}
+		gtk_grid_attach(GTK_GRID(grid), box, j + 1, k, 1, 1);
+		k++;
+	}
+
+	tab[2] = grid = gtk_grid_new();
+	gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
+	i = -1;
+	for (auto e : { LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR, LANGUAGE::EMAIL,
+			LANGUAGE::READABLE_FORMATS, LANGUAGE::READABLE_EXTENSIONS,
+			LANGUAGE::WRITABLE_FORMATS, LANGUAGE::WRITABLE_EXTENSIONS }) {
+		i++;
+		w = gtk_label_new(getLanguageStringC(e));
+		gtk_widget_set_halign(w, GTK_ALIGN_START);
+		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
+
+		if (e == LANGUAGE::HOMEPAGE) {
+			s = getLanguageString(e, 1);
+			w = gtk_label_new(NULL);
+			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
+					s.c_str(), LNG_LONG[m_languageIndex].c_str(),
+					s.c_str(),
+					LNG_LONG[m_languageIndex].c_str());
+			gtk_label_set_markup(GTK_LABEL(w), markup);
+			g_free(markup);
+			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
+					gpointer(s.c_str()));
+		} else if (oneOf(e, LANGUAGE::AUTHOR, LANGUAGE::EMAIL)) {
+			w = gtk_label_new(getLanguageStringC(e, 1));
+		} else {
+			b = oneOf(e, LANGUAGE::WRITABLE_FORMATS,
+					LANGUAGE::WRITABLE_EXTENSIONS);
+			b1 = oneOf(e, LANGUAGE::READABLE_FORMATS,
+					LANGUAGE::WRITABLE_FORMATS);
+			k=e==LANGUAGE::READABLE_EXTENSIONS ? 2 :1+(e==LANGUAGE::READABLE_FORMATS);
+			w = gtk_label_new(getExtensionString(b, b1, k).c_str());
+		}
+		gtk_widget_set_halign(w, GTK_ALIGN_START);
+		gtk_widget_set_valign(w, GTK_ALIGN_CENTER);
+		gtk_grid_attach(GTK_GRID(grid), w, 1, i, 1, 1);
+	}
 	i++;
-	s = getBuildVersionString(false) + ", "
-			+ getLanguageString(LANGUAGE::FILE_SIZE) + " "
+	s = getBuildVersionString(true) + ", file size "
+			//+ getLanguageString(LANGUAGE::SIZE)+ " "
 			+ toString(getApplicationFileSize(), ',');
 	gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i, 2, 1);
-	showModalDialog(grid, DIALOG::SETTINGS);
+
+	auto m_notebook = gtk_notebook_new();
+
+	i = 0;
+	for (auto e : tab) {
+		addClass(e, "bg");
+		w = gtk_label_new(getLanguageStringC(LANGUAGE::OPTIONS, i));
+		gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), e, w);
+		i++;
+	}
+
+	showModalDialog(m_notebook, DIALOG::SETTINGS);
+
 }
 
 void Frame::showDialog(DIALOG d, std::string s) {
@@ -1314,10 +1399,9 @@ void Frame::showDialog(DIALOG d, std::string s) {
 }
 
 gint Frame::showDeleteDialog() {
-	auto w =
-			gtk_label_new(
-					getLanguageString(
-							LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE).c_str());
+	auto w = gtk_label_new(
+			getLanguageStringC(
+					LANGUAGE::DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE));
 	return showModalDialog(w, DIALOG::DELETE);
 }
 
@@ -1333,10 +1417,8 @@ gint Frame::showSaveDialog(bool error) {
 		w = gtk_label_new(s.c_str());
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 	}
-	w =
-			gtk_label_new(
-					getLanguageString(
-							LANGUAGE::DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE).c_str());
+	w = gtk_label_new(
+			getLanguageStringC(LANGUAGE::DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE));
 	gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 
 	m_modalDialogEntry = gtk_entry_new();
@@ -1349,15 +1431,15 @@ gint Frame::showSaveDialog(bool error) {
 
 	w = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_container_add(GTK_CONTAINER(w),
-			gtk_label_new(getLanguageString(LANGUAGE::FILE).c_str()));
+			gtk_label_new(getLanguageStringC(LANGUAGE::FILE)));
 	gtk_box_pack_start(GTK_BOX(w), m_modalDialogEntry, TRUE, TRUE, 0);
 	gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 
 	for (j = 0; j < 2; j++) {
-		s = getLanguageString(LANGUAGE::WRITABLE_FILE_FORMAT, j);
+		s = getLanguageString(LANGUAGE::WRITABLE_FORMATS, j);
 		gtk_grid_attach(GTK_GRID(grid), gtk_label_new(s.c_str()), 0, i, 1, 1);
 
-		s = getExtensionString(j + 2);
+		s = getExtensionString(true, !j);
 		w = gtk_entry_new();
 		gtk_entry_set_text(GTK_ENTRY(w), s.c_str());
 		gtk_editable_set_editable(GTK_EDITABLE(w), 0);
@@ -1372,7 +1454,11 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	GtkWidget *b, *b1, *b2;
 	m_modalDialogIndex = o;
 	auto d = m_modal = gtk_dialog_new();
-	addClass(d, "bg");
+	if (o == DIALOG::SETTINGS) {
+		addClass(d, "bf");
+	} else {
+		addClass(d, "bg");
+	}
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(m_window));
 
@@ -1568,28 +1654,13 @@ void Frame::setIconHeightWidth(int height) {
 }
 
 void Frame::loadLanguage() {
-	static const int MAX_BUFF_LEN = 2048;
-	FILE *f;
-	char buff[MAX_BUFF_LEN];
-	std::string s, s1;
+	std::string s;
 	m_language.clear();
-
-	f = open(m_languageIndex, "language");
-	assert(f!=NULL);
-
-	int i = 0;
-	while (fgets(buff, MAX_BUFF_LEN, f) != NULL) {
-		s = buff;
-		if (i >= int(LANGUAGE::HELP)) {
-			s1 += s;
-		} else {
-			s = s.substr(0, s.length() - 1);
-			m_language.push_back(s);
-			i++;
-		}
+	std::ifstream f = openResourceFileAsStream(
+			getShortLanguageString(m_languageIndex) + "/language.txt");
+	while (std::getline(f, s)) {
+		m_language.push_back(s);
 	}
-	fclose(f);
-	m_language.push_back(s1);
 }
 
 std::string Frame::getTitleVersion() {
@@ -1598,8 +1669,12 @@ std::string Frame::getTitleVersion() {
 			+ format(" %.1lf", IMAGE_VIEWER_VERSION);
 }
 
-std::string& Frame::getLanguageString(LANGUAGE l, int add) {
+std::string const& Frame::getLanguageString(LANGUAGE l, int add) {
 	return m_language[int(l) + add];
+}
+
+const char* Frame::getLanguageStringC(LANGUAGE l, int add) {
+	return m_language[int(l) + add].c_str();
 }
 
 GtkWidget* Frame::createTextCombo(VString &v, int active) {
@@ -1650,6 +1725,10 @@ void Frame::resetOptions() {
 	for (auto e : m_optionsPointer) {
 		*e = m_optionsDefalutValue[i++];
 	}
+	i=0;
+	for(auto&e:key){
+		m_key[i++]=e;
+	}
 }
 
 void Frame::updateOptions() {
@@ -1669,7 +1748,7 @@ void Frame::setPopups() {
 	for (auto e : m_button) {
 		if (m_showPopup && gtk_widget_get_sensitive(e)) {
 			gtk_widget_set_tooltip_text(e,
-					getLanguageString(LANGUAGE::LTOOLTIP1, i).c_str());
+					getLanguageStringC(LANGUAGE::TOOLTIP1, i));
 		} else {
 			gtk_widget_set_has_tooltip(e, 0);
 		}
@@ -1683,12 +1762,12 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 	const gint MY_SELECTED = 0;
 
 	GtkWidget *dialog = gtk_file_chooser_dialog_new(
-			getLanguageString(LANGUAGE::OPEN_FILE).c_str(), GTK_WINDOW(parent),
+			getLanguageStringC(LANGUAGE::OPEN_FILE), GTK_WINDOW(parent),
 			onlyFolder ?
 					GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER :
 					GTK_FILE_CHOOSER_ACTION_OPEN,
-			getLanguageString(LANGUAGE::CANCEL).c_str(), GTK_RESPONSE_CANCEL,
-			getLanguageString(LANGUAGE::OPEN).c_str(), GTK_RESPONSE_ACCEPT,
+			getLanguageStringC(LANGUAGE::CANCEL), GTK_RESPONSE_CANCEL,
+			getLanguageStringC(LANGUAGE::OPEN), GTK_RESPONSE_ACCEPT,
 			NULL);
 
 	if (!onlyFolder) {
@@ -1697,7 +1776,7 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
 		 * "open" button can open only files
 		 */
 		gtk_dialog_add_button(GTK_DIALOG(dialog),
-				getLanguageString(LANGUAGE::SELECT).c_str(), MY_SELECTED);
+				getLanguageStringC(LANGUAGE::SELECT), MY_SELECTED);
 	}
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog),
 			(dir + "/..").c_str());
@@ -1755,23 +1834,18 @@ void Frame::stopTimer(guint &t) {
 		t = 0;
 	}
 }
-
-std::string Frame::getExtensionString(int o) {
-	/* 0 - extensions in one row with index 0
-	 * 1 - extensions in two rows with index 0
-	 * 2 - writable extensions in one row with index 0
-	 * 3 - writable extensions in one row with any index
-	 */
+std::string Frame::getExtensionString(bool writableOnly, bool onlyIndex0,
+		int rows) {
 	int i = -1;
 	std::string s;
 	int sz = m_supported.size();
 	for (auto &e : m_supported) {
 		i++;
-		if ((o != 3 && e.index != 0) || (oneOf(o, 2, 3) && !e.writable)) {
+		if ((onlyIndex0 && e.index != 0) || (writableOnly && !e.writable)) {
 			continue;
 		}
 		if (!s.empty()) {
-			s += i == sz / 2 && o == 1 ? '\n' : ' ';
+			s += i == sz / rows || i == 2*sz / rows ? '\n' : ' ';
 		}
 		s += e.extension;
 	}

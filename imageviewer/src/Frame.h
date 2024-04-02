@@ -33,14 +33,17 @@ enum class LANGUAGE {
 	REMOVE_FILES_TO_RECYCLE_BIN,
 	REMOVE_FILES_PERMANENTLY,
 	FILE,
-	FILE_SIZE,
-	SUPPORTED_FORMATS,
-	WRITABLE_FILE_FORMAT,
-	WRITABLE_EXTENSIONS, //should goes after WRITABLE_FILE_FORMAT
+	SIZE,
+	READABLE_FORMATS,
+	READABLE_EXTENSIONS,
+	WRITABLE_FORMATS,
+	WRITABLE_EXTENSIONS, //should goes after WRITABLE_FORMATS
 	HOMEPAGE,
 	HOMEPAGE1,
 	AUTHOR,
 	AUTHOR1,
+	EMAIL,
+	EMAIL1,
 	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	VERSION,
 	YES,
@@ -77,39 +80,19 @@ enum class LANGUAGE {
 	TOTAL,
 	ONE_APPLICATION_INSTANCE,
 	REQUIRES_RESTARTING,
-	LTOOLTIP1,
-	LTOOLTIP2,
-	LTOOLTIP3,
-	LTOOLTIP4,
-	LTOOLTIP5,
-	LTOOLTIP6,
-	LTOOLTIP7,
-	LTOOLTIP8,
-	LTOOLTIP9,
-	LTOOLTIP10,
-	LTOOLTIP11,
-	LTOOLTIP12,
-	LTOOLTIP13,
-	LTOOLTIP14,
-	LTOOLTIP15,
-	LTOOLTIP16,
-	LTOOLTIP17,
-	LTOOLTIP18,
-	LTOOLTIP19,
-	LTOOLTIP20,
-	LTOOLTIP21,
-	LTOOLTIP22,
-	LTOOLTIP23,
-	LTOOLTIP24,
-	HELP
+	OPTIONS,
+	KEYS,
+	ABOUT,
+	CLICK_TO_SET_THE_KEY,
+	TOOLTIP1
+	//other toolitps
 };
 
 const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
 		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
 		LANGUAGE::ONE_APPLICATION_INSTANCE,
-		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY, LANGUAGE::HOMEPAGE,
-		LANGUAGE::AUTHOR, LANGUAGE::SUPPORTED_FORMATS, LANGUAGE::WRITABLE_FILE_FORMAT };
+		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY };
 
 //if add TOOLBAR_INDEX enum need also add toopltip LTOOLTIP.. also need change Frame::keyPress
 enum class TOOLBAR_INDEX {
@@ -136,7 +119,6 @@ enum class TOOLBAR_INDEX {
 	REORDER_FILE,
 	FULLSCREEN,
 	SETTINGS,
-	HELP,
 	TB_SIZE
 };
 const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
@@ -156,6 +138,11 @@ struct FileSupported {
 	bool operator<(FileSupported const &a) const {
 		return extension < a.extension;
 	}
+};
+
+struct Key{
+	guint code;
+	bool keyval;
 };
 
 class Frame {
@@ -193,6 +180,7 @@ public:
 	guint m_timer;
 	double m_zoom;
 	std::vector<int*> m_optionsPointer;
+	std::vector<Key> m_key[TOOLBAR_INDEX_SIZE];
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
@@ -266,7 +254,8 @@ public:
 	void setIconHeightWidth(int height);
 	void loadLanguage();
 	std::string getTitleVersion();
-	std::string& getLanguageString(LANGUAGE l, int add = 0);
+	std::string const& getLanguageString(LANGUAGE l, int add = 0);
+	const char* getLanguageStringC(LANGUAGE l, int add = 0);
 	GtkWidget* createTextCombo(VString &v, int active);
 	void resetOptions();
 	void updateOptions();
@@ -277,7 +266,8 @@ public:
 	void directoryChanged();
 	void directoryChangedAddEvent();
 	void stopTimer(guint &t);
-	std::string getExtensionString(int o);
+	std::string getExtensionString(bool writableOnly = false, bool onlyIndex0 =
+			true, int rows = 1);
 	static bool isOneInstanceOnly();
 	void setDefaultZoom();
 	GtkWidget* createLanguageCombo();

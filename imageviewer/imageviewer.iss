@@ -62,7 +62,7 @@ english.checkUncheckAll=check/uncheck all
 russian.checkUncheckAll=установить/снять все флажки
 english.associate=associate a file extension with imageviewer
 russian.associate=ассоциировать расширение файла с программой просмотра изображений
-;https://stackoverflow.com/questions/8909283/inno-setup-optional-user-selectable-file-association
+;https://stackoverflow.com/questions/8909283/inno-setup-optional-user-selectable-file-association 
 ;https://jrsoftware.org/ishelp/index.php?topic=taskssection
 [Tasks]
 Name: group; Description:{cm:checkUncheckAll}; GroupDescription: {cm:associate}; Flags: unchecked
