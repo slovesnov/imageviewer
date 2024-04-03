@@ -108,7 +108,7 @@ enum class TOOLBAR_INDEX {
 	REORDER_FILE,
 	FULLSCREEN,
 	SETTINGS,
-	TB_SIZE
+	SZ
 };
 
 enum class ENUM_CONFIG_TAGS {
@@ -139,6 +139,12 @@ enum class MODE {
 
 enum class DIALOG {
 	HELP, SETTINGS, DELETE, SAVE, ERROR
+};
+
+enum class TIMER{
+	DIRECTORY
+	,ZOOM
+	,SZ
 };
 
 #endif /* ENUMS_H_ */

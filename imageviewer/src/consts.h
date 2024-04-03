@@ -24,7 +24,7 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,
 		LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE, LANGUAGE::ZOOM_FACTOR };
 
-const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
+const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::SZ);
 
 const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
@@ -119,6 +119,9 @@ GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,
 static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==SIZE(KEY));
 
 const std::string SEPARATOR = "         ";
-const int EVENT_TIME = 1000; //milliseconds, may be problems with small timer
+//milliseconds
+const int EVENT_TIME[] = {1000,60};
+static_assert(int(TIMER::SZ)==SIZE(EVENT_TIME));
+
 
 #endif /* CONSTS_H_ */

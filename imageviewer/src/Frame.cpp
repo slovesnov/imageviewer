@@ -93,13 +93,13 @@ static gboolean label_clicked(GtkWidget *label, const gchar *uri, gpointer) {
 	return TRUE;
 }
 
-void directory_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
+static void directory_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
 		GFileMonitorEvent event_type, gpointer user_data) {
-	frame->directoryChangedAddEvent();
+	frame->addTimerEvent(TIMER::DIRECTORY);
 }
 
-static gboolean directory_changed_timer(gpointer data) {
-	frame->directoryChanged();
+static gboolean timer_changed(TIMER t) {
+	frame->timerEventOccurred(t);
 	return G_SOURCE_REMOVE;
 }
 
@@ -130,10 +130,13 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	ENUM_CONFIG_TAGS ct;
 	VString v;
 	m_loadid = -1;
-	m_timer = 0;
+	for(auto&e:m_timer){
+		e = 0;
+	}
 	m_zoom = 1;
 	m_lastNonListMode = MODE::ANY;
 	m_proceedEvents=true;
+	m_zoomDelta=0;
 	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
 			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
 			&m_rememberLastOpenDirectory, &m_showToolbarFullscreen };
@@ -622,6 +625,13 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		h = m_zoom * m_ph;
 		//TODO?? scale only one time
 		m_pixScaled = gdk_pixbuf_scale_simple(m_pix, w, h, GDK_INTERP_BILINEAR);
+
+		//not working on some svgs arrow0.svg from bridge project not scaled (in photoshop scaled ok)
+		//m_pixScaled = gdk_pixbuf_new_from_file_at_size(m_vp[m_pi].m_path.c_str(),w,h, 0);
+		//m_pixScaled = gdk_pixbuf_new_from_file_at_scale(m_vp[m_pi].m_path.c_str(),w,h,false, 0);
+		//m_pixScaled = gdk_pixbuf_new_from_file_at_size_utf8(m_vp[m_pi].m_path.c_str(),w,h, 0);
+		//m_pixScaled = gdk_pixbuf_new_from_file_at_scale_utf8(m_vp[m_pi].m_path.c_str(),w,h,false, 0);
+
 		destx = (width - w) / 2;
 		desty = (height - h) / 2;
 
@@ -632,6 +642,14 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		m_ah = MIN(h, height);
 
 		adjustPos();
+
+/*
+		const GdkRGBA RED_COLOR = { 1, 0, 0, 1 };
+		gdk_cairo_set_source_rgba(cr, &RED_COLOR);
+		cairo_rectangle(cr, destx, desty, m_aw, m_ah);
+		cairo_stroke_preserve(cr);
+		cairo_fill(cr);
+*/
 
 		copy(m_pixScaled, cr, destx, desty, m_aw, m_ah, m_posh, m_posv);
 	}
@@ -663,7 +681,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	 //	cairo_stroke_preserve(cr);
 
 	 */
-
 }
 
 void Frame::drawImage() {
@@ -689,7 +706,19 @@ gboolean Frame::keyPress(GtkWidget *w, GdkEventKey *event, int n) {
 
 	if (n == -1) {
 		if (i != sz) {
-			buttonClicked(i / MAX_HOTKEYS);
+			i/=MAX_HOTKEYS;
+			//TODO
+			auto t = TOOLBAR_INDEX(i);
+			if (m_mode == MODE::LIST
+					&& oneOf(t, TOOLBAR_INDEX::ZOOM_IN,
+							TOOLBAR_INDEX::ZOOM_OUT)) {
+				m_zoomDelta += t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1;
+				addTimerEvent(TIMER::ZOOM);
+//				printi
+//				buttonClicked(i);
+			} else {
+				buttonClicked(i);
+			}
 			return true;
 		} else {
 			return false;
@@ -723,7 +752,8 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 	if (event->state == GDK_CONTROL_MASK) {
 		if (dy) {
 			//dy=-1 or 1
-			buttonClicked(ZOOM_INOUT[dy == 1]);
+			m_zoomDelta-=dy;
+			addTimerEvent(TIMER::ZOOM);
 		}
 	} else {
 		if (m_mode == MODE::LIST) {
@@ -733,7 +763,6 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 					event->time);
 		}
 	}
-
 }
 
 void Frame::setPosRedraw(double dx, double dy, guint32 time) {
@@ -1609,6 +1638,7 @@ int Frame::countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr) {
 void Frame::setIconHeightWidth(int height) {
 	m_listIconHeight = height;
 	m_listIconWidth = 4 * height / 3;
+	m_lastListIconHeight = height;
 }
 
 void Frame::loadLanguage() {
@@ -1806,15 +1836,62 @@ void Frame::addMonitor(std::string &path) {
 	}
 }
 
-void Frame::directoryChanged() {
-	m_timer = 0;
-	load(m_dir);
+void Frame::timerEventOccurred(TIMER t) {
+	int i;
+	if(t==TIMER::ZOOM){
+		if(m_mode==MODE::LIST){
+//			printl(m_zoomDelta)
+			i = m_listIconHeight + m_zoomDelta * 5;
+			adjust(i, MIN_LIST_IMAGE_HEIGHT, MAX_LIST_IMAGE_HEIGHT);
+			setButtonState(TOOLBAR_INDEX::ZOOM_IN, i < MAX_LIST_IMAGE_HEIGHT);
+			setButtonState(TOOLBAR_INDEX::ZOOM_OUT, i > MIN_LIST_IMAGE_HEIGHT);
+			if (i!=m_lastListIconHeight) {
+				stopThreads();
+				setIconHeightWidth(i);
+				recountListParameters();
+				m_filenameFontHeight = 0; //to recount font
+				m_loadid++;
+				for (auto &o : m_vp) {
+					o.free();
+					o.m_thumbnail = nullptr;
+					o.m_loadid = m_loadid;
+				}
+				startThreads();
+				redraw(false);
+			}
+		}
+		else{
+			double k =pow(m_zoomFactor,m_zoomDelta);
+			i = (m_zoom * k) * m_ph;
+			if(i<MIN_SCALED_IMAGE_HEIGHT){
+				i=MIN_SCALED_IMAGE_HEIGHT;
+				k=i/m_zoom/m_ph;
+			}
+			setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
+					i > MIN_SCALED_IMAGE_HEIGHT);
+
+			m_zoom *= k;
+
+			//this code leaves center point in center after zoom
+			m_posh = (m_aw / 2 + m_posh) * k - m_aw / 2;
+			m_posv = (m_ah / 2 + m_posv) * k - m_ah / 2;
+			redraw();
+		}
+		m_zoomDelta=0;
+	}
+	else{
+		//printi
+		load(m_dir);
+	}
+	m_timer[int(t)] = 0;
 }
 
-void Frame::directoryChangedAddEvent() {
+void Frame::addTimerEvent(TIMER t) {
 	//if delete several files then got many delete events, the same if copy file to folder so just proceed last signal
-	stopTimer(m_timer);
-	m_timer = g_timeout_add(EVENT_TIME, directory_changed_timer, gpointer(0));
+	int i=int(t);
+	stopTimer(m_timer[i]);
+//	printl("stopped");
+	m_timer[i] = g_timeout_add(EVENT_TIME[i],G_SOURCE_FUNC(timer_changed), GP(i));
 }
 
 void Frame::stopTimer(guint &t) {
@@ -1898,10 +1975,8 @@ GtkWidget* Frame::createLanguageCombo() {
 
 void Frame::setAscendingOrder(bool b) {
 	m_ascendingOrder = b;
-	printi
 	setButtonImage(int(TOOLBAR_INDEX::REORDER_FILE), true,
 			m_additionalImages[!m_ascendingOrder]);
-	printi
 }
 
 void Frame::entryChanged(GtkWidget *w,int n) {

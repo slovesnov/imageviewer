@@ -54,14 +54,16 @@ public:
 	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
-	int m_listIconHeight, m_listIconWidth;
+	int m_listIconHeight, m_listIconWidth,m_lastListIconHeight;
 	VString m_language;
 	int m_languageIndex, m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave,
 			m_showPopup, m_rememberLastOpenDirectory, m_showToolbarFullscreen;
-	guint m_timer;
+	guint m_timer[int(TIMER::SZ)];
 	double m_zoom, m_zoomFactor;
 	std::vector<int*> m_optionsPointer;
 	guint m_key[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
+	int m_zoomDelta;
+
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
@@ -148,8 +150,8 @@ public:
 	std::string filechooser(GtkWidget *parent, const std::string &dir);
 	std::string getSizeMbKbB(double v);
 	void addMonitor(std::string &path);
-	void directoryChanged();
-	void directoryChangedAddEvent();
+	void timerEventOccurred(TIMER t);
+	void addTimerEvent(TIMER t);
 	void stopTimer(guint &t);
 	std::string getExtensionString(bool writableOnly = false, bool onlyIndex0 =
 			true, int rows = 1);
