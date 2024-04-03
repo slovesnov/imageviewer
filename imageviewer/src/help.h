@@ -15,9 +15,6 @@
 #include <string>
 #include "Pixbuf.h"
 
-const std::string LNG[] = { "en", "ru" };
-const std::string LNG_LONG[] = { "english", "russian" };
-
 void getTextExtents(std::string text, int height, bool bold, int &w, int &h,
 		cairo_t *cr);
 void drawTextToCairo(cairo_t *ct, std::string text, int height, bool bold,
@@ -28,5 +25,6 @@ void adjust(int &v, int min, int max = INT_MAX);
 GdkPixbuf* scaleFit(GdkPixbuf *src, int destW, int destH);
 bool deleteFileToRecycleBin(const std::string &path);
 std::string getShortLanguageString(int i);
+guint getKey(guint e, GdkEventKey *event);
 
 #endif /* HELP_H_ */

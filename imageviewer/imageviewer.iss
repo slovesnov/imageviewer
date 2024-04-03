@@ -37,11 +37,11 @@ russian.BeveledLabel=Russian
 Source: "{#GTKPATH}share\icons\Adwaita\16x16\ui\pan-up-symbolic.symbolic.png"; DestDir: "{app}\share\icons\Adwaita\16x16\actions"; Flags: onlyifdoesntexist
 Source: "{#GTKPATH}share\icons\Adwaita\16x16\ui\pan-down-symbolic.symbolic.png"; DestDir: "{app}\share\icons\Adwaita\16x16\actions"; Flags: onlyifdoesntexist
 Source: "{#GTKPATH}share\icons\Adwaita\16x16\ui\pan-end-symbolic.symbolic.png"; DestDir: "{app}\share\icons\Adwaita\16x16\actions"; Flags: onlyifdoesntexist
-;TODO Source: "{#GTKPATH}bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "{#GTKPATH}bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 ;gspawn-win64-helper.exe needs for gtk_show_uri_on_window() function
 Source: "{#GTKPATH}bin\gspawn-win64-helper.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "{#GTKPATH}lib\gdk-pixbuf-2.0\2.10.0\loaders.cache"; DestDir: "{app}\lib\gdk-pixbuf-2.0\2.10.0"; Flags: ignoreversion
-;TODO Source: "{#GTKPATH}lib\gdk-pixbuf-2.0\2.10.0\loaders\*.dll"; DestDir: "{app}\lib\gdk-pixbuf-2.0\2.10.0\loaders"; Flags: ignoreversion
+Source: "{#GTKPATH}lib\gdk-pixbuf-2.0\2.10.0\loaders\*.dll"; DestDir: "{app}\lib\gdk-pixbuf-2.0\2.10.0\loaders"; Flags: ignoreversion
 
 Source: "Release\{#APPNAME}.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "*.css"; DestDir: "{app}\bin"; Flags: ignoreversion

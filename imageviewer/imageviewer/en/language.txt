@@ -1,4 +1,5 @@
 image viewer
+drag and drop a file or directory to view
 language
 warn before saving a file
 warn before deleting a file
@@ -7,6 +8,8 @@ show popup tips
 remove files to recycle bin
 remove files permanently
 file
+scaled
+zoom factor
 size
 readable formats
 readable extensions

@@ -8,6 +8,7 @@
  *         homepage: slovesnov.users.sourceforge.net
  */
 #include "help.h"
+#include "consts.h"
 #include "aslov.h"
 #include <windows.h>//deleteFileToRecycleBin
 
@@ -119,3 +120,6 @@ std::string getShortLanguageString(int i) {
 	return LNG[i];
 }
 
+guint getKey(guint e, GdkEventKey *event) {
+	return e >= 'A' && e <= 'Z' ? event->hardware_keycode : event->keyval;
+}

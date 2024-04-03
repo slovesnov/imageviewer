@@ -13,129 +13,9 @@
 
 #include <atomic>
 #include "aslov.h"
+#include "enums.h"
+#include "consts.h"
 #include "Image.h"
-
-enum class MODE {
-	ANY, NORMAL, FIT, LIST
-};
-
-enum class DIALOG {
-	HELP, SETTINGS, DELETE, SAVE, ERROR
-};
-
-enum class LANGUAGE {
-	IMAGE_VIEWER,
-	LANGUAGE,
-	WARN_BEFORE_SAVING_A_FILE,
-	WARN_BEFORE_DELETING_A_FILE,
-	REMOVE_FILE_OPTION,
-	SHOW_POPUP_TIPS,
-	REMOVE_FILES_TO_RECYCLE_BIN,
-	REMOVE_FILES_PERMANENTLY,
-	FILE,
-	SIZE,
-	READABLE_FORMATS,
-	READABLE_EXTENSIONS,
-	WRITABLE_FORMATS,
-	WRITABLE_EXTENSIONS, //should goes after WRITABLE_FORMATS
-	HOMEPAGE,
-	HOMEPAGE1,
-	AUTHOR,
-	AUTHOR1,
-	EMAIL,
-	EMAIL1,
-	REMEMBER_THE_LAST_OPEN_DIRECTORY,
-	VERSION,
-	YES,
-	NO,
-	OK,
-	CANCEL,
-	RESET,
-	JAN,
-	FEB,
-	MAR,
-	APR,
-	MAY,
-	JUN,
-	JUL,
-	AUG,
-	SEP,
-	OCT,
-	NOV,
-	DEC,
-	OPEN,
-	OPEN_FILE,
-	SELECT,
-	QUESTION,
-	ERROR,
-	CANNOT_SAVE_FILE,
-	DO_YOU_REALLY_WANT_TO_DELETE_THE_IMAGE,
-	DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE,
-	SAVE_ERROR_MESSAGE,
-	ZOOM,
-	BYTES,
-	KILOBYTES,
-	MEGABYTES,
-	AVERAGE,
-	TOTAL,
-	ONE_APPLICATION_INSTANCE,
-	REQUIRES_RESTARTING,
-	OPTIONS,
-	KEYS,
-	ABOUT,
-	CLICK_TO_SET_THE_KEY,
-	PRESS_ANY_KEY,
-	HELP_TAB2,
-	SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,
-	KEY_ALREADY_IN_USE,
-	TOOLTIP1
-	//other toolitps
-};
-
-const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
-		LANGUAGE::WARN_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
-		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
-		LANGUAGE::ONE_APPLICATION_INSTANCE,
-		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE };
-
-//if add TOOLBAR_INDEX enum need also add toopltip TOOLTIP.. also need change Frame::keyPress
-enum class TOOLBAR_INDEX {
-	ZOOM_IN,
-	ZOOM_OUT,
-	MODE_ZOOM_ANY,
-	MODE_ZOOM_100,
-	MODE_ZOOM_FIT,
-	MODE_LIST,
-	ROTATE_ANTICLOCKWISE,
-	ROTATE_180,
-	ROTATE_CLOCKWISE,
-	FLIP_HORIZONTAL,
-	FLIP_VERTICAL,
-	HOME,
-	PAGE_UP,
-	PREVIOUS,
-	NEXT,
-	PAGE_DOWN,
-	END,
-	OPEN,
-	DELETE_FILE,
-	SAVE_FILE,
-	REORDER_FILE,
-	FULLSCREEN,
-	SETTINGS,
-	TB_SIZE
-};
-const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::TB_SIZE);
-
-const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
-
-const bool DEFAULT_ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
-const int WHEEL_MULTIPLIER = 80;
-const int LIST_MULTIPLIER = 50;
-const int SCROLL_DELAY_MILLISECONDS = 500;
-const double IMAGE_VIEWER_VERSION = 1.0;
-const int MAX_HOTKEYS=3;
-const guint INVALID_KEY=0;
 
 struct FileSupported {
 	std::string extension, type;
@@ -177,20 +57,22 @@ public:
 	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
 	int m_languageIndex, m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave,
-			m_showPopup, m_rememberLastOpenDirectory,m_showToolbarFullscreen;
+			m_showPopup, m_rememberLastOpenDirectory, m_showToolbarFullscreen;
 	guint m_timer;
-	double m_zoom;
+	double m_zoom, m_zoomFactor;
 	std::vector<int*> m_optionsPointer;
-	guint m_key[TOOLBAR_INDEX_SIZE*MAX_HOTKEYS];
+	guint m_key[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
-	GtkWidget *m_modalDialogEntry,*m_showModalDialogButtonOK;
+	GtkWidget *m_modalDialogEntry, *m_showModalDialogButtonOK;
 	std::string m_modalDialogEntryText;
 	//settings dialog variables
 	GtkWidget *m_notebook;
-	guint m_tmpkey[TOOLBAR_INDEX_SIZE*MAX_HOTKEYS];
+	guint m_tmpkey[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
 	bool m_modalDialogEntryOK;
+	double m_modalDialogFactor;
+	bool m_proceedEvents;
 
 	static std::vector<int> m_optionsDefalutValue;
 	static int m_oneInstance;
@@ -204,7 +86,7 @@ public:
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
-	gboolean keyPress(GtkWidget *w,GdkEventKey *event,int n);
+	gboolean keyPress(GtkWidget *w, GdkEventKey *event, int n);
 	void setDragDrop(GtkWidget *widget);
 	void openUris(char **uris);
 	void scrollEvent(GdkEventScroll *event);
@@ -242,9 +124,7 @@ public:
 	void recountListParameters();
 	void updateNavigationButtonsState();
 	void setButtonState(int i, bool enable);
-	void setButtonState(TOOLBAR_INDEX i, bool enable) {
-		setButtonState(int(i), enable);
-	}
+	void setButtonState(TOOLBAR_INDEX i, bool enable);
 	void setMode(MODE m, bool start = false);
 	int size();
 	void listTopLeftIndexChanged();
@@ -276,11 +156,13 @@ public:
 	static bool isOneInstanceOnly();
 	void setDefaultZoom();
 	GtkWidget* createLanguageCombo();
-	void setAscendingOrder(bool b);
-	void entryChanged(GtkWidget *entry);
-	void focusIn(GtkWidget *w,int n);
-	void focusOut(GtkWidget *w);
 	bool isFullScreen();
+	void setAscendingOrder(bool b);
+	void entryChanged(GtkWidget *w, int n);
+	void focusIn(GtkWidget *w, int n);
+	void focusOut(GtkWidget *w, int n);
+	static void addInsertDeleteEvents(GtkWidget *w, int n);
+	static void addFocusEvents(GtkWidget *w, int n);
 };
 
 #endif /* FRAME_H_ */
