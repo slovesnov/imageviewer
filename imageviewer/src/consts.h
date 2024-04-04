@@ -46,7 +46,7 @@ const double INVALID_ZOOM_FACTOR = 0;
 const int LIST_IMAGE_STEP = 17;
 const int LIST_IMAGE_STEPS = 10;
 const int MIN_LIST_IMAGE_HEIGHT = 30;
-const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+(LIST_IMAGE_STEP-1)*LIST_IMAGE_STEPS;//200;
+const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+(LIST_IMAGE_STEPS-1)*LIST_IMAGE_STEP;//old value 200;
 
 static const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png",
 		"sort_descending.png" };
@@ -123,7 +123,7 @@ static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==SIZE(KEY));
 
 const std::string SEPARATOR = "         ";
 //milliseconds
-const int EVENT_TIME[] = {1000,60};
+const int EVENT_TIME[] = {1000};
 static_assert(int(TIMER::SZ)==SIZE(EVENT_TIME));
 
 

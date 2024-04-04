@@ -174,7 +174,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_mode = MODE::NORMAL;
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS/2;//95;
+	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*int(LIST_IMAGE_STEPS/2);//old value 95;
 //	printl(m_listIconHeight)
 	resetOptions();
 
@@ -618,7 +618,13 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j = l / m_listx * m_listIconHeight + m_listdy;
 			auto &o = m_vp[k];
 #ifdef USE_THREADS
-			GdkPixbuf *p = o.m_thumbnail[0];
+			w=(m_listIconHeight - MIN_LIST_IMAGE_HEIGHT)/LIST_IMAGE_STEP;
+//			if(w<0 || w>=LIST_IMAGE_STEPS){
+//				printl("error", w );
+//						exit(1);
+//			}
+			GdkPixbuf *p = o.m_thumbnail[w];
+////			printl(p)
 			if (p) {
 				w = gdk_pixbuf_get_width(p);
 				h = gdk_pixbuf_get_height(p);
@@ -630,6 +636,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			}
+
 #else
 			Pixbuf pb=o.m_path;
 			GdkPixbuf *p = scaleFit(pb, m_listIconWidth, m_listIconHeight);
@@ -733,17 +740,7 @@ gboolean Frame::keyPress(GtkWidget *w, GdkEventKey *event, int n) {
 	if (n == -1) {
 		if (i != sz) {
 			i/=MAX_HOTKEYS;
-			auto t = TOOLBAR_INDEX(i);
-			if (m_mode == MODE::LIST
-					&& oneOf(t, TOOLBAR_INDEX::ZOOM_IN,
-							TOOLBAR_INDEX::ZOOM_OUT)) {
-				m_zoomDelta += t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1;
-				addTimerEvent(TIMER::ZOOM);
-//				printi
-//				buttonClicked(i);
-			} else {
-				buttonClicked(i);
-			}
+			buttonClicked(i);
 			return true;
 		} else {
 			return false;
@@ -777,12 +774,7 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 	if (event->state == GDK_CONTROL_MASK) {
 		if (dy) {
 			//dy=-1 or 1
-			m_zoomDelta-=dy;
-			addTimerEvent(TIMER::ZOOM);
-
-			//dy=-1 or 1
-//			buttonClicked(ZOOM_INOUT[dy == 1]);
-
+			buttonClicked(ZOOM_INOUT[dy == 1]);
 		}
 	} else {
 		if (m_mode == MODE::LIST) {
@@ -919,7 +911,7 @@ void Frame::thumbnailThread(int n) {
 	int v, max = 0;
 	Pixbuf p;
 
-//#define SHOW_THREAD_TIME
+#define SHOW_THREAD_TIME
 
 #ifdef SHOW_THREAD_TIME
 	clock_t start= clock();
@@ -945,9 +937,13 @@ void Frame::thumbnailThread(int n) {
 		auto &o = m_vp[v];
 
 		if (!o.m_thumbnail[0]) {
-			//full path
+			//load image from path
 			p = o.m_path;
-			o.m_thumbnail[0] = scaleFit(p, m_listIconWidth, m_listIconHeight);
+
+			for(int i=0;i<LIST_IMAGE_STEPS;i++){
+				int h= MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*i;
+				o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
+			}
 
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
@@ -1089,17 +1085,9 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			setButtonState(TOOLBAR_INDEX::ZOOM_IN, i < MAX_LIST_IMAGE_HEIGHT);
 			setButtonState(TOOLBAR_INDEX::ZOOM_OUT, i > MIN_LIST_IMAGE_HEIGHT);
 			if (i >= MIN_LIST_IMAGE_HEIGHT && i <= MAX_LIST_IMAGE_HEIGHT) {
-				stopThreads();
 				setIconHeightWidth(i);
 				recountListParameters();
 				m_filenameFontHeight = 0; //to recount font
-				m_loadid++;
-				for (auto &o : m_vp) {
-					o.free();
-					o.m_thumbnail[0] = nullptr;
-					o.m_loadid = m_loadid;
-				}
-				startThreads();
 				redraw(false);
 			}
 		} else {
@@ -1670,10 +1658,13 @@ int Frame::countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr) {
 	return 16;
 }
 
+int Frame::getWidthForHeight(int height){
+	return 4*height/3;
+}
+
 void Frame::setIconHeightWidth(int height) {
 	m_listIconHeight = height;
-	m_listIconWidth = 4 * height / 3;
-	m_lastListIconHeight = height;
+	m_listIconWidth = getWidthForHeight(height);
 }
 
 void Frame::loadLanguage() {
@@ -1872,50 +1863,7 @@ void Frame::addMonitor(std::string &path) {
 }
 
 void Frame::timerEventOccurred(TIMER t) {
-	int i;
-	if(t==TIMER::ZOOM){
-		if(m_mode==MODE::LIST){
-//			printl(m_zoomDelta)
-			i = m_listIconHeight + m_zoomDelta * LIST_IMAGE_STEP;
-			adjust(i, MIN_LIST_IMAGE_HEIGHT, MAX_LIST_IMAGE_HEIGHT);
-			setButtonState(TOOLBAR_INDEX::ZOOM_IN, i < MAX_LIST_IMAGE_HEIGHT);
-			setButtonState(TOOLBAR_INDEX::ZOOM_OUT, i > MIN_LIST_IMAGE_HEIGHT);
-			if (i!=m_lastListIconHeight) {
-				stopThreads();
-				setIconHeightWidth(i);
-				recountListParameters();
-				m_filenameFontHeight = 0; //to recount font
-				m_loadid++;
-				for (auto &o : m_vp) {
-					o.free();
-					o.m_thumbnail[0] = nullptr;
-					o.m_loadid = m_loadid;
-				}
-				startThreads();
-				redraw(false);
-			}
-		}
-		else{
-			//printi
-			double k =pow(m_zoomFactor,m_zoomDelta);
-			i = (m_zoom * k) * m_ph;
-			if(i<MIN_SCALED_IMAGE_HEIGHT){
-				i=MIN_SCALED_IMAGE_HEIGHT;
-				k=i/m_zoom/m_ph;
-			}
-			setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
-					i > MIN_SCALED_IMAGE_HEIGHT);
-
-			m_zoom *= k;
-
-			//this code leaves center point in center after zoom
-			m_posh = (m_aw / 2 + m_posh) * k - m_aw / 2;
-			m_posv = (m_ah / 2 + m_posv) * k - m_ah / 2;
-			redraw();
-		}
-		m_zoomDelta=0;
-	}
-	else{
+	if(t==TIMER::DIRECTORY){
 		//printi
 		load(m_dir);
 	}

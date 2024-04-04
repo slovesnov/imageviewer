@@ -58,7 +58,7 @@ public:
 	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
-	int m_listIconHeight, m_listIconWidth,m_lastListIconHeight;
+	int m_listIconHeight, m_listIconWidth;
 	VString m_language;
 	int m_languageIndex, m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave,
 			m_showPopup, m_rememberLastOpenDirectory, m_showToolbarFullscreen;
@@ -143,6 +143,7 @@ public:
 	void setButtonImage(int i, bool enable, GdkPixbuf *p);
 	void redraw(bool withTitle = true);
 	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
+	int getWidthForHeight(int height);
 	void setIconHeightWidth(int height);
 	void loadLanguage();
 	std::string getTitleVersion();

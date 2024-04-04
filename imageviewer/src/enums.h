@@ -143,7 +143,6 @@ enum class DIALOG {
 
 enum class TIMER{
 	DIRECTORY
-	,ZOOM
 	,SZ
 };
 
