@@ -14,7 +14,10 @@
 Image::Image(std::string p, int id) {
 	m_path = p;
 	m_loadid = id;
-	m_thumbnail[0] = nullptr;
+	int i;
+	for(i=0;i<LIST_IMAGE_STEPS;i++){
+		m_thumbnail[i] = nullptr;
+	}
 	m_size = getFileSize(m_path);
 }
 
@@ -36,12 +39,18 @@ void Image::assign(Image &o) {
 	m_path = o.m_path;
 	m_size = o.m_size;
 	m_loadid = o.m_loadid;
-	m_thumbnail[0] = o.m_thumbnail[0].load();
-	o.m_thumbnail[0] = nullptr;
+	int i;
+	for(i=0;i<LIST_IMAGE_STEPS;i++){
+		m_thumbnail[i] = o.m_thumbnail[i].load();
+		o.m_thumbnail[i] = nullptr;
+	}
 }
 
 void Image::free() {
-	if (m_thumbnail[0]) {
-		g_object_unref(m_thumbnail[0]);
+	int i;
+	for(i=0;i<LIST_IMAGE_STEPS;i++){
+		if (m_thumbnail[i]) {
+			g_object_unref(m_thumbnail[i]);
+		}
 	}
 }

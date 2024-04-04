@@ -175,7 +175,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
 	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS/2;//95;
-	printl(m_listIconHeight)
+//	printl(m_listIconHeight)
 	resetOptions();
 
 	MapStringString m;
