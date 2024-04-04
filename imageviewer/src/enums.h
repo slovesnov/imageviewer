@@ -129,8 +129,8 @@ enum class ENUM_CONFIG_TAGS {
 	ZOOM_FACTOR,
 };
 
-enum {
-	PIXBUF_COL, TEXT_COL
+enum COL{
+	PIXBUF, TEXT
 };
 
 enum class MODE {

@@ -30,10 +30,13 @@ const MODE INITIAL_MODE=MODE::LIST;
 int Frame::m_oneInstance;
 std::vector<int> Frame::m_optionsDefalutValue;
 
+
+#ifdef USE_THREADS
 static gpointer thumbnail_thread(gpointer data) {
 	frame->thumbnailThread(GP2INT(data));
 	return NULL;
 }
+#endif
 
 static gboolean key_press(GtkWidget *widget, GdkEventKey *event, int n) {
 	//println("%x %x %s",event->keyval,event->hardware_keycode,event->string)
@@ -83,10 +86,12 @@ static void open_files(GtkWidget*, const char *data) {
 	frame->load(data);
 }
 
+#ifdef USE_THREADS
 static gboolean set_show_thumbnail_thread(gpointer data) {
 	frame->setShowThumbnail(GP2INT(data));
 	return G_SOURCE_REMOVE;
 }
+#endif
 
 static gboolean label_clicked(GtkWidget *label, const gchar *uri, gpointer) {
 	openURL(uri);
@@ -153,11 +158,13 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	assert(std::size(m_optionsPointer)==std::size(m_optionsDefalutValue));
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
+#ifdef USE_THREADS
 	m_pThread.resize(getNumberOfCores());
 	for (auto &p : m_pThread) {
 		p = nullptr;
 	}
 	g_mutex_init(&m_mutex);
+#endif
 
 	m_lastWidth = m_lastHeight = m_posh = m_posv = 0;
 	m_filenameFontHeight = 0;
@@ -167,8 +174,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_mode = MODE::NORMAL;
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-	m_listIconHeight = 95;
-
+	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS/2;//95;
+	printl(m_listIconHeight)
 	resetOptions();
 
 	MapStringString m;
@@ -406,8 +413,10 @@ Frame::~Frame() {
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
 			m_oneInstance, m_rememberLastOpenDirectory, m_showToolbarFullscreen,
 			m_dir, s, m_zoomFactor);
+#ifdef USE_THREADS
 	stopThreads();
 	g_mutex_clear(&m_mutex);
+#endif
 }
 
 void Frame::openUris(char **uris) {
@@ -482,7 +491,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 	stopThreads(); //endThreads=0 after
 	m_loadid++;
 	m_vp.clear();
-	const bool d = isDir(p);
+	bool d = isDir(p);
 	/* by default m_pi=0 - first image in directory
 	 * if path is not dir m_pi=0 first image it's ok
 	 * if path is file with bad extension then m_pi=0 it's ok
@@ -591,7 +600,9 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		m_lastWidth = width;
 		m_lastHeight = height;
 		recountListParameters();
+//		printl(m_lastWidth,m_lastHeight)
 		setDefaultZoom();
+		setTitle();
 	}
 
 	if (!m_filenameFontHeight) {
@@ -606,6 +617,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			i = l % m_listx * m_listIconWidth + m_listdx;
 			j = l / m_listx * m_listIconHeight + m_listdy;
 			auto &o = m_vp[k];
+#ifdef USE_THREADS
 			GdkPixbuf *p = o.m_thumbnail;
 			if (p) {
 				w = gdk_pixbuf_get_width(p);
@@ -618,6 +630,20 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
 						true);
 			}
+#else
+			Pixbuf pb=o.m_path;
+			GdkPixbuf *p = scaleFit(pb, m_listIconWidth, m_listIconHeight);
+			w = gdk_pixbuf_get_width(p);
+			h = gdk_pixbuf_get_height(p);
+			copy(p, cr, i + (m_listIconWidth - w) / 2,
+					j + (m_listIconHeight - h) / 2, w, h, 0, 0);
+
+			drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
+					m_filenameFontHeight, filenameFontBold, i, j + 1,
+					m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
+					true);
+			g_object_unref(p);
+#endif
 		}
 
 	} else {
@@ -707,7 +733,6 @@ gboolean Frame::keyPress(GtkWidget *w, GdkEventKey *event, int n) {
 	if (n == -1) {
 		if (i != sz) {
 			i/=MAX_HOTKEYS;
-			//TODO
 			auto t = TOOLBAR_INDEX(i);
 			if (m_mode == MODE::LIST
 					&& oneOf(t, TOOLBAR_INDEX::ZOOM_IN,
@@ -754,6 +779,10 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 			//dy=-1 or 1
 			m_zoomDelta-=dy;
 			addTimerEvent(TIMER::ZOOM);
+
+			//dy=-1 or 1
+//			buttonClicked(ZOOM_INOUT[dy == 1]);
+
 		}
 	} else {
 		if (m_mode == MODE::LIST) {
@@ -868,6 +897,7 @@ void Frame::flipPixbuf(Pixbuf &p, bool horizontal) {
 }
 
 void Frame::startThreads() {
+#ifdef USE_THREADS
 	int i;
 	for (i = getFirstListIndex(); m_vp[i].m_thumbnail != nullptr;
 			i += m_ascendingOrder ? 1 : -1) {
@@ -881,8 +911,10 @@ void Frame::startThreads() {
 	for (auto &p : m_pThread) {
 		p = g_thread_new("", thumbnail_thread, GP(i++));
 	}
+#endif
 }
 
+#ifdef USE_THREADS
 void Frame::thumbnailThread(int n) {
 	int v, max = 0;
 	Pixbuf p;
@@ -926,8 +958,10 @@ void Frame::thumbnailThread(int n) {
 	println("t%d%s %.2lf %d",n,stopped?" user stop":"",((double) (clock() - start)) / CLOCKS_PER_SEC,max)
 #endif
 }
+#endif
 
 void Frame::stopThreads() {
+#ifdef USE_THREADS
 	g_atomic_int_set(&m_endThreads, 1);
 
 	//	clock_t begin=clock();
@@ -940,6 +974,7 @@ void Frame::stopThreads() {
 	//	println("%.3lf",double(clock()-begin)/CLOCKS_PER_SEC);
 
 	g_atomic_int_set(&m_endThreads, 0);
+#endif
 }
 
 void Frame::buttonPress(GdkEventButton *event) {
@@ -1050,7 +1085,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	i = INDEX_OF(t, ZOOM_INOUT);
 	if (i != -1) {
 		if (m_mode == MODE::LIST) {
-			i = m_listIconHeight + (t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1) * 5;
+			i = m_listIconHeight + (t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1) * LIST_IMAGE_STEP;
 			setButtonState(TOOLBAR_INDEX::ZOOM_IN, i < MAX_LIST_IMAGE_HEIGHT);
 			setButtonState(TOOLBAR_INDEX::ZOOM_OUT, i > MIN_LIST_IMAGE_HEIGHT);
 			if (i >= MIN_LIST_IMAGE_HEIGHT && i <= MAX_LIST_IMAGE_HEIGHT) {
@@ -1841,7 +1876,7 @@ void Frame::timerEventOccurred(TIMER t) {
 	if(t==TIMER::ZOOM){
 		if(m_mode==MODE::LIST){
 //			printl(m_zoomDelta)
-			i = m_listIconHeight + m_zoomDelta * 5;
+			i = m_listIconHeight + m_zoomDelta * LIST_IMAGE_STEP;
 			adjust(i, MIN_LIST_IMAGE_HEIGHT, MAX_LIST_IMAGE_HEIGHT);
 			setButtonState(TOOLBAR_INDEX::ZOOM_IN, i < MAX_LIST_IMAGE_HEIGHT);
 			setButtonState(TOOLBAR_INDEX::ZOOM_OUT, i > MIN_LIST_IMAGE_HEIGHT);
@@ -1861,6 +1896,7 @@ void Frame::timerEventOccurred(TIMER t) {
 			}
 		}
 		else{
+			//printi
 			double k =pow(m_zoomFactor,m_zoomDelta);
 			i = (m_zoom * k) * m_ph;
 			if(i<MIN_SCALED_IMAGE_HEIGHT){
@@ -1937,6 +1973,7 @@ void Frame::setDefaultZoom() {
 	if (m_mode == MODE::NORMAL) {
 		m_zoom = 1;
 	} else if (m_mode == MODE::FIT) {
+//		printl(m_zoom,m_lastWidth,m_pw)
 		m_zoom = MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
 	}
 }
@@ -1956,7 +1993,7 @@ GtkWidget* Frame::createLanguageCombo() {
 	for (i = 0; i < SIZE(LNG); i++) {
 		pb = pixbuf((LNG[i] + ".gif").c_str());
 		gtk_tree_store_append(store, &iter, NULL);
-		gtk_tree_store_set(store, &iter, PIXBUF_COL, pb, TEXT_COL,
+		gtk_tree_store_set(store, &iter, COL::PIXBUF, pb, COL::TEXT,
 				(" " + LNG_LONG[i]).c_str(), -1);
 		g_object_unref(pb);
 	}

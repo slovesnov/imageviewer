@@ -17,6 +17,8 @@
 #include "consts.h"
 #include "Image.h"
 
+#define USE_THREADS
+
 struct FileSupported {
 	std::string extension, type;
 	int index;
@@ -44,11 +46,13 @@ public:
 	std::vector<FileSupported> m_supported;
 	std::string m_dir;
 	guint32 m_lastScroll;
+#ifdef USE_THREADS
 	std::vector<GThread*> m_pThread;
 	GMutex m_mutex;
-	std::atomic_int m_threadNumber;
+#endif
+	std::atomic_int m_threadNumber;//TODO
+	gint m_endThreads; //already have function stopThreads//TODO
 	int m_loadid;
-	gint m_endThreads; //already have function stopThreads
 	int m_filenameFontHeight, m_listTopLeftIndex, totalFileSize;
 	int m_listx, m_listy, m_listdx, m_listdy, m_listxy;
 	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
@@ -107,7 +111,9 @@ public:
 	void flipPixbuf(Pixbuf &p, bool horizontal);
 
 	void startThreads();
+#ifdef USE_THREADS
 	void thumbnailThread(int n);
+#endif
 	void stopThreads();
 	void buttonPress(GdkEventButton *event);
 	void setShowThumbnail(int i);

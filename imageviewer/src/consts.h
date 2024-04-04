@@ -38,12 +38,15 @@ const guint INVALID_KEY = 0;
 const int ZOOM_FACTOR_ID=-1;
 const int GOTO_BEGIN = INT_MIN;
 const int GOTO_END = INT_MAX;
-const int MIN_LIST_IMAGE_HEIGHT = 30;
-const int MAX_LIST_IMAGE_HEIGHT = 200;
 const int MIN_SCALED_IMAGE_HEIGHT = 6;
 const double DEFAULT_ZOOM_FACTOR = 1.1;
 const double MAX_ZOOM_FACTOR=2;
 const double INVALID_ZOOM_FACTOR = 0;
+
+const int LIST_IMAGE_STEP = 17;
+const int LIST_IMAGE_STEPS = 10;
+const int MIN_LIST_IMAGE_HEIGHT = 30;
+const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS;//200;
 
 static const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png",
 		"sort_descending.png" };
