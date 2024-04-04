@@ -10,11 +10,11 @@
 
 #ifndef IMAGE_H_
 #define IMAGE_H_
-
-#include <string>
 #include <gtk/gtk.h>
 #include <vector>
 #include <atomic>
+
+#include "consts.h"
 
 /* Note use mutex for every Image is bad idea too long g_mutex_init & g_mutex_clear so use GdkPixbuf*t
  * which is set by thread. Drawing using thumbnail class member. After loading thread set t class member and call
@@ -40,7 +40,7 @@ class Image {
 public:
 	std::string m_path;
 	int m_size, m_loadid;
-	std::atomic<GdkPixbuf*> m_thumbnail;
+	std::atomic<GdkPixbuf*> m_thumbnail[LIST_IMAGE_STEPS];
 
 	Image(std::string p, int id);
 	~Image();
