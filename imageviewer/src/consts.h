@@ -46,7 +46,7 @@ const double INVALID_ZOOM_FACTOR = 0;
 const int LIST_IMAGE_STEP = 17;
 const int LIST_IMAGE_STEPS = 10;
 const int MIN_LIST_IMAGE_HEIGHT = 30;
-const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS;//200;
+const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+(LIST_IMAGE_STEP-1)*LIST_IMAGE_STEPS;//200;
 
 static const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png",
 		"sort_descending.png" };
