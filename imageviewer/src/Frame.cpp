@@ -174,7 +174,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_mode = MODE::NORMAL;
 	//drawing area height 959,so got 10 rows
 	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*int(LIST_IMAGE_STEPS/2);//95;
+	m_listIconHeight = MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*LIST_IMAGE_STEPS/2;//95;
 	printl(m_listIconHeight)
 	resetOptions();
 
@@ -618,7 +618,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			j = l / m_listx * m_listIconHeight + m_listdy;
 			auto &o = m_vp[k];
 #ifdef USE_THREADS
-			GdkPixbuf *p = o.m_thumbnail[(m_listIconHeight - MIN_LIST_IMAGE_HEIGHT)/LIST_IMAGE_STEP ];
+			GdkPixbuf *p = o.m_thumbnail[0];
 			if (p) {
 				w = gdk_pixbuf_get_width(p);
 				h = gdk_pixbuf_get_height(p);
@@ -947,10 +947,8 @@ void Frame::thumbnailThread(int n) {
 		if (!o.m_thumbnail[0]) {
 			//full path
 			p = o.m_path;
-			for(int i=0;i<LIST_IMAGE_STEPS;i++){
-				int height=MIN_LIST_IMAGE_HEIGHT+LIST_IMAGE_STEP*int(LIST_IMAGE_STEPS/2);
-				o.m_thumbnail[i] = scaleFit(p, 4 * height / 3, height);
-			}
+			o.m_thumbnail[0] = scaleFit(p, m_listIconWidth, m_listIconHeight);
+
 			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
 		}
 		//s+=" "+std::to_string(v);
@@ -1098,12 +1096,10 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				m_loadid++;
 				for (auto &o : m_vp) {
 					o.free();
-					for(int i=0;i<LIST_IMAGE_STEPS;i++){
-						o.m_thumbnail[i] = nullptr;
-					}
+					o.m_thumbnail[0] = nullptr;
 					o.m_loadid = m_loadid;
 				}
-				startThreads();//TODO
+				startThreads();
 				redraw(false);
 			}
 		} else {
@@ -1892,9 +1888,7 @@ void Frame::timerEventOccurred(TIMER t) {
 				m_loadid++;
 				for (auto &o : m_vp) {
 					o.free();
-					for(auto&a:o.m_thumbnail){
-					a = nullptr;
-					}
+					o.m_thumbnail[0] = nullptr;
 					o.m_loadid = m_loadid;
 				}
 				startThreads();
