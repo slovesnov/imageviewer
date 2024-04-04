@@ -129,7 +129,7 @@ enum class ENUM_CONFIG_TAGS {
 	ZOOM_FACTOR,
 };
 
-enum COL{
+enum COL {
 	PIXBUF, TEXT
 };
 
@@ -141,9 +141,8 @@ enum class DIALOG {
 	HELP, SETTINGS, DELETE, SAVE, ERROR
 };
 
-enum class TIMER{
-	DIRECTORY
-	,SZ
+enum class TIMER {
+	DIRECTORY, SZ
 };
 
 #endif /* ENUMS_H_ */

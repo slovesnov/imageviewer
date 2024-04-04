@@ -35,18 +35,19 @@ const int SCROLL_DELAY_MILLISECONDS = 500;
 const double IMAGE_VIEWER_VERSION = 1.0;
 const int MAX_HOTKEYS = 3;
 const guint INVALID_KEY = 0;
-const int ZOOM_FACTOR_ID=-1;
+const int ZOOM_FACTOR_ID = -1;
 const int GOTO_BEGIN = INT_MIN;
 const int GOTO_END = INT_MAX;
-const int MIN_SCALED_IMAGE_HEIGHT = 6;
+const int MIN_SCALED_IMAGE_HEIGHT = 16;
 const double DEFAULT_ZOOM_FACTOR = 1.1;
-const double MAX_ZOOM_FACTOR=2;
+const double MAX_ZOOM_FACTOR = 2;
 const double INVALID_ZOOM_FACTOR = 0;
 
 const int LIST_IMAGE_STEP = 17;
 const int LIST_IMAGE_STEPS = 10;
-const int MIN_LIST_IMAGE_HEIGHT = 30;
-const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT+(LIST_IMAGE_STEPS-1)*LIST_IMAGE_STEP;//old value 200;
+const int MIN_LIST_IMAGE_HEIGHT = 50;
+const int MAX_LIST_IMAGE_HEIGHT = MIN_LIST_IMAGE_HEIGHT
+		+ (LIST_IMAGE_STEPS - 1) * LIST_IMAGE_STEP; //old value 200;
 
 static const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png",
 		"sort_descending.png" };
@@ -123,8 +124,7 @@ static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==SIZE(KEY));
 
 const std::string SEPARATOR = "         ";
 //milliseconds
-const int EVENT_TIME[] = {1000};
+const int EVENT_TIME[] = { 1000 };
 static_assert(int(TIMER::SZ)==SIZE(EVENT_TIME));
-
 
 #endif /* CONSTS_H_ */
