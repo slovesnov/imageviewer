@@ -38,7 +38,7 @@
 class Image {
 	void assign(Image &o);
 public:
-	std::string m_path;
+	std::string m_path;//utf8
 	int m_size, m_loadid;
 	std::atomic<GdkPixbuf*> m_thumbnail[LIST_IMAGE_STEPS];
 

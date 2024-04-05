@@ -12,32 +12,14 @@
 #include "aslov.h"
 #include <windows.h>//deleteFileToRecycleBin
 
+#include <cstdint>
+
 void adjust(int &v, int min, int max /*= INT_MAX*/) {
 	if (v < min) {
 		v = min;
 	} else if (v > max) {
 		v = max;
 	}
-}
-
-GdkPixbuf* scaleFit(GdkPixbuf *src, int destW, int destH) {
-	int w, h;
-	int pw = gdk_pixbuf_get_width(src);
-	int ph = gdk_pixbuf_get_height(src);
-	if (pw <= destW && ph <= destH) { //image smaller than screen
-		w = pw;
-		h = ph;
-	} else {
-		//pw*k<=destW && ph*k<=destH k=min(destW/pw,destH/ph)
-		if (destW * ph <= destH * pw) {
-			w = destW;
-			h = ph * destW / pw;
-		} else {
-			w = pw * destH / ph;
-			h = destH;
-		}
-	}
-	return gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
 }
 
 PangoLayout* createPangoLayout(std::string text, int height, bool bold,
@@ -123,3 +105,58 @@ std::string getShortLanguageString(int i) {
 guint getKey(guint e, GdkEventKey *event) {
 	return e >= 'A' && e <= 'Z' ? event->hardware_keycode : event->keyval;
 }
+
+GdkPixbuf* scaleFit(GdkPixbuf *src, int destW, int destH) {
+	int w, h;
+	int pw = gdk_pixbuf_get_width(src);
+	int ph = gdk_pixbuf_get_height(src);
+	if (pw <= destW && ph <= destH) { //image smaller than screen
+		w = pw;
+		h = ph;
+	} else {
+		//pw*k<=destW && ph*k<=destH k=min(destW/pw,destH/ph)
+		if (destW * ph <= destH * pw) {
+			w = destW;
+			h = ph * destW / pw;
+		} else {
+			w = pw * destH / ph;
+			h = destH;
+		}
+	}
+	return gdk_pixbuf_scale_simple(src, w, h, GDK_INTERP_BILINEAR);
+}
+
+#ifdef USE_EXTERNAL_SVG_LIB
+
+GdkPixbuf* svgToPixBuf(std::string path,int width,int height){
+    std::uint32_t bgColor = 0x00000000;
+
+    auto document = Document::loadFromFile(path);
+    if(!document){
+    	printi
+    	return 0;
+    }
+
+    Bitmap bitmap = document->renderToBitmap(width, height, bgColor);
+    if(!bitmap.valid()){
+    	printi
+    	return 0;
+    }
+
+    bitmap.convertToRGBA();
+
+    GdkPixbuf*p=gdk_pixbuf_new (
+    		  GDK_COLORSPACE_RGB,
+    		  true,
+    		  8,
+    		  width,
+    		  height
+    );
+	guchar *pixels = gdk_pixbuf_get_pixels (p);
+	memcpy(pixels,bitmap.data(),width*height*4);
+	return p;
+
+//	const char outfile[]="out.png";
+//	gdk_pixbuf_save(p, outfile, "png", NULL, NULL);
+}
+#endif

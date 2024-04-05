@@ -11,8 +11,16 @@
 #ifndef CONSTS_H_
 #define CONSTS_H_
 
-#include "aslov.h" //SIZE
+#include <string>
+
 #include "enums.h"
+
+/* internal gtk library not scaled some svg images properly (for example arrow0.svg from bridge project) now just scale pixbuf as raster when zoom
+ * i've tried use libraries. They don't always work correctly.
+ * nanosvg from github has problems with arrow2.svg from bridge project
+ * lunasvg from github works good but for deck1.svg from bridge project not shows all svg elements
+ */
+//#define USE_EXTERNAL_SVG_LIB
 
 const std::string LNG[] = { "en", "ru" };
 const std::string LNG_LONG[] = { "english", "russian" };
@@ -39,9 +47,12 @@ const int ZOOM_FACTOR_ID = -1;
 const int GOTO_BEGIN = INT_MIN;
 const int GOTO_END = INT_MAX;
 const int MIN_SCALED_IMAGE_HEIGHT = 16;
+const double MIN_ZOOM_FACTOR_BOUND = 1;
 const double DEFAULT_ZOOM_FACTOR = 1.1;
 const double MAX_ZOOM_FACTOR = 2;
-const double INVALID_ZOOM_FACTOR = 0;
+const double INVALID_ZOOM_FACTOR = 3;
+//assert(INVALID_ZOOM_FACTOR<MIN_ZOOM_FACTOR_BOUND || INVALID_ZOOM_FACTOR>MAX_ZOOM_FACTOR);
+const double MIN_MANULAL_OPERATION_ELAPSE=5;//seconds max was 3.6
 
 const int LIST_IMAGE_STEP = 17;
 const int LIST_IMAGE_STEPS = 10;
@@ -67,7 +78,7 @@ static const char *TOOLBAR_IMAGES[] = { "magnifier_zoom_in.png",
 		"folder.png", "cross.png", "save.png", ADDITIONAL_IMAGES[0],
 
 		"fullscreen.png", "setting_tools.png" };
-static_assert(SIZEI(TOOLBAR_IMAGES)==TOOLBAR_INDEX_SIZE);
+static_assert(std::size(TOOLBAR_IMAGES)==TOOLBAR_INDEX_SIZE);
 
 const TOOLBAR_INDEX ZOOM_INOUT[] = { TOOLBAR_INDEX::ZOOM_IN,
 		TOOLBAR_INDEX::ZOOM_OUT };
@@ -120,11 +131,11 @@ GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,
 		GDK_KEY_F11, GDK_KEY_Escape, GDK_KEY_F1, INVALID_KEY, INVALID_KEY //H already is used
 
 		};
-static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==SIZE(KEY));
+static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==std::size(KEY));
 
 const std::string SEPARATOR = "         ";
 //milliseconds
-const int EVENT_TIME[] = { 1000 };
-static_assert(int(TIMER::SZ)==SIZE(EVENT_TIME));
+const int EVENT_TIME[] = { 800 };
+static_assert(int(TIMER::SZ)==std::size(EVENT_TIME));
 
 #endif /* CONSTS_H_ */

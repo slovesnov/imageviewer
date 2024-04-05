@@ -26,6 +26,7 @@
 								<option defaultValue="gnu.cpp.compiler.debugging.level.none" id="gnu.cpp.compiler.mingw.exe.release.option.debugging.level.1673900371" name="Debug Level" superClass="gnu.cpp.compiler.mingw.exe.release.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.other.other.1340638334" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -mms-bitfields -pthread" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.167701081" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/lunasvg/3rdparty/plutovg}&quot;"/>
 									<listOptionValue builtIn="false" value="C:/soft/msys64/mingw64/include"/>
 									<listOptionValue builtIn="false" value="C:/soft/msys64/mingw64/include/atk-1.0"/>
 									<listOptionValue builtIn="false" value="C:/soft/msys64/mingw64/include/cairo"/>

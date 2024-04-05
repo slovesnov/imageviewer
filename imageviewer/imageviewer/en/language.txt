@@ -8,6 +8,8 @@ show popup tips
 remove files to recycle bin
 remove files permanently
 file
+save
+rename
 scaled
 zoom factor
 size
@@ -47,7 +49,7 @@ question
 error
 Cannot save file.
 Do you really want to delete the image?
-Do you really want to save the image?
+Do you really want to % the image?
 Unable to save the image in this format, please select\none of the writable formats to save the image.
 zoom
 b

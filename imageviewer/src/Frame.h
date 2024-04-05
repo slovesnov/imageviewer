@@ -43,11 +43,11 @@ public:
 	VImage m_vp;
 	std::vector<FileSupported> m_supported;
 	std::string m_dir;
-	guint32 m_lastScroll;
+	guint32 m_lastScrollTime;
 	std::vector<GThread*> m_pThread;
 	GMutex m_mutex;
-	std::atomic_int m_threadNumber; //TODO
-	gint m_endThreads; //already have function stopThreads//TODO
+	std::atomic_int m_threadNumber;
+	gint m_endThreads;
 	int m_loadid;
 	int m_filenameFontHeight, m_listTopLeftIndex, totalFileSize;
 	int m_listx, m_listy, m_listdx, m_listdy, m_listxy;
@@ -63,11 +63,14 @@ public:
 	std::vector<int*> m_optionsPointer;
 	guint m_key[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
 	int m_zoomDelta;
+	GFileMonitor *m_monitor;
+	clock_t m_lastManualOperationTime;
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
-	GtkWidget *m_modalDialogEntry, *m_showModalDialogButtonOK;
+	GtkWidget *m_modalDialogEntry,*m_modalDialogCombo, *m_showModalDialogButtonOK;
 	std::string m_modalDialogEntryText;
+	int m_modalDialogComboIndex;
 	//settings dialog variables
 	GtkWidget *m_notebook;
 	guint m_tmpkey[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
@@ -144,7 +147,7 @@ public:
 	std::string const& getLanguageString(LANGUAGE l, int add = 0);
 	std::string getLanguageStringMultiline(LANGUAGE l);
 	const char* getLanguageStringC(LANGUAGE l, int add = 0);
-	GtkWidget* createTextCombo(VString &v, int active);
+	GtkWidget* createTextCombo(VString const&v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
@@ -168,6 +171,7 @@ public:
 	static void addFocusEvents(GtkWidget *w, int n);
 	static int stepToHeight(int step);
 	static int heightToStep(int height);
+	void sortFiles();
 };
 
 #endif /* FRAME_H_ */

@@ -136,7 +136,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_zoom = 1;
 	m_lastNonListMode = MODE::ANY;
 	m_proceedEvents = true;
-	m_zoomDelta = 0;
+	m_monitor=nullptr;
+	m_lastManualOperationTime=0;
 	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
 			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
 			&m_rememberLastOpenDirectory, &m_showToolbarFullscreen };
@@ -217,6 +218,11 @@ Frame::Frame(GtkApplication *application, std::string path) {
 					m_showToolbarFullscreen = j;
 				} else if (ct == ENUM_CONFIG_TAGS::ZOOM_FACTOR) {
 					parseString(it->second, m_zoomFactor);
+					//sometimes in case of error program stores "0" value even if m_zoomFactor=1.1
+					if(m_zoomFactor<=MIN_ZOOM_FACTOR_BOUND || m_zoomFactor>MAX_ZOOM_FACTOR){
+//						printl("error",m_zoomFactor,it->second)
+						m_zoomFactor=DEFAULT_ZOOM_FACTOR;
+					}
 				} else if (ct == ENUM_CONFIG_TAGS::KEYS) {
 					v = split(it->second);
 					if (v.size() == SIZE(m_key)) {
@@ -368,7 +374,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
 	setDragDrop(m_window);
 
-	m_lastScroll = 0;
+	m_lastScrollTime = 0;
 
 	if (path.empty() && m_rememberLastOpenDirectory) {
 		path = m_dir;
@@ -500,11 +506,13 @@ void Frame::load(const std::string &p, int index, bool start) {
 				if (!d && s == p) {
 					m_pi = size();
 				}
+				//printl(s)
 				m_vp.push_back(Image(s, m_loadid));
 				totalFileSize += m_vp.back().m_size;
 			}
 		}
 	}
+	sortFiles();
 
 	addMonitor(m_dir);
 
@@ -546,7 +554,6 @@ void Frame::loadImage() {
 		/* Create pixbuf */
 		//here full path
 		m_pix = gdk_pixbuf_new_from_file(m_vp[m_pi].m_path.c_str(), &err);
-
 		if (err) {
 			println("Error : %s", err->message);
 			g_error_free(err);
@@ -571,10 +578,10 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
 
-	const GdkRGBA BACKGROUND_COLOR = { 31. / 255, 31. / 255, 31. / 255, 1 };
 	const GdkRGBA WHITE_COLOR = { 1, 1, 1, 1 };
 	//1920 959
 	//printl(width,height)
+	const GdkRGBA BACKGROUND_COLOR = { 31. / 255, 31. / 255, 31. / 255, 1 };
 	gdk_cairo_set_source_rgba(cr, &BACKGROUND_COLOR);
 	cairo_rectangle(cr, 0, 0, width, height);
 	cairo_fill(cr);
@@ -625,13 +632,15 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	} else {
 		w = m_zoom * m_pw;
 		h = m_zoom * m_ph;
+//		printl(w,h,m_pw,m_ph)
+#ifdef USE_EXTERNAL_SVG_LIB
+		m_pixScaled= svgToPixBuf(m_vp[m_pi].m_path,w,h);
+#else
 		m_pixScaled = gdk_pixbuf_scale_simple(m_pix, w, h, GDK_INTERP_BILINEAR);
-
+#endif
 		//not working on some svgs arrow0.svg from bridge project not scaled (in photoshop scaled ok)
 		//m_pixScaled = gdk_pixbuf_new_from_file_at_size(m_vp[m_pi].m_path.c_str(),w,h, 0);
 		//m_pixScaled = gdk_pixbuf_new_from_file_at_scale(m_vp[m_pi].m_path.c_str(),w,h,false, 0);
-		//m_pixScaled = gdk_pixbuf_new_from_file_at_size_utf8(m_vp[m_pi].m_path.c_str(),w,h, 0);
-		//m_pixScaled = gdk_pixbuf_new_from_file_at_scale_utf8(m_vp[m_pi].m_path.c_str(),w,h,false, 0);
 
 		destx = (width - w) / 2;
 		desty = (height - h) / 2;
@@ -643,7 +652,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		m_ah = MIN(h, height);
 
 		adjustPos();
-
 		copy(m_pixScaled, cr, destx, desty, m_aw, m_ah, m_posh, m_posv);
 	}
 
@@ -752,8 +760,8 @@ void Frame::setPosRedraw(double dx, double dy, guint32 time) {
 	 */
 	if (((m_pw <= m_aw && dx != 0 && dy == 0)
 			|| (m_ph <= m_ah && dx == 0 && dy != 0))
-			&& time > SCROLL_DELAY_MILLISECONDS + m_lastScroll) {
-		m_lastScroll = time;
+			&& time > SCROLL_DELAY_MILLISECONDS + m_lastScrollTime) {
+		m_lastScrollTime = time;
 //		switchImage(1, dx > 0 || dy > 0);
 		return;
 	}
@@ -896,10 +904,23 @@ void Frame::thumbnailThread(int n) {
 		int i, h, j = heightToStep(m_listIconHeight);
 
 		if (!o.m_thumbnail[0]) {
+//			printl("proceed t"+std::to_string(n),v)
+			/*
+			i = j;
+			h = stepToHeight(i);
+			o.m_thumbnail[i] = svgToPixBuf(o.m_path, getWidthForHeight(h), h);
+			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+
+			for (i = 0; i < LIST_IMAGE_STEPS; i++) {
+				if (i != j) {
+					h = stepToHeight(i);
+					o.m_thumbnail[i] = svgToPixBuf(o.m_path, getWidthForHeight(h), h);
+				}
+			}*/
+
 			//load pixbug from path
 			p = o.m_path;
-
-			//set scaled images, current scale at first
+//			set scaled images, current scale at first
 			i = j;
 			h = stepToHeight(i);
 			o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
@@ -951,7 +972,6 @@ void Frame::buttonPress(GdkEventButton *event) {
 								+ (cy - m_listdy) / m_listIconHeight * m_listx)
 								* (m_ascendingOrder ? 1 : -1)
 								+ m_listTopLeftIndex;
-						//printl(int(m_lastNonListMode));
 						setMode(m_lastNonListMode);
 						loadImage();
 					}
@@ -966,7 +986,6 @@ void Frame::buttonPress(GdkEventButton *event) {
 void Frame::setShowThumbnail(int i) {
 	auto &o = m_vp[i];
 	if (o.m_loadid != m_loadid) {
-		//printl("skipped",o.m_loadid,m_loadid,"i=",i);
 		return;
 	}
 	if (m_mode == MODE::LIST
@@ -1060,13 +1079,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			const double k =
 					t == TOOLBAR_INDEX::ZOOM_IN ?
 							m_zoomFactor : 1 / m_zoomFactor;
-//			printl(m_zoom,k);
-			m_zoom *= k;
-
-			//this code leave center point in center after zoom
-			m_posh = (m_aw / 2 + m_posh) * k - m_aw / 2;
-			m_posv = (m_ah / 2 + m_posv) * k - m_ah / 2;
-			redraw();
+			if(m_zoom *k* m_ph >= MIN_SCALED_IMAGE_HEIGHT){
+				m_zoom *= k;
+				//this code leave center point in center after zoom
+				m_posh = (m_aw / 2 + m_posh) * k - m_aw / 2;
+				m_posv = (m_ah / 2 + m_posv) * k - m_ah / 2;
+				redraw();
+			}
 		}
 		updateZoomButtonsState();
 		return;
@@ -1114,8 +1133,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		setAscendingOrder(!m_ascendingOrder);
 		m_listTopLeftIndex = getFirstListIndex();
 		if (m_mode == MODE::LIST) {
-			stopThreads();
-			startThreads(); //new m_listTopLeftIndex
+//			stopThreads();
+//			startThreads(); //new m_listTopLeftIndex
 			redraw();
 		}
 		return;
@@ -1126,8 +1145,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				&& (!m_warnBeforeDelete
 						|| showDeleteDialog() == GTK_RESPONSE_YES)) {
 
+			m_lastManualOperationTime=clock();
 			//not need full reload
-			stopThreads();
 
 			//before g_remove change totalFileSize
 			auto &a = m_vp[m_pi];
@@ -1147,14 +1166,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				adjust(m_pi, 0, sz - 1);
 				recountListParameters();
 				loadImage();
-
-				//see Image.h for documentation why need to set new m_loadid & set o.thumbmails
-				//old indexes for setShowThumbnail() are not valid so make new m_loadid & set o.thumbmails
-				m_loadid++;
-				for (auto &o : m_vp) {
-					o.m_loadid = m_loadid;
-				}
-				startThreads();
 			}
 		}
 		return;
@@ -1165,11 +1176,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				&& (!m_warnBeforeSave || showSaveDialog() == GTK_RESPONSE_YES)) {
 			bool b = false;
 			s = m_warnBeforeSave ? m_modalDialogEntryText : m_vp[m_pi].m_path;
+			int rename=m_warnBeforeSave ? m_modalDialogComboIndex :0;
 //			printl(s)
 			auto it = supportedIterator(s, true);
 			if (it == m_supported.end()) { //user click save non writable file m_warnBeforeSave=false
 				if (showSaveDialog(true) == GTK_RESPONSE_YES) {
 					it = supportedIterator(m_modalDialogEntryText, true);
+					rename=m_modalDialogComboIndex;
 					b = it != m_supported.end();
 				}
 			} else {
@@ -1177,10 +1190,27 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			}
 			if (b) {
 				GError *error = NULL;
-				if (!gdk_pixbuf_save((GdkPixbuf*) m_pixScaled,
+				if (gdk_pixbuf_save((GdkPixbuf*) m_pixScaled,
 						m_modalDialogEntryText.c_str(), it->type.c_str(),
 						&error,
 						NULL)) {
+					if(rename){
+						g_remove(m_vp[m_pi].m_path.c_str());
+					}
+					else{
+						m_vp.push_back(Image("",m_loadid));
+					}
+					auto&e=m_vp[rename?m_pi:m_vp.size()-1];
+					e.m_path=m_modalDialogEntryText;
+					e.m_thumbnail[0]=nullptr;//reload this image
+					sortFiles();
+					m_lastManualOperationTime=clock();//disable monitoring call
+					stopThreads();
+					startThreads();
+
+					setTitle();
+				}
+				else{
 					showDialog(DIALOG::ERROR,
 							std::to_string(error->code) + " " + error->message);
 					g_error_free(error);
@@ -1249,7 +1279,7 @@ void Frame::showSettings() {
 			gtk_container_add(GTK_CONTAINER(w), gtk_label_new("k="));
 			gtk_container_add(GTK_CONTAINER(w), m_options[i]);
 			w1 = gtk_label_new("");
-			s = " 1 &lt; k &#8804; " + forma(MAX_ZOOM_FACTOR);
+			s = " "+forma(MIN_ZOOM_FACTOR_BOUND)+" &lt; k &#8804; " + forma(MAX_ZOOM_FACTOR);
 			gtk_label_set_markup(GTK_LABEL(w1), s.c_str());
 			gtk_container_add(GTK_CONTAINER(w), w1);
 		} else {
@@ -1381,7 +1411,7 @@ gint Frame::showDeleteDialog() {
 
 gint Frame::showSaveDialog(bool error) {
 	GtkWidget *w, *grid;
-	std::string s;
+	std::string s,s1;
 	int i, j;
 	grid = gtk_grid_new();
 	i = 0;
@@ -1390,8 +1420,13 @@ gint Frame::showSaveDialog(bool error) {
 		w = gtk_label_new(s.c_str());
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 	}
-	w = gtk_label_new(
-			getLanguageStringC(LANGUAGE::DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE));
+	w = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+	VString v;
+	v=split(getLanguageStringC(LANGUAGE::DO_YOU_REALLY_WANT_TO_SAVE_THE_IMAGE),"%");
+	gtk_container_add(GTK_CONTAINER(w), gtk_label_new(v[0].c_str()));
+	m_modalDialogCombo=createTextCombo({getLanguageString(LANGUAGE::SAVE),getLanguageString(LANGUAGE::RENAME)},0);
+	gtk_container_add(GTK_CONTAINER(w), m_modalDialogCombo);
+	gtk_container_add(GTK_CONTAINER(w), gtk_label_new(v[1].c_str()));
 	gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
 
 	m_modalDialogEntry = gtk_entry_new();
@@ -1435,7 +1470,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 							sd ? LANGUAGE::QUESTION : LANGUAGE::ERROR) :
 					getTitleVersion();
 	gtk_window_set_title(GTK_WINDOW(d), s.c_str());
-	gtk_window_set_resizable(GTK_WINDOW(d), 1);
+	gtk_window_set_resizable(GTK_WINDOW(d), 0);
 
 	if (oneOf(o, DIALOG::HELP, DIALOG::ERROR)) {
 		b = w;
@@ -1669,7 +1704,7 @@ const char* Frame::getLanguageStringC(LANGUAGE l, int add) {
 	return m_language[int(l) + add].c_str();
 }
 
-GtkWidget* Frame::createTextCombo(VString &v, int active) {
+GtkWidget* Frame::createTextCombo(VString const&v, int active) {
 	GtkWidget *w = gtk_combo_box_text_new();
 	for (auto &a : v) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(w), a.c_str());
@@ -1685,6 +1720,7 @@ void Frame::optionsButtonClicked(LANGUAGE l) {
 		if (m_modalDialogIndex == DIALOG::SAVE) {
 			m_modalDialogEntryText = gtk_entry_get_text(
 					GTK_ENTRY(m_modalDialogEntry));
+			m_modalDialogComboIndex=gtk_combo_box_get_active(GTK_COMBO_BOX(m_modalDialogCombo));
 		}
 		gtk_dialog_response(GTK_DIALOG(m_modal),
 				l == LANGUAGE::YES ? GTK_RESPONSE_YES : GTK_RESPONSE_NO);
@@ -1825,12 +1861,15 @@ std::string Frame::getSizeMbKbB(double v) {
 }
 
 void Frame::addMonitor(std::string &path) {
-	GFileMonitor *monitor;
 	GFile *directory = g_file_new_for_path(path.c_str());
-	monitor = g_file_monitor_directory(directory, G_FILE_MONITOR_SEND_MOVED,
+	if (m_monitor) {
+		//remove previous monitor directory
+		g_file_monitor_cancel (G_FILE_MONITOR(m_monitor));
+	}
+	m_monitor = g_file_monitor_directory(directory, G_FILE_MONITOR_SEND_MOVED,
 	NULL, NULL);
-	if (monitor != NULL) {
-		g_signal_connect_object(G_OBJECT(monitor), "changed",
+	if (m_monitor) {
+		g_signal_connect_object(G_OBJECT(m_monitor), "changed",
 				G_CALLBACK(directory_changed),
 				NULL, G_CONNECT_AFTER);
 	}
@@ -1838,8 +1877,10 @@ void Frame::addMonitor(std::string &path) {
 
 void Frame::timerEventOccurred(TIMER t) {
 	if (t == TIMER::DIRECTORY) {
-		//printi
-		load(m_dir);
+//		printl(timeElapse(m_lastManualOperationTime),MIN_MANULAL_OPERATION_ELAPSE,timeElapse(m_lastManualOperationTime)>=MIN_MANULAL_OPERATION_ELAPSE?"load":"not load")
+		if(timeElapse(m_lastManualOperationTime)>=MIN_MANULAL_OPERATION_ELAPSE){
+			load(m_dir);
+		}
 	}
 	m_timer[int(t)] = 0;
 }
@@ -1897,7 +1938,6 @@ void Frame::setDefaultZoom() {
 		m_zoom = 1;
 	} else if (m_mode == MODE::FIT) {
 		m_zoom = MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
-		printl(m_zoom,m_lastWidth,m_pw)
 	}
 }
 
@@ -1948,7 +1988,7 @@ void Frame::entryChanged(GtkWidget *w, int n) {
 	if (n == ZOOM_FACTOR_ID) {
 		double d = INVALID_ZOOM_FACTOR;
 		b = parseString(s, d);
-		if (b && (d <= 1 || d > MAX_ZOOM_FACTOR)) {
+		if (b && (d <= MIN_ZOOM_FACTOR_BOUND || d > MAX_ZOOM_FACTOR)) {
 			d = INVALID_ZOOM_FACTOR;
 			b = false;
 		}
@@ -2015,4 +2055,12 @@ int Frame::stepToHeight(int step) {
 
 int Frame::heightToStep(int height) {
 	return (height - MIN_LIST_IMAGE_HEIGHT) / LIST_IMAGE_STEP;
+}
+
+void Frame::sortFiles(){
+	//g_strcmp0
+	//return strcoll (utf8ToLocale(a.m_path).c_str() , utf8ToLocale(b.m_path).c_str())<0;
+	std::sort(m_vp.begin(), m_vp.end(), [](const auto &a, const auto &b) {
+		return g_utf8_collate (a.m_path.c_str() , b.m_path.c_str())<0;
+	});
 }

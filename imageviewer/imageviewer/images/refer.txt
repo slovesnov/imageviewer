@@ -1,4 +1,8 @@
-D:\soft\иконы\Icons\Vista\Files\JPG Files.ico
+new icon from
+download 50.png from http://www.filefacts.net/en/exticons/50.png page http://www.filefacts.net/en/jpg-file-extension
+http://online-converting.com/image/convert2ico/ make one 4 sizes 16,24,32,48 ico from 50.png
+https://redketchup.io/icon-editor open ico remove image 24x24, add 50.png
+old icon D:\soft\иконы\Icons\Vista\Files\JPG Files.ico
 
 toolbar images{
 	all taken from downloaded collection and leave same names https://iconarchive.com/show/farm-fresh-icons-by-fatcow.html "download this iconset" 
