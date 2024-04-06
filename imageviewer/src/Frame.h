@@ -32,7 +32,7 @@ public:
 			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE(OPTIONS)], *m_modal;
 
 	int m_lastWidth, m_lastHeight;
-	Pixbuf m_pix, m_pixScaled;
+	Pixbuf m_pix;
 	/*
 	 * m_pw, m_ph - image width, height
 	 * m_posh, m_posv - source image copy x,y
@@ -43,7 +43,6 @@ public:
 	VImage m_vp;
 	std::vector<FileSupported> m_supported;
 	std::string m_dir;
-	guint32 m_lastScrollTime;
 	std::vector<GThread*> m_pThread;
 	GMutex m_mutex;
 	std::atomic_int m_threadNumber;
@@ -94,7 +93,7 @@ public:
 	void setDragDrop(GtkWidget *widget);
 	void openUris(char **uris);
 	void scrollEvent(GdkEventScroll *event);
-	void setPosRedraw(double dx, double dy, guint32 time = 0);
+	void setPosRedraw(double dx, double dy);
 	bool noImage();
 	void setNoImage();
 	std::vector<FileSupported>::const_iterator supportedIterator(
@@ -161,6 +160,7 @@ public:
 			true, int rows = 1);
 	static bool isOneInstanceOnly();
 	void setDefaultZoom();
+	void setCenterPos();
 	GtkWidget* createLanguageCombo();
 	bool isFullScreen();
 	void setAscendingOrder(bool b);
