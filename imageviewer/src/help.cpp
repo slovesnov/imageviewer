@@ -10,8 +10,9 @@
 #include "help.h"
 #include "consts.h"
 #include "aslov.h"
-#include <windows.h>//deleteFileToRecycleBin
+#include <webp/decode.h>
 
+#include <windows.h>//deleteFileToRecycleBin
 #include <cstdint>
 
 void adjust(int &v, int min, int max /*= INT_MAX*/) {
@@ -160,3 +161,27 @@ GdkPixbuf* svgToPixBuf(std::string path,int width,int height){
 //	gdk_pixbuf_save(p, outfile, "png", NULL, NULL);
 }
 #endif
+
+GdkPixbuf* loadWebp (std::string path){
+	std::ifstream in(path,std::ios_base::binary);
+
+	std::string contents((std::istreambuf_iterator<char>(in)),
+	    std::istreambuf_iterator<char>());
+
+    int width, height;
+    if(!WebPGetInfo((uint8_t*)contents.c_str(), contents.length(), &width, &height))
+    {
+        return nullptr;
+    }
+
+    uint8_t* data;
+    if (!(data = WebPDecodeRGBA((uint8_t*)contents.c_str(), contents.length(), &width, &height)))
+    {
+        return nullptr;
+    }
+	GdkPixbuf*p;
+	p = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8, width, height);
+	memcpy(gdk_pixbuf_get_pixels(p), data, width * height * 4);
+	WebPFree(data);
+    return p;
+}

@@ -262,6 +262,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
 	}
 	g_slist_free(formats);
+	m_supported.push_back( { "webp", "webp", 0, false });
 	//alphabet order
 	std::sort(m_supported.begin(), m_supported.end());
 	/*
@@ -551,15 +552,26 @@ void Frame::load(const std::string &p, int index, bool start) {
 void Frame::loadImage() {
 	if (!noImage()) {
 		GError *err = NULL;
-		/* Create pixbuf */
-		//here full path
-		m_pix = gdk_pixbuf_new_from_file(m_vp[m_pi].m_path.c_str(), &err);
-		if (err) {
-			println("Error : %s", err->message);
-			g_error_free(err);
-			setNoImage();
-			return;
+		std::string path=m_vp[m_pi].m_path;
+		auto ext=getFileInfo(path,FILEINFO::LOWER_EXTENSION);
+		if(ext=="webp"){
+			m_pix=loadWebp(path);
+			if (!m_pix) {
+				println("Error loading",path);
+				setNoImage();
+				return;
+			}
 		}
+		else{
+			m_pix = gdk_pixbuf_new_from_file(path.c_str(), &err);
+			if (err) {
+				println("Error : %s", err->message);
+				g_error_free(err);
+				setNoImage();
+				return;
+			}
+		}
+
 		m_pw = m_pix.width();
 		m_ph = m_pix.height();
 		setDefaultZoom();
@@ -634,7 +646,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		cairo_scale(cr, m_zoom, m_zoom);
 		gdk_cairo_set_source_pixbuf(cr, m_pix, -m_posh, -m_posv);
 		cairo_fill(cr);
-
 	}
 
 	/*
@@ -892,11 +903,18 @@ void Frame::thumbnailThread(int n) {
 		auto &o = m_vp[v];
 		//m_listIconHeight can changed during thread running so load every time
 		int i, h, j = heightToStep(m_listIconHeight);
+		std::string ext;
 
 		if (!o.m_thumbnail[0]) {
 //			printl("proceed t"+std::to_string(n),v)
-			//load pixbug from path
-			p = o.m_path;
+			//load pixbuf from path
+			ext=getFileInfo(o.m_path,FILEINFO::LOWER_EXTENSION);
+			if(ext=="webp"){
+				p=loadWebp(o.m_path);
+			}
+			else{
+				p = o.m_path;
+			}
 //			set scaled images, current scale at first
 			i = j;
 			h = stepToHeight(i);
