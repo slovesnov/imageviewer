@@ -519,16 +519,17 @@ void Frame::load(const std::string &p, int index, bool start) {
 
 	if (m_vp.empty()) {
 		setNoImage();
-	} else {
-		//if was no image, need to set m_toolbar buttons enabled
-		for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
-			setButtonState(i,
-					i != int(m_mode) + int(TOOLBAR_INDEX::MODE_ZOOM_ANY));
-		}
-
-		startThreads();
-		setListTopLeftIndexStartValue(); //have to reset
+		return;
 	}
+
+	//if was no image, need to set m_toolbar buttons enabled
+	for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
+		setButtonState(i,
+				i != int(m_mode) + int(TOOLBAR_INDEX::MODE_ZOOM_ANY));
+	}
+
+	startThreads();
+	setListTopLeftIndexStartValue(); //have to reset
 
 	if (start) {
 #if	START_MODE==-1
