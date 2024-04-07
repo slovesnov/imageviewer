@@ -10,8 +10,8 @@
 #include "help.h"
 #include "consts.h"
 #include "aslov.h"
-#include <webp/decode.h>
 
+#include <webp/decode.h>
 #include <windows.h>//deleteFileToRecycleBin
 #include <cstdint>
 

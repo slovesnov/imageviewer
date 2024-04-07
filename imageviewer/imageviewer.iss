@@ -91,9 +91,10 @@ Name: g\t21; Description: "*.targa"; Flags: unchecked
 Name: g\t22; Description: "*.tga"; Flags: unchecked
 Name: g\t23; Description: "*.tif"; Flags: unchecked
 Name: g\t24; Description: "*.tiff"; Flags: unchecked
-Name: g\t25; Description: "*.wmf"; Flags: unchecked
-Name: g\t26; Description: "*.xbm"; Flags: unchecked
-Name: g\t27; Description: "*.xpm"; Flags: unchecked
+Name: g\t25; Description: "*.webp"; Flags: unchecked
+Name: g\t26; Description: "*.wmf"; Flags: unchecked
+Name: g\t27; Description: "*.xbm"; Flags: unchecked
+Name: g\t28; Description: "*.xpm"; Flags: unchecked
 
 [Registry]
 Root: HKCR; Subkey: ".ani"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t0
@@ -121,9 +122,10 @@ Root: HKCR; Subkey: ".targa"; ValueType: string; ValueName: ""; ValueData: "{#AP
 Root: HKCR; Subkey: ".tga"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t22
 Root: HKCR; Subkey: ".tif"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t23
 Root: HKCR; Subkey: ".tiff"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t24
-Root: HKCR; Subkey: ".wmf"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t25
-Root: HKCR; Subkey: ".xbm"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t26
-Root: HKCR; Subkey: ".xpm"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t27
-Root: HKCR; Subkey: {#APPNAME}; ValueType: string; ValueName: ""; ValueData: {#APPNAME}; Flags: uninsdeletekey; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27
-Root: HKCR; Subkey: "{#APPNAME}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\bin\{#APPNAME}.exe,0"; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27
-Root: HKCR; Subkey: "{#APPNAME}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\bin\{#APPNAME}.exe"" ""%1"""; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27
+Root: HKCR; Subkey: ".webp"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t25
+Root: HKCR; Subkey: ".wmf"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t26
+Root: HKCR; Subkey: ".xbm"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t27
+Root: HKCR; Subkey: ".xpm"; ValueType: string; ValueName: ""; ValueData: "{#APPNAME}"; Flags: uninsdeletevalue; Tasks: g\t28
+Root: HKCR; Subkey: {#APPNAME}; ValueType: string; ValueName: ""; ValueData: {#APPNAME}; Flags: uninsdeletekey; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27 or g\t28
+Root: HKCR; Subkey: "{#APPNAME}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\bin\{#APPNAME}.exe,0"; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27 or g\t28
+Root: HKCR; Subkey: "{#APPNAME}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\bin\{#APPNAME}.exe"" ""%1"""; Tasks:g\t0 or g\t1 or g\t2 or g\t3 or g\t4 or g\t5 or g\t6 or g\t7 or g\t8 or g\t9 or g\t10 or g\t11 or g\t12 or g\t13 or g\t14 or g\t15 or g\t16 or g\t17 or g\t18 or g\t19 or g\t20 or g\t21 or g\t22 or g\t23 or g\t24 or g\t25 or g\t26 or g\t27 or g\t28

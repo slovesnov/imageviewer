@@ -1334,7 +1334,7 @@ void Frame::showSettings() {
 			if (m_key[m] != INVALID_KEY) {
 				gtk_entry_set_text(GTK_ENTRY(w), gdk_keyval_name(m_key[m]));
 			}
-			//gtk_entry_set_width_chars(GTK_ENTRY(w), 18);
+			gtk_entry_set_width_chars(GTK_ENTRY(w), 22);
 			gtk_entry_set_placeholder_text(GTK_ENTRY(w),
 					getLanguageStringC(LANGUAGE::CLICK_TO_SET_THE_KEY));
 			gtk_container_add(GTK_CONTAINER(box), w);

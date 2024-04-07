@@ -62,7 +62,7 @@ application restart required
 options
 hotkeys
 about
-click to set the key
+click to set the key...
 press any key...
 To delete a hotkey, click on the corresponding input field and then\nclick on any other input field or on the button with a picture.\nYou can set up to three hotkeys for each button.
 show the toolbar in full-screen mode

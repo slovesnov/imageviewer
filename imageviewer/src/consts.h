@@ -16,6 +16,7 @@
 #include "enums.h"
 
 /* internal gtk library not scaled some svg images properly (for example arrow0.svg from bridge project) now just scale pixbuf as raster when zoom
+ * rsvg library not working with arrow0.svg
  * i've tried use libraries. They don't always work correctly.
  * nanosvg from github has problems with arrow2.svg from bridge project
  * lunasvg from github works good but for deck1.svg from bridge project not shows all svg elements
