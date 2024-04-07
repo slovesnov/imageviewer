@@ -634,13 +634,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		gdk_cairo_set_source_pixbuf(cr, m_pix, -m_posh, -m_posv);
 		cairo_fill(cr);
 
-		//TODO
-//		gdk_cairo_set_source_pixbuf(cr, m_pix, (width / m_zoom - m_pw) / 2,
-//				(height / m_zoom - m_ph) / 2);
-//		gdk_cairo_set_source_pixbuf(cr, m_pix,  - m_pw / 2,
-//				 - m_ph / 2);
-//				gdk_cairo_set_source_pixbuf(cr, m_pix,  width  - m_pw,
-//						 height  - m_ph );
 	}
 
 	/*
@@ -1117,7 +1110,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 
 	if (t == TOOLBAR_INDEX::REORDER_FILE) {
 		setAscendingOrder(!m_ascendingOrder);
-		//TODO
 		m_listTopLeftIndex = getFirstListIndex();
 		if (m_mode == MODE::LIST) {
 			redraw();
