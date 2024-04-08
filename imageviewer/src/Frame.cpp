@@ -457,10 +457,46 @@ void Frame::setTitle() {
 					+ getLanguageString(LANGUAGE::ZOOM) + " "
 					+ std::to_string(int(m_zoom * 100)) + "%" + SEPARATOR
 					+ format("%d/%d", m_pi + 1, size());
+			//get date if it's possible
+
+			//std::string n = "IMG_21000229_130015-20230530_130015.jpg";
+			GMatchInfo *match_info;
+			GRegex *regex = g_regex_new(
+					"(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2})(\\d{2})",
+					GRegexCompileFlags(G_REGEX_RAW | G_REGEX_CASELESS),
+					GRegexMatchFlags(0), NULL);
+			int d[6];
+			const int DMAX[]= {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+			int k;
+
+			g_regex_match(regex, n.c_str(), G_REGEX_MATCH_DEFAULT, &match_info);
+			while (g_match_info_matches(match_info)) {
+				for (i = 0; i < SIZEI(d); i++) {
+					gchar *word = g_match_info_fetch(match_info, i + 1);
+					d[i] = atoi(word);
+					g_free(word);
+				}
+				k=d[0];
+				i= d[1] == 2 && (k % 4 == 0 && (k % 100 != 0 || k % 400 == 0));
+				if (d[0] >= 1900 && d[1]>0 && d[1] < 13 && d[2]>0 &&d[2] <= DMAX[d[1]-1]+i && d[3] < 24
+						&& d[4] < 60 && d[5] < 60) {
+					t += SEPARATOR + std::to_string(d[2])
+							+ getLanguageString(LANGUAGE::JAN, d[1]-1)
+							+ std::to_string(d[0]);
+					for (i = 0; i < 3; i++) {
+						t += (i ? ':' : ' ') + format("%02d",d[i+3]);
+					}
+					break;
+				}
+				g_match_info_next(match_info, NULL);
+			}
+			g_match_info_free(match_info);
+			g_regex_unref(regex);
 
 			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
 			 * compress images online https://compressjpeg.com/ru/
 			 */
+/*
 			GRegex *r = g_regex_new("^IMG_\\d{8}_\\d{6}.*\\.jpg$",
 					GRegexCompileFlags(G_REGEX_RAW | G_REGEX_CASELESS),
 					GRegexMatchFlags(0), NULL);
@@ -474,7 +510,7 @@ void Frame::setTitle() {
 					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
 				}
 			}
-			g_regex_unref(r);
+			g_regex_unref(r);*/
 		}
 	}
 
