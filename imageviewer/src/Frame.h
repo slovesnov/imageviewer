@@ -48,7 +48,7 @@ public:
 	std::atomic_int m_threadNumber;
 	gint m_endThreads;
 	int m_loadid;
-	int m_filenameFontHeight, m_listTopLeftIndex, totalFileSize;
+	int m_filenameFontHeight, m_listTopLeftIndex, m_totalFileSize;
 	int m_listx, m_listy, m_listdx, m_listdy, m_listxy;
 	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
@@ -61,7 +61,7 @@ public:
 	double m_zoom, m_zoomFactor;
 	std::vector<int*> m_optionsPointer;
 	guint m_key[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];
-	int m_zoomDelta;
+	int m_recursive;
 	GFileMonitor *m_monitor;
 	clock_t m_lastManualOperationTime;
 
@@ -86,6 +86,7 @@ public:
 
 	void setTitle();
 	void load(const std::string &p, int index = 0, bool start = false); //supports dir & file
+	void addDirectory(const std::string &dir,const std::string&p);
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);

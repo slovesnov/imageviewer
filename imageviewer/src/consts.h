@@ -31,7 +31,10 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
 		LANGUAGE::ONE_APPLICATION_INSTANCE,
 		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,
-		LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE, LANGUAGE::ZOOM_FACTOR };
+		LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,LANGUAGE::RECURSIVE_DIRECTORY
+		//zoom factor should be last insert new values before it see Frame::updateOptions()
+		, LANGUAGE::ZOOM_FACTOR
+};
 
 const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::SZ);
 
@@ -106,7 +109,7 @@ const std::string CONFIG_TAGS[] = { "version", "mode", "order",
 		"delete option", "warn before save", "show popup tips",
 		"one application instance", "remember the last open directory",
 		"show the toolbar in full-screen mode", "last open directory", "keys",
-		"zoom factor" };
+		"zoom factor","recursive directory" };
 
 const guint KEY[] = {
 GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,

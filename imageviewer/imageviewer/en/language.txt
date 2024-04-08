@@ -1,5 +1,6 @@
 image viewer
 drag and drop a file or directory to view
+recursive directory
 language
 warn before saving a file
 warn before deleting a file

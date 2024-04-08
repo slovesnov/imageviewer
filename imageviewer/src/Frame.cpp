@@ -140,7 +140,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_lastManualOperationTime = 0;
 	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
 			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
-			&m_rememberLastOpenDirectory, &m_showToolbarFullscreen };
+			&m_rememberLastOpenDirectory, &m_showToolbarFullscreen,&m_recursive };
 	m_optionsDefalutValue = { 0, //m_languageIndex
 			1, //m_warnBeforeDelete
 			0, //m_deleteOption
@@ -149,8 +149,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 			1, //m_oneInstance
 			1, //m_rememberLastOpenDirectory
 			0, //m_showToolbarFullscreen
+			0, //m_recursive
 			};
-	//SIZE not working use std::size
 	assert(std::size(m_optionsPointer)==std::size(m_optionsDefalutValue));
 
 	setlocale(LC_NUMERIC, "C"); //dot interpret as decimal separator for format(... , scale)
@@ -216,6 +216,10 @@ Frame::Frame(GtkApplication *application, std::string path) {
 						== ENUM_CONFIG_TAGS::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE
 						&& j >= 0 && j < 2) {
 					m_showToolbarFullscreen = j;
+				} else if (ct
+						== ENUM_CONFIG_TAGS::RECURSIVE
+						&& j >= 0 && j < 2) {
+					m_recursive = j;
 				} else if (ct == ENUM_CONFIG_TAGS::ZOOM_FACTOR) {
 					parseString(it->second, m_zoomFactor);
 					//sometimes in case of error program stores "0" value even if m_zoomFactor=1.1
@@ -411,7 +415,7 @@ Frame::~Frame() {
 			m_ascendingOrder, m_listIconHeight, m_languageIndex,
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
 			m_oneInstance, m_rememberLastOpenDirectory, m_showToolbarFullscreen,
-			m_dir, s, m_zoomFactor);
+			m_dir, s, m_zoomFactor,m_recursive);
 	stopThreads();
 	g_mutex_clear(&m_mutex);
 }
@@ -432,7 +436,7 @@ void Frame::setTitle() {
 		t = m_dir + SEPARATOR;
 		const int sz = size();
 		if (m_mode == MODE::LIST) {
-			double ts = totalFileSize;
+			double ts = m_totalFileSize;
 			/* format("%d-%d/%d" a-b/size
 			 * a=m_listTopLeftIndex + 1
 			 * if LIST_ASCENDING_ORDER=1 a<b & b-a+1=m_listxy => b=a-1+m_listxy=m_listTopLeftIndex + m_listxy
@@ -519,8 +523,6 @@ void Frame::setTitle() {
 
 void Frame::load(const std::string &p, int index, bool start) {
 	std::string s;
-	GDir *di;
-	const gchar *filename;
 	stopThreads(); //endThreads=0 after
 	m_loadid++;
 	m_vp.clear();
@@ -532,22 +534,27 @@ void Frame::load(const std::string &p, int index, bool start) {
 	m_pi = index;
 	m_dir = d ? p : getFileInfo(p, FILEINFO::DIRECTORY);
 //	printl(m_dir,p)
-	totalFileSize = 0;
+	m_totalFileSize = 0;
 
-	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
-	if ((di = g_dir_open(m_dir.c_str(), 0, 0))) {
-		while ((filename = g_dir_read_name(di))) {
-			s = m_dir + G_DIR_SEPARATOR + filename;
-			if (!isDir(s) && isSupportedImage(s)) {
-				if (!d && s == p) {
-					m_pi = size();
-				}
-				//printl(s)
-				m_vp.push_back(Image(s, m_loadid));
-				totalFileSize += m_vp.back().m_size;
-			}
-		}
-	}
+	addDirectory(m_dir, p);
+
+//	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
+//	if ((di = g_dir_open(m_dir.c_str(), 0, 0))) {
+//		while ((filename = g_dir_read_name(di))) {
+//			s = m_dir + G_DIR_SEPARATOR + filename;
+//			if(isDir(s)){
+//
+//			}
+//			else if (isSupportedImage(s)) {
+//				if (!d && s == p) {
+//					m_pi = size();
+//				}
+//				//printl(s)
+//				m_vp.push_back(Image(s, m_loadid));
+//				totalFileSize += m_vp.back().m_size;
+//			}
+//		}
+//	}
 	sortFiles();
 
 	addMonitor(m_dir);
@@ -582,6 +589,32 @@ void Frame::load(const std::string &p, int index, bool start) {
 
 	//need to redraw anyway even if no image
 	loadImage();
+
+}
+
+void Frame::addDirectory(const std::string &dir,const std::string&p){
+	GDir *di;
+	const gchar *filename;
+	std::string s;
+	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
+	if ((di = g_dir_open(dir.c_str(), 0, 0))) {
+		while ((filename = g_dir_read_name(di))) {
+			s = dir + G_DIR_SEPARATOR + filename;
+			if(isDir(s)){
+				if(m_recursive){
+					addDirectory(s,p);
+				}
+			}
+			else if (isSupportedImage(s)) {
+				if (s == p) {
+					m_pi = size();
+				}
+				//printl(s)
+				m_vp.push_back(Image(s, m_loadid));
+				m_totalFileSize += m_vp.back().m_size;
+			}
+		}
+	}
 
 }
 
@@ -1182,7 +1215,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 
 			//before g_remove change totalFileSize
 			auto &a = m_vp[m_pi];
-			totalFileSize -= a.m_size;
+			m_totalFileSize -= a.m_size;
 
 			if (m_deleteOption) {
 				g_remove(a.m_path.c_str());
@@ -1832,12 +1865,13 @@ void Frame::updateOptions() {
 	int i = 0;
 	GtkWidget *w;
 	for (auto e : m_optionsPointer) {
-		w = m_options[i++];
+		w = m_options[i];
 		if (GTK_IS_COMBO_BOX(w)) {
 			gtk_combo_box_set_active(GTK_COMBO_BOX(w), *e);
 		} else {
 			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), *e);
 		}
+		i++;
 	}
 	w = m_options[i++];
 	m_proceedEvents = false;
