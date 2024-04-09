@@ -671,7 +671,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				copy(p, cr, i + (m_listIconWidth - w) / 2,
 						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
 
-
 				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
 						m_filenameFontHeight, filenameFontBold, i, j + 1,
 						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,

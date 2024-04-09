@@ -59,8 +59,11 @@ const double INVALID_ZOOM_FACTOR = 3;
 const double MIN_MANULAL_OPERATION_ELAPSE=5;//seconds max was 3.6
 
 /* w=4*h/3
- * w=192 h=3*192/4=144 (10 images by width)
+ * w=192 h=3*192/4=144
+ * 1920/w=1920/192=10 images
  *
+ * h=24 w=4*24/3=32
+ * 1920/w=1920/32=60 images
  */
 const int LIST_IMAGE_STEP = 20;
 const int LIST_IMAGE_STEPS = 7;
