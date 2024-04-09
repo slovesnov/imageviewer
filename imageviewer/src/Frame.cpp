@@ -1101,6 +1101,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				m_posh += width / m_zoom / 2 * (k - 1);
 				m_posv += height / m_zoom / 2 * (k - 1);
 				adjustPos();
+				updateModesButtonState();
 				redraw();
 			}
 		}
@@ -1111,15 +1112,15 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	i = INDEX_OF(t, TMODE);
 	if (i != -1) {
 		MODE m = MODE(i);
-		if (m_mode != m) {
-			setMode(m);
-			if (m_mode == MODE::LIST) {
-				redraw();
-			} else {
-				setDefaultZoom();
-				drawImage();
-			}
+		//can be m_mode=zoom_fit after rotate or zoom then m_mode the same but need rescale image
+		setMode(m);
+		if (m_mode == MODE::LIST) {
+			redraw();
+		} else {
+			setDefaultZoom();
+			drawImage();
 		}
+		updateModesButtonState();
 		return;
 	}
 
@@ -1260,6 +1261,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			} else {
 				rotatePixbuf(m_pix, m_pw, m_ph, i+1);
 			}
+			updateModesButtonState();
 			drawImage();
 		}
 		return;
@@ -1969,11 +1971,15 @@ bool Frame::isOneInstanceOnly() {
 	return m_oneInstance;
 }
 
+double Frame::getDefaultZoomFit(){
+	return MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
+}
+
 void Frame::setDefaultZoom() {
 	if (m_mode == MODE::NORMAL) {
 		m_zoom = 1;
 	} else if (m_mode == MODE::FIT) {
-		m_zoom = MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
+		m_zoom = getDefaultZoomFit();
 	}
 }
 
@@ -2113,4 +2119,13 @@ void Frame::setPictureIndex(const std::string &path){
 			m_vp.begin(), m_vp.end(),
 	    [&path](const auto& e) { return e.m_path == path;});
 	m_pi=std::distance(m_vp.begin(), it);
+}
+
+void Frame::updateModesButtonState() {
+	if(m_mode!=MODE::LIST){
+		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_100, m_zoom!=1);
+//		println ("%dx%d %dx%d",m_lastWidth, m_lastHeight , m_pw ,m_ph );
+//		println("%lf %lf z=%lf",m_zoom*m_pw,m_zoom*m_ph,m_zoom)
+		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_FIT, m_zoom!=getDefaultZoomFit());
+	}
 }

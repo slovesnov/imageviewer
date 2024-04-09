@@ -157,6 +157,7 @@ public:
 	std::string getExtensionString(bool writableOnly = false, bool onlyIndex0 =
 			true, int rows = 1);
 	static bool isOneInstanceOnly();
+	double getDefaultZoomFit();
 	void setDefaultZoom();
 	void setCenterPos();
 	GtkWidget* createLanguageCombo();
@@ -171,6 +172,7 @@ public:
 	static int heightToStep(int height);
 	void sortFiles();
 	void setPictureIndex(const std::string &path);
+	void updateModesButtonState();
 };
 
 #endif /* FRAME_H_ */
