@@ -456,6 +456,7 @@ void Frame::setTitle() {
 					+ getSizeMbKbB(ts / sz);
 		} else {
 			auto &f = m_vp[m_pi];
+			//printl(m_pi,f.m_path)
 			const std::string n = getFileInfo(f.m_path, FILEINFO::NAME);
 			t += n + SEPARATOR + getLanguageString(LANGUAGE::SIZE)
 					+ format(" %dx%d ", m_pw, m_ph)
@@ -500,25 +501,6 @@ void Frame::setTitle() {
 			}
 			g_match_info_free(match_info);
 			g_regex_unref(regex);
-
-			/* allow IMG_20210823_110315.jpg & compressed IMG_20210813_121527-min.jpg
-			 * compress images online https://compressjpeg.com/ru/
-			 */
-/*
-			GRegex *r = g_regex_new("^IMG_\\d{8}_\\d{6}.*\\.jpg$",
-					GRegexCompileFlags(G_REGEX_RAW | G_REGEX_CASELESS),
-					GRegexMatchFlags(0), NULL);
-			if (g_regex_match(r, n.c_str(), GRegexMatchFlags(0), NULL)) {
-				i = stoi(n.substr(8, 2)) - 1;
-				t += SEPARATOR + n.substr(10, 2)
-						+ (i >= 0 && i < 12 ?
-								getLanguageString(LANGUAGE::JAN, i) : "???")
-						+ n.substr(4, 4);
-				for (i = 0; i < 3; i++) {
-					t += (i ? ':' : ' ') + n.substr(13 + i * 2, 2);
-				}
-			}
-			g_regex_unref(r);*/
 		}
 	}
 
@@ -541,28 +523,8 @@ void Frame::load(const std::string &p, int index, bool start) {
 	m_totalFileSize = 0;
 
 	addDirectory(m_dir, p);
-
-//	//from gtk documentation order of file is arbitrary. Actually it's name (or may be date) ascending order
-//	if ((di = g_dir_open(m_dir.c_str(), 0, 0))) {
-//		while ((filename = g_dir_read_name(di))) {
-//			s = m_dir + G_DIR_SEPARATOR + filename;
-//			if(isDir(s)){
-//
-//			}
-//			else if (isSupportedImage(s)) {
-//				if (!d && s == p) {
-//					m_pi = size();
-//				}
-//				//printl(s)
-//				m_vp.push_back(Image(s, m_loadid));
-//				totalFileSize += m_vp.back().m_size;
-//			}
-//		}
-//	}
 	sortFiles();
-
 	addMonitor(m_dir);
-
 	recountListParameters();
 
 	if (m_vp.empty()) {
@@ -1284,9 +1246,16 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 						m_modalDialogEntryText=m_vp[m_pi].m_path;
 					}
 					auto &e = m_vp[rename ? m_pi : m_vp.size() - 1];
-					e.m_path = m_modalDialogEntryText;
+					auto path=e.m_path = m_modalDialogEntryText;
 					e.m_thumbnail[0] = nullptr; //reload this image
 					sortFiles();
+					auto it=std::find_if(
+							m_vp.begin(), m_vp.end(),
+					    [&path](const auto& e) { return e.m_path == path;});
+					m_pi=std::distance(m_vp.begin(), it);
+
+					//printl(rename ? m_pi : m_vp.size() - 1,std::distance(m_vp.begin(), it))
+
 					m_lastManualOperationTime = clock(); //disable monitoring call
 					stopThreads();
 					startThreads();
