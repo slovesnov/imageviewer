@@ -657,6 +657,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	}
 
 	if (m_mode == MODE::LIST) {
+//		printl(m_listIconWidth,m_listIconHeight)
 		for (k = m_listTopLeftIndex, l = 0;
 				((m_ascendingOrder && k < sz) || (!m_ascendingOrder && k >= 0))
 						&& l < m_listxy; k += m_ascendingOrder ? 1 : -1, l++) {
@@ -669,6 +670,7 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 				h = gdk_pixbuf_get_height(p);
 				copy(p, cr, i + (m_listIconWidth - w) / 2,
 						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
+
 
 				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
 						m_filenameFontHeight, filenameFontBold, i, j + 1,
