@@ -390,7 +390,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	if (path.empty()) {
 		setNoImage();
 	} else {
-		load(path, 0, true); //after area is created
+		load(path, true); //after area is created
 		if (m_mode == MODE::LIST) { //after vp is loading in load() function
 			setListTopLeftIndexStartValue();
 		}
@@ -507,23 +507,28 @@ void Frame::setTitle() {
 	gtk_window_set_title(GTK_WINDOW(m_window), t.c_str());
 }
 
-void Frame::load(const std::string &p, int index, bool start) {
+void Frame::load(const std::string &path, bool start) {
 	std::string s;
 	stopThreads(); //endThreads=0 after
 	m_loadid++;
 	m_vp.clear();
-	bool d = isDir(p);
+	bool d = isDir(path);
 	/* by default m_pi=0 - first image in directory
 	 * if path is not dir m_pi=0 first image it's ok
 	 * if path is file with bad extension then m_pi=0 it's ok
 	 */
-	m_pi = index;
-	m_dir = d ? p : getFileInfo(p, FILEINFO::DIRECTORY);
+	m_dir = d ? path : getFileInfo(path, FILEINFO::DIRECTORY);
 //	printl(m_dir,p)
 	m_totalFileSize = 0;
 
-	addDirectory(m_dir, p);
+	addDirectory(m_dir);
 	sortFiles();
+	if(d){
+		m_pi=0;
+	}
+	else{
+		setPictureIndex(path);
+	}
 	addMonitor(m_dir);
 	recountListParameters();
 
@@ -558,7 +563,7 @@ void Frame::load(const std::string &p, int index, bool start) {
 
 }
 
-void Frame::addDirectory(const std::string &dir,const std::string&p){
+void Frame::addDirectory(const std::string &dir){
 	GDir *di;
 	const gchar *filename;
 	std::string s;
@@ -568,14 +573,10 @@ void Frame::addDirectory(const std::string &dir,const std::string&p){
 			s = dir + G_DIR_SEPARATOR + filename;
 			if(isDir(s)){
 				if(m_recursive){
-					addDirectory(s,p);
+					addDirectory(s);
 				}
 			}
 			else if (isSupportedImage(s)) {
-				if (s == p) {
-					m_pi = size();
-				}
-				//printl(s)
 				m_vp.push_back(Image(s, m_loadid));
 				m_totalFileSize += m_vp.back().m_size;
 			}
@@ -1246,13 +1247,10 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 						m_modalDialogEntryText=m_vp[m_pi].m_path;
 					}
 					auto &e = m_vp[rename ? m_pi : m_vp.size() - 1];
-					auto path=e.m_path = m_modalDialogEntryText;
+					e.m_path = m_modalDialogEntryText;
 					e.m_thumbnail[0] = nullptr; //reload this image
 					sortFiles();
-					auto it=std::find_if(
-							m_vp.begin(), m_vp.end(),
-					    [&path](const auto& e) { return e.m_path == path;});
-					m_pi=std::distance(m_vp.begin(), it);
+					setPictureIndex(m_modalDialogEntryText);
 
 					//printl(rename ? m_pi : m_vp.size() - 1,std::distance(m_vp.begin(), it))
 
@@ -2126,4 +2124,11 @@ void Frame::sortFiles() {
 	std::sort(m_vp.begin(), m_vp.end(), [](const auto &a, const auto &b) {
 		return g_utf8_collate(a.m_path.c_str(), b.m_path.c_str()) < 0;
 	});
+}
+
+void Frame::setPictureIndex(const std::string &path){
+	auto it=std::find_if(
+			m_vp.begin(), m_vp.end(),
+	    [&path](const auto& e) { return e.m_path == path;});
+	m_pi=std::distance(m_vp.begin(), it);
 }

@@ -85,8 +85,8 @@ public:
 	virtual ~Frame();
 
 	void setTitle();
-	void load(const std::string &p, int index = 0, bool start = false); //supports dir & file
-	void addDirectory(const std::string &dir,const std::string&p);
+	void load(const std::string &path, bool start = false); //supports dir & file
+	void addDirectory(const std::string &dir);
 	void loadImage();
 	void drawImage();
 	void draw(cairo_t *cr, GtkWidget *widget);
@@ -173,6 +173,7 @@ public:
 	static int stepToHeight(int step);
 	static int heightToStep(int height);
 	void sortFiles();
+	void setPictureIndex(const std::string &path);
 };
 
 #endif /* FRAME_H_ */
