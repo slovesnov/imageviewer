@@ -1087,7 +1087,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				setIconHeightWidth(m_listIconHeight);
 				recountListParameters();
 				m_filenameFontHeight = 0; //to recount font
-				redraw(false);
+				redraw();//with title m_listxy changed
 			}
 		} else {
 			const double k =
