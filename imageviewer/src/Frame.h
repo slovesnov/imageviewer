@@ -105,9 +105,6 @@ public:
 	void openDirectory();
 	void switchImage(int v, bool add);
 
-	void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
-	void flipPixbuf(Pixbuf &p, bool horizontal);
-
 	void startThreads();
 	void thumbnailThread(int n);
 	void stopThreads();

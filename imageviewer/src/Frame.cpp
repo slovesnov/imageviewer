@@ -876,23 +876,6 @@ void Frame::switchImage(int v, bool add) {
 	}
 }
 
-void Frame::rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
-	//angle 90 or 180 or 270
-	p = gdk_pixbuf_rotate_simple(p,
-			angle == 180 ?
-					GDK_PIXBUF_ROTATE_UPSIDEDOWN :
-					(angle == 90 ?
-							GDK_PIXBUF_ROTATE_CLOCKWISE :
-							GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE));
-	if (angle != 180) {
-		std::swap(w, h);
-	}
-}
-
-void Frame::flipPixbuf(Pixbuf &p, bool horizontal) {
-	p = gdk_pixbuf_flip(p, horizontal);
-}
-
 void Frame::startThreads() {
 	int i;
 	for (i = getFirstListIndex(); m_vp[i].m_thumbnail[0] != nullptr;
@@ -1275,8 +1258,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			if (i >= 3) {
 				flipPixbuf(m_pix, i == 3);
 			} else {
-				int a = 90 * (i + 1);
-				rotatePixbuf(m_pix, m_pw, m_ph, a);
+				rotatePixbuf(m_pix, m_pw, m_ph, i+1);
 			}
 			drawImage();
 		}

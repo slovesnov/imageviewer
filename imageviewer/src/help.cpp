@@ -185,3 +185,21 @@ GdkPixbuf* loadWebp (std::string path){
 	WebPFree(data);
     return p;
 }
+
+void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle) {
+	//angle 1-90 or 2-180 or 3-270
+	p = gdk_pixbuf_rotate_simple(p,
+			angle == 2 ?
+					GDK_PIXBUF_ROTATE_UPSIDEDOWN :
+					(angle == 1 ?
+							GDK_PIXBUF_ROTATE_CLOCKWISE :
+							GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE));
+	if (angle != 2) {
+		std::swap(w, h);
+	}
+}
+
+void flipPixbuf(Pixbuf &p, bool horizontal) {
+	p = gdk_pixbuf_flip(p, horizontal);
+}
+
