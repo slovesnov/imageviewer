@@ -137,6 +137,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_lastNonListMode = MODE::ANY;
 	m_proceedEvents = true;
 	m_monitor = nullptr;
+	m_saveRename=0;
 	m_lastManualOperationTime = 0;
 	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
 			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
@@ -221,13 +222,15 @@ Frame::Frame(GtkApplication *application, std::string path) {
 						&& j >= 0 && j < 2) {
 					m_recursive = j;
 				} else if (ct == ENUM_CONFIG_TAGS::ZOOM_FACTOR) {
-					parseString(it->second, m_zoomFactor);
+					j=parseString(it->second, m_zoomFactor);
+//					printl(j,it->second,m_zoomFactor)
 					//sometimes in case of error program stores "0" value even if m_zoomFactor=1.1
-					if (m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
+					if (!j || m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
 							|| m_zoomFactor > MAX_ZOOM_FACTOR) {
-//						printl("error",m_zoomFactor,it->second)
 						m_zoomFactor = DEFAULT_ZOOM_FACTOR;
 					}
+				} else if (ct == ENUM_CONFIG_TAGS::SAVE_RENAME && j >= 0 && j < 2) {
+					m_saveRename=j;
 				} else if (ct == ENUM_CONFIG_TAGS::KEYS) {
 					v = split(it->second);
 					if (v.size() == SIZE(m_key)) {
@@ -415,7 +418,8 @@ Frame::~Frame() {
 			m_ascendingOrder, m_listIconHeight, m_languageIndex,
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
 			m_oneInstance, m_rememberLastOpenDirectory, m_showToolbarFullscreen,
-			m_dir, s, m_zoomFactor,m_recursive);
+			m_dir, s,m_recursive,m_saveRename
+			, m_zoomFactor);
 	stopThreads();
 	g_mutex_clear(&m_mutex);
 }
@@ -1241,13 +1245,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				&& (!m_warnBeforeSave || showSaveDialog() == GTK_RESPONSE_YES)) {
 			bool b = false;
 			s = m_warnBeforeSave ? m_modalDialogEntryText : m_vp[m_pi].m_path;
-			int rename = m_warnBeforeSave ? m_modalDialogComboIndex : 0;
+			int rename = m_warnBeforeSave ? m_saveRename : 0;
 //			printl(s)
 			auto it = supportedIterator(s, true);
 			if (it == m_supported.end()) { //user click save non writable file m_warnBeforeSave=false
 				if (showSaveDialog(true) == GTK_RESPONSE_YES) {
 					it = supportedIterator(m_modalDialogEntryText, true);
-					rename = m_modalDialogComboIndex;
+					rename = m_saveRename;
 					b = it != m_supported.end();
 				}
 			} else {
@@ -1347,6 +1351,7 @@ void Frame::showSettings() {
 			w = m_options[i] = createTextCombo(v, 0);
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::ZOOM_FACTOR) {
+			m_modalDialogFactor=m_zoomFactor;
 			w = m_options[i] = gtk_entry_new();
 			addInsertDeleteEvents(w, ZOOM_FACTOR_ID);
 			addFocusEvents(w, ZOOM_FACTOR_ID);
@@ -1503,7 +1508,7 @@ gint Frame::showSaveDialog(bool error) {
 			"%");
 	gtk_container_add(GTK_CONTAINER(w), gtk_label_new(v[0].c_str()));
 	m_modalDialogCombo = createTextCombo( { getLanguageString(LANGUAGE::SAVE),
-			getLanguageString(LANGUAGE::RENAME) }, 0);
+			getLanguageString(LANGUAGE::RENAME) }, m_saveRename);
 	gtk_container_add(GTK_CONTAINER(w), m_modalDialogCombo);
 	gtk_container_add(GTK_CONTAINER(w), gtk_label_new(v[1].c_str()));
 	gtk_grid_attach(GTK_GRID(grid), w, 0, i++, 2, 1);
@@ -1799,7 +1804,7 @@ void Frame::optionsButtonClicked(LANGUAGE l) {
 		if (m_modalDialogIndex == DIALOG::SAVE) {
 			m_modalDialogEntryText = gtk_entry_get_text(
 					GTK_ENTRY(m_modalDialogEntry));
-			m_modalDialogComboIndex = gtk_combo_box_get_active(
+			m_saveRename = gtk_combo_box_get_active(
 					GTK_COMBO_BOX(m_modalDialogCombo));
 		}
 		gtk_dialog_response(GTK_DIALOG(m_modal),

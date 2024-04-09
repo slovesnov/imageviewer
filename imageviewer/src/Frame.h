@@ -69,7 +69,7 @@ public:
 	DIALOG m_modalDialogIndex;
 	GtkWidget *m_modalDialogEntry,*m_modalDialogCombo, *m_showModalDialogButtonOK;
 	std::string m_modalDialogEntryText;
-	int m_modalDialogComboIndex;
+	int m_saveRename;
 	//settings dialog variables
 	GtkWidget *m_notebook;
 	guint m_tmpkey[TOOLBAR_INDEX_SIZE * MAX_HOTKEYS];

@@ -108,8 +108,11 @@ const std::string CONFIG_TAGS[] = { "version", "mode", "order",
 		"list icon height", "language", "warning before delete",
 		"delete option", "warn before save", "show popup tips",
 		"one application instance", "remember the last open directory",
-		"show the toolbar in full-screen mode", "last open directory", "keys",
-		"zoom factor","recursive directory" };
+		"show the toolbar in full-screen mode", "last open directory", "keys"
+		,"recursive directory"
+		,"save rename"
+		,"zoom factor"
+};
 
 const guint KEY[] = {
 GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,

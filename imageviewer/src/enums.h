@@ -129,8 +129,10 @@ enum class ENUM_CONFIG_TAGS {
 	SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,
 	LAST_OPEN_DIRECTORY, //not show in options
 	KEYS, //not show in options
-	ZOOM_FACTOR,
 	RECURSIVE,
+	SAVE_RENAME,
+
+	ZOOM_FACTOR
 };
 
 enum COL {
