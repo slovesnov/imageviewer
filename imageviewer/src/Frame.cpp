@@ -64,10 +64,10 @@ static gboolean mouse_scroll(GtkWidget *widget, GdkEventScroll *event,
 	return FALSE;
 }
 
-static gboolean button_press(GtkWidget *widget, GdkEventButton *event,
+static gboolean mouse_press(GtkWidget *widget, GdkEventButton *event,
 		gpointer) {
 	//printl(event->x,event->y,event->x_root,event->y_root);
-	frame->buttonPress(event);
+	frame->mousePress(event);
 	return TRUE;
 }
 
@@ -133,6 +133,14 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	for (auto &e : m_timer) {
 		e = 0;
 	}
+	i=-1;
+	for (auto &e : m_noImage) {
+		i++;
+		j=LIST_IMAGE_HEIGHT[i];
+		e = gdk_pixbuf_new_from_file_at_size(
+				getImagePath("noimage.svg").c_str(), getWidthForHeight(j), j, NULL);
+	}
+	//m_noImage=pixbuf("noimage.svg");
 	m_zoom = 1;
 	m_lastNonListMode = MODE::ANY;
 	m_proceedEvents = true;
@@ -335,7 +343,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	g_signal_connect(m_window, "key-press-event", G_CALLBACK (key_press),
 			gpointer(-1));
 
-	g_signal_connect(m_window, "button-press-event", G_CALLBACK(button_press),
+	//use mouse_press - more readable code
+	g_signal_connect(m_window, "button-press-event", G_CALLBACK(mouse_press),
 			NULL);
 
 	g_signal_connect(m_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -644,6 +653,11 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			}
 			else if(o.m_status==LOAD_STATUS::LOADED_ERROR){
 				drawFileName=true;
+				GdkPixbuf *p=(GdkPixbuf *)m_noImage[m_listIconIndex];
+				w = gdk_pixbuf_get_width(p);
+				h = gdk_pixbuf_get_height(p);
+				copy(p, cr, i + (m_listIconWidth - w) / 2,
+						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
 			}
 			if(drawFileName){
 				drawTextToCairo(cr,
@@ -954,7 +968,7 @@ void Frame::stopThreads() {
 	g_atomic_int_set(&m_endThreads, 0);
 }
 
-void Frame::buttonPress(GdkEventButton *event) {
+void Frame::mousePress(GdkEventButton *event) {
 	//middle button is three fingers tap (in windows10 settings)
 	if (event->type == GDK_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
 		const bool left = event->button == 1;
@@ -963,12 +977,14 @@ void Frame::buttonPress(GdkEventButton *event) {
 				if (left) { // left button check click on image
 					int cx = event->x;
 					int cy = event->y;
+					int i=((cx - m_listdx) / m_listIconWidth
+							+ (cy - m_listdy) / m_listIconHeight * m_listx)
+							* (m_ascendingOrder ? 1 : -1)
+							+ m_listTopLeftIndex;
+
 					if (cx >= m_listdx && cx < m_lastWidth - m_listdx
-							&& cy >= m_listdy && cy < m_lastHeight - m_listdy) {
-						m_pi = ((cx - m_listdx) / m_listIconWidth
-								+ (cy - m_listdy) / m_listIconHeight * m_listx)
-								* (m_ascendingOrder ? 1 : -1)
-								+ m_listTopLeftIndex;
+							&& cy >= m_listdy && cy < m_lastHeight - m_listdy && m_vp[i].m_status==LOAD_STATUS::LOADED_OK) {
+						m_pi = i;
 						setMode(m_lastNonListMode);
 						loadImage();
 					}
@@ -1214,8 +1230,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 						m_modalDialogEntryText = m_vp[m_pi].m_path;
 					}
 					auto &e = m_vp[rename ? m_pi : m_vp.size() - 1];
-					e.m_path = m_modalDialogEntryText;
-					e.m_status = LOAD_STATUS::NOT_LOADED; //reload this image
+					e.setPathClear(m_modalDialogEntryText);
 					sortFiles();
 					setPictureIndex(m_modalDialogEntryText);
 

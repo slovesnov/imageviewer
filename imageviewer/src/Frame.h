@@ -64,6 +64,7 @@ public:
 	int m_recursive;
 	GFileMonitor *m_monitor;
 	clock_t m_lastManualOperationTime;
+	Pixbuf m_noImage[LIST_IMAGE_STEPS];
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
@@ -109,7 +110,7 @@ public:
 	void startThreads();
 	void thumbnailThread(int n);
 	void stopThreads();
-	void buttonPress(GdkEventButton *event);
+	void mousePress(GdkEventButton *event);
 	void setShowThumbnail(int i);
 	void setListTopLeftIndexStartValue();
 	void scrollList(int v);

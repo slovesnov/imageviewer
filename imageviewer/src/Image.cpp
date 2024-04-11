@@ -11,15 +11,9 @@
 #include "Image.h"
 #include "aslov.h"
 
-Image::Image(std::string p, int id) {
-	m_path = p;
+Image::Image(std::string const&path, int id) {
 	m_loadid = id;
-	m_status=LOAD_STATUS::NOT_LOADED;
-	int i;
-	for (i = 0; i < LIST_IMAGE_STEPS; i++) {
-		m_thumbnail[i] = nullptr;
-	}
-	m_size = getFileSize(m_path);
+	setPathClear(path);
 }
 
 Image::~Image() {
@@ -57,3 +51,13 @@ void Image::free() {
 		}
 	}
 }
+
+void Image::setPathClear(std::string const& path){
+	m_path = path;
+	m_status=LOAD_STATUS::NOT_LOADED;
+	for(auto& a:m_thumbnail){
+		a = nullptr;
+	}
+	m_size = getFileSize(m_path);
+}
+

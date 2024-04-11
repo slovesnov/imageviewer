@@ -43,13 +43,15 @@ public:
 	LOAD_STATUS m_status;
 	std::atomic<GdkPixbuf*> m_thumbnail[LIST_IMAGE_STEPS];
 
-	Image(std::string p, int id);
+	Image(std::string const&path, int id);
 	~Image();
 
 	//for correct VImage.erase()
 	Image(Image &&o);
 	Image& operator=(Image &&o);
 	void free();
+
+	void setPathClear(std::string const& path);
 };
 
 typedef std::vector<Image> VImage;
