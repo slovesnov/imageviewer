@@ -14,6 +14,7 @@
 Image::Image(std::string p, int id) {
 	m_path = p;
 	m_loadid = id;
+	m_status=LOAD_STATUS::NOT_LOADED;
 	int i;
 	for (i = 0; i < LIST_IMAGE_STEPS; i++) {
 		m_thumbnail[i] = nullptr;
@@ -39,6 +40,7 @@ void Image::assign(Image &o) {
 	m_path = o.m_path;
 	m_size = o.m_size;
 	m_loadid = o.m_loadid;
+	m_status=o.m_status;
 	int i;
 	for (i = 0; i < LIST_IMAGE_STEPS; i++) {
 		m_thumbnail[i] = o.m_thumbnail[i].load();
@@ -48,6 +50,7 @@ void Image::assign(Image &o) {
 
 void Image::free() {
 	int i;
+	m_status=LOAD_STATUS::NOT_LOADED;
 	for (i = 0; i < LIST_IMAGE_STEPS; i++) {
 		if (m_thumbnail[i]) {
 			g_object_unref(m_thumbnail[i]);

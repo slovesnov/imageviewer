@@ -38,8 +38,9 @@
 class Image {
 	void assign(Image &o);
 public:
-	std::string m_path;//utf8
+	std::string m_path; //utf8
 	int m_size, m_loadid;
+	LOAD_STATUS m_status;
 	std::atomic<GdkPixbuf*> m_thumbnail[LIST_IMAGE_STEPS];
 
 	Image(std::string p, int id);

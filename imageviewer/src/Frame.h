@@ -53,7 +53,7 @@ public:
 	Pixbuf m_buttonPixbuf[TOOLBAR_INDEX_SIZE][2];
 	std::vector<GdkPixbuf*> m_additionalImages;
 	bool m_ascendingOrder;
-	int m_listIconHeight, m_listIconWidth;
+	int m_listIconHeight, m_listIconWidth, m_listIconIndex;
 	VString m_language;
 	int m_languageIndex, m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave,
 			m_showPopup, m_rememberLastOpenDirectory, m_showToolbarFullscreen;
@@ -67,7 +67,8 @@ public:
 
 	//options dialog variables
 	DIALOG m_modalDialogIndex;
-	GtkWidget *m_modalDialogEntry,*m_modalDialogCombo, *m_showModalDialogButtonOK;
+	GtkWidget *m_modalDialogEntry, *m_modalDialogCombo,
+			*m_showModalDialogButtonOK;
 	std::string m_modalDialogEntryText;
 	int m_saveRename;
 	//settings dialog variables
@@ -138,13 +139,13 @@ public:
 	void redraw(bool withTitle = true);
 	int countFontMaxHeight(const std::string &s, bool bold, cairo_t *cr);
 	int getWidthForHeight(int height);
-	void setIconHeightWidth(int height);
+	void setIconHeightWidth(int delta);
 	void loadLanguage();
 	std::string getTitleVersion();
 	std::string const& getLanguageString(LANGUAGE l, int add = 0);
 	std::string getLanguageStringMultiline(LANGUAGE l);
 	const char* getLanguageStringC(LANGUAGE l, int add = 0);
-	GtkWidget* createTextCombo(VString const&v, int active);
+	GtkWidget* createTextCombo(VString const &v, int active);
 	void resetOptions();
 	void updateOptions();
 	void setPopups();
@@ -168,8 +169,6 @@ public:
 	void focusOut(GtkWidget *w, int n);
 	static void addInsertDeleteEvents(GtkWidget *w, int n);
 	static void addFocusEvents(GtkWidget *w, int n);
-	static int stepToHeight(int step);
-	static int heightToStep(int height);
 	void sortFiles();
 	void setPictureIndex(const std::string &path);
 	void updateModesButtonState();

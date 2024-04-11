@@ -137,11 +137,13 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	m_lastNonListMode = MODE::ANY;
 	m_proceedEvents = true;
 	m_monitor = nullptr;
-	m_saveRename=0;
+	m_saveRename = 0;
 	m_lastManualOperationTime = 0;
-	m_optionsPointer = { &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
-			&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
-			&m_rememberLastOpenDirectory, &m_showToolbarFullscreen,&m_recursive };
+	m_optionsPointer =
+			{ &m_languageIndex, &m_warnBeforeDelete, &m_deleteOption,
+					&m_warnBeforeSave, &m_showPopup, &m_oneInstance,
+					&m_rememberLastOpenDirectory, &m_showToolbarFullscreen,
+					&m_recursive };
 	m_optionsDefalutValue = { 0, //m_languageIndex
 			1, //m_warnBeforeDelete
 			0, //m_deleteOption
@@ -167,10 +169,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	//begin readConfig
 	m_ascendingOrder = true;
 	m_mode = MODE::NORMAL;
-	//drawing area height 959,so got 10 rows
-	//4*95/3 = 126, 1920/126=15.23 so got 15 columns
-	m_listIconHeight = stepToHeight(LIST_IMAGE_STEPS / 2);	//old value 95;
-//	printl(m_listIconHeight)
+	m_listIconIndex = 0;
 	resetOptions();
 
 	MapStringString m;
@@ -183,54 +182,13 @@ Frame::Frame(GtkApplication *application, std::string path) {
 				parseString(it->second, j);
 				if (ct == ENUM_CONFIG_TAGS::MODE && j >= 0 && j < SIZEI(TMODE)) {
 					m_mode = MODE(j);
-				} else if (ct == ENUM_CONFIG_TAGS::ORDER && j >= 0 && j < 2) {
-					m_ascendingOrder = j == 1;
-				} else if (ct == ENUM_CONFIG_TAGS::LIST_ICON_HEIGHT
-						&& j >= MIN_LIST_IMAGE_HEIGHT
-						&& j <= MAX_LIST_IMAGE_HEIGHT) {
-					m_listIconHeight = j;
-				} else if (ct
-						== ENUM_CONFIG_TAGS::LANGUAGE&& j>=0 && j<SIZEI(LNG)) {
-					m_languageIndex = j;
-				} else if (ct == ENUM_CONFIG_TAGS::ASK_BEFORE_DELETE && j >= 0
-						&& j < 2) {
-					m_warnBeforeDelete = j;
-				} else if (ct == ENUM_CONFIG_TAGS::DELETE_OPTION && j >= 0
-						&& j < 2) {
-					m_deleteOption = j;
-				} else if (ct == ENUM_CONFIG_TAGS::ASK_BEFORE_SAVE && j >= 0
-						&& j < 2) {
-					m_warnBeforeSave = j;
-				} else if (ct == ENUM_CONFIG_TAGS::SHOW_POPUP && j >= 0
-						&& j < 2) {
-					m_showPopup = j;
-				} else if (ct == ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE
-						&& j >= 0 && j < 2) {
-					m_oneInstance = j;
-				} else if (ct
-						== ENUM_CONFIG_TAGS::REMEMBER_THE_LAST_OPEN_DIRECTORY
-						&& j >= 0 && j < 2) {
-					m_rememberLastOpenDirectory = j;
 				} else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
 					m_dir = it->second;
-				} else if (ct
-						== ENUM_CONFIG_TAGS::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE
-						&& j >= 0 && j < 2) {
-					m_showToolbarFullscreen = j;
-				} else if (ct
-						== ENUM_CONFIG_TAGS::RECURSIVE
-						&& j >= 0 && j < 2) {
-					m_recursive = j;
 				} else if (ct == ENUM_CONFIG_TAGS::ZOOM_FACTOR) {
-					j=parseString(it->second, m_zoomFactor);
-//					printl(j,it->second,m_zoomFactor)
-					//sometimes in case of error program stores "0" value even if m_zoomFactor=1.1
-					if (!j || m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
+					if (!parseString(it->second, m_zoomFactor) || m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
 							|| m_zoomFactor > MAX_ZOOM_FACTOR) {
 						m_zoomFactor = DEFAULT_ZOOM_FACTOR;
 					}
-				} else if (ct == ENUM_CONFIG_TAGS::SAVE_RENAME && j >= 0 && j < 2) {
-					m_saveRename=j;
 				} else if (ct == ENUM_CONFIG_TAGS::KEYS) {
 					v = split(it->second);
 					if (v.size() == SIZE(m_key)) {
@@ -241,7 +199,20 @@ Frame::Frame(GtkApplication *application, std::string path) {
 						}
 					}
 				}
-
+#define M(id,max,variable) else if (ct == id){if( j >= 0 && j < max) {variable = j ;}}
+				M(ENUM_CONFIG_TAGS::ORDER,2,m_ascendingOrder)
+				M(ENUM_CONFIG_TAGS::LIST_ICON_INDEX,LIST_IMAGE_STEPS,m_listIconIndex)
+				M(ENUM_CONFIG_TAGS::LANGUAGE,SIZEI(LNG),m_languageIndex)
+				M(ENUM_CONFIG_TAGS::ASK_BEFORE_DELETE,2,m_warnBeforeDelete)
+				M(ENUM_CONFIG_TAGS::DELETE_OPTION,2,m_deleteOption)
+				M(ENUM_CONFIG_TAGS::ASK_BEFORE_SAVE,2,m_warnBeforeSave)
+				M(ENUM_CONFIG_TAGS::SHOW_POPUP,2,m_showPopup)
+				M(ENUM_CONFIG_TAGS::ONE_APPLICATION_INSTANCE,2,m_oneInstance)
+				M(ENUM_CONFIG_TAGS::REMEMBER_THE_LAST_OPEN_DIRECTORY,2,m_rememberLastOpenDirectory)
+				M(ENUM_CONFIG_TAGS::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,2,m_showToolbarFullscreen)
+				M(ENUM_CONFIG_TAGS::RECURSIVE,2,m_recursive)
+				M(ENUM_CONFIG_TAGS::SAVE_RENAME, 2, m_saveRename)
+#undef M
 			}
 			i++;
 		}
@@ -249,7 +220,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	//end readConfig
 	loadLanguage();
 
-	setIconHeightWidth(m_listIconHeight);
+	setIconHeightWidth(0);
 
 	GSList *formats;
 	GSList *elem;
@@ -415,11 +386,10 @@ Frame::~Frame() {
 	}
 
 	WRITE_CONFIG(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int ) m_mode,
-			m_ascendingOrder, m_listIconHeight, m_languageIndex,
+			m_ascendingOrder, m_listIconIndex, m_languageIndex,
 			m_warnBeforeDelete, m_deleteOption, m_warnBeforeSave, m_showPopup,
 			m_oneInstance, m_rememberLastOpenDirectory, m_showToolbarFullscreen,
-			m_dir, s,m_recursive,m_saveRename
-			, m_zoomFactor);
+			m_dir, s, m_recursive, m_saveRename, m_zoomFactor);
 	stopThreads();
 	g_mutex_clear(&m_mutex);
 }
@@ -475,7 +445,8 @@ void Frame::setTitle() {
 					GRegexCompileFlags(G_REGEX_RAW | G_REGEX_CASELESS),
 					GRegexMatchFlags(0), NULL);
 			int d[6];
-			const int DMAX[]= {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+			const int DMAX[] =
+					{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 			int k;
 
 			g_regex_match(regex, n.c_str(), G_REGEX_MATCH_DEFAULT, &match_info);
@@ -485,15 +456,16 @@ void Frame::setTitle() {
 					d[i] = atoi(word);
 					g_free(word);
 				}
-				k=d[0];
-				i= d[1] == 2 && (k % 4 == 0 && (k % 100 != 0 || k % 400 == 0));
-				if (d[0] >= 1900 && d[1]>0 && d[1] < 13 && d[2]>0 &&d[2] <= DMAX[d[1]-1]+i && d[3] < 24
-						&& d[4] < 60 && d[5] < 60) {
+				k = d[0];
+				i = d[1] == 2 && (k % 4 == 0 && (k % 100 != 0 || k % 400 == 0));
+				if (d[0] >= 1900 && d[1] > 0 && d[1] < 13 && d[2] > 0
+						&& d[2] <= DMAX[d[1] - 1] + i && d[3] < 24 && d[4] < 60
+						&& d[5] < 60) {
 					t += SEPARATOR + std::to_string(d[2])
-							+ getLanguageString(LANGUAGE::JAN, d[1]-1)
+							+ getLanguageString(LANGUAGE::JAN, d[1] - 1)
 							+ std::to_string(d[0]);
 					for (i = 0; i < 3; i++) {
-						t += (i ? ':' : ' ') + format("%02d",d[i+3]);
+						t += (i ? ':' : ' ') + format("%02d", d[i + 3]);
 					}
 					break;
 				}
@@ -523,10 +495,9 @@ void Frame::load(const std::string &path, bool start) {
 
 	addDirectory(m_dir);
 	sortFiles();
-	if(d){
-		m_pi=0;
-	}
-	else{
+	if (d) {
+		m_pi = 0;
+	} else {
 		setPictureIndex(path);
 	}
 	addMonitor(m_dir);
@@ -539,8 +510,7 @@ void Frame::load(const std::string &path, bool start) {
 
 	//if was no image, need to set m_toolbar buttons enabled
 	for (int i = 0; i < TOOLBAR_INDEX_SIZE; i++) {
-		setButtonState(i,
-				i != int(m_mode) + int(TOOLBAR_INDEX::MODE_ZOOM_ANY));
+		setButtonState(i, i != int(m_mode) + int(TOOLBAR_INDEX::MODE_ZOOM_ANY));
 	}
 
 	startThreads();
@@ -563,7 +533,7 @@ void Frame::load(const std::string &path, bool start) {
 
 }
 
-void Frame::addDirectory(const std::string &dir){
+void Frame::addDirectory(const std::string &dir) {
 	GDir *di;
 	const gchar *filename;
 	std::string s;
@@ -571,12 +541,11 @@ void Frame::addDirectory(const std::string &dir){
 	if ((di = g_dir_open(dir.c_str(), 0, 0))) {
 		while ((filename = g_dir_read_name(di))) {
 			s = dir + G_DIR_SEPARATOR + filename;
-			if(isDir(s)){
-				if(m_recursive){
+			if (isDir(s)) {
+				if (m_recursive) {
 					addDirectory(s);
 				}
-			}
-			else if (isSupportedImage(s)) {
+			} else if (isSupportedImage(s)) {
 				m_vp.push_back(Image(s, m_loadid));
 				m_totalFileSize += m_vp.back().m_size;
 			}
@@ -588,17 +557,16 @@ void Frame::addDirectory(const std::string &dir){
 void Frame::loadImage() {
 	if (!noImage()) {
 		GError *err = NULL;
-		std::string path=m_vp[m_pi].m_path;
-		auto ext=getFileInfo(path,FILEINFO::LOWER_EXTENSION);
-		if(ext=="webp"){
-			m_pix=loadWebp(path);
+		std::string path = m_vp[m_pi].m_path;
+		auto ext = getFileInfo(path, FILEINFO::LOWER_EXTENSION);
+		if (ext == "webp") {
+			m_pix = loadWebp(path);
 			if (!m_pix) {
-				println("Error loading",path);
+				println("Error loading", path);
 				setNoImage();
 				return;
 			}
-		}
-		else{
+		} else {
 			m_pix = gdk_pixbuf_new_from_file(path.c_str(), &err);
 			if (err) {
 				println("Error : %s", err->message);
@@ -657,24 +625,37 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	}
 
 	if (m_mode == MODE::LIST) {
-//		printl(m_listIconWidth,m_listIconHeight)
 		for (k = m_listTopLeftIndex, l = 0;
 				((m_ascendingOrder && k < sz) || (!m_ascendingOrder && k >= 0))
 						&& l < m_listxy; k += m_ascendingOrder ? 1 : -1, l++) {
 			i = l % m_listx * m_listIconWidth + m_listdx;
 			j = l / m_listx * m_listIconHeight + m_listdy;
 			auto &o = m_vp[k];
-			GdkPixbuf *p = o.m_thumbnail[heightToStep(m_listIconHeight)];
-			if (p) {
-				w = gdk_pixbuf_get_width(p);
-				h = gdk_pixbuf_get_height(p);
-				copy(p, cr, i + (m_listIconWidth - w) / 2,
-						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
-
-				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
+			bool drawFileName=false;
+			if (o.m_status==LOAD_STATUS::LOADED_OK) {
+				GdkPixbuf *p = o.m_thumbnail[m_listIconIndex];
+				if (p) {
+					w = gdk_pixbuf_get_width(p);
+					h = gdk_pixbuf_get_height(p);
+					copy(p, cr, i + (m_listIconWidth - w) / 2,
+							j + (m_listIconHeight - h) / 2, w, h, 0, 0);
+					drawFileName=true;
+				}
+			}
+			else if(o.m_status==LOAD_STATUS::LOADED_ERROR){
+				drawFileName=true;
+			}
+			if(drawFileName){
+				drawTextToCairo(cr,
+						getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
 						m_filenameFontHeight, filenameFontBold, i, j + 1,
-						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
-						true);
+						m_listIconWidth, m_listIconHeight, true, 2,
+						WHITE_COLOR, true);
+
+				//				drawTextToCairo(cr, forma(l),
+				//						m_filenameFontHeight*8, filenameFontBold, i, j + 1,
+				//						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
+				//						true);
 			}
 		}
 
@@ -710,7 +691,6 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 	 //	cairo_move_to(cr, r.width / 2, 0); //angle 0
 	 //	cairo_arc(cr, 0, 0, r.width / 2, 0, 2 * G_PI);
 	 //	cairo_stroke_preserve(cr);
-
 	 */
 }
 
@@ -921,30 +901,32 @@ void Frame::thumbnailThread(int n) {
 			break;
 		}
 		auto &o = m_vp[v];
-		//m_listIconHeight can changed during thread running so load every time
-		int i, h, j = heightToStep(m_listIconHeight);
+		//m_listIconIndex can changed during thread running so load every time
+		int i, j = m_listIconIndex,k,h;
 		std::string ext;
 
-		if (!o.m_thumbnail[0]) {
+		if (o.m_status==LOAD_STATUS::NOT_LOADED) {
 //			printl("proceed t"+std::to_string(n),v)
 			//load pixbuf from path
-			ext=getFileInfo(o.m_path,FILEINFO::LOWER_EXTENSION);
-			if(ext=="webp"){
-				p=loadWebp(o.m_path);
-			}
-			else{
+			ext = getFileInfo(o.m_path, FILEINFO::LOWER_EXTENSION);
+			if (ext == "webp") {
+				p = loadWebp(o.m_path);
+			} else {
 				p = o.m_path;
 			}
-//			set scaled images, current scale at first
-			i = j;
-			h = stepToHeight(i);
-			o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
-			gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
-
-			for (i = 0; i < LIST_IMAGE_STEPS; i++) {
-				if (i != j) {
-					h = stepToHeight(i);
-					o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
+			o.m_status=p?LOAD_STATUS::LOADED_OK:LOAD_STATUS::LOADED_ERROR;
+			if(p){
+	//			set scaled images, current scale at first
+				for(k=0;k<2;k++){
+					for (i = 0; i < LIST_IMAGE_STEPS; i++) {
+						if( (k==0 && i==j) || (k==1 && i!=j) ){
+							h = LIST_IMAGE_HEIGHT[i];
+							o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
+							if(!k){
+								gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+							}
+						}
+					}
 				}
 			}
 
@@ -1078,17 +1060,13 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	i = INDEX_OF(t, ZOOM_INOUT);
 	if (i != -1) {
 		if (m_mode == MODE::LIST) {
-			if ((m_listIconHeight > MIN_LIST_IMAGE_HEIGHT
-					&& t == TOOLBAR_INDEX::ZOOM_OUT)
-					|| (m_listIconHeight < MAX_LIST_IMAGE_HEIGHT
+			if ((m_listIconIndex > 0 && t == TOOLBAR_INDEX::ZOOM_OUT)
+					|| (m_listIconIndex < LIST_IMAGE_STEPS - 1
 							&& t == TOOLBAR_INDEX::ZOOM_IN)) {
-				m_listIconHeight += (t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1)
-						* LIST_IMAGE_STEP;
-
-				setIconHeightWidth(m_listIconHeight);
+				setIconHeightWidth(t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1);
 				recountListParameters();
 				m_filenameFontHeight = 0; //to recount font
-				redraw();//with title m_listxy changed
+				redraw(); //with title m_listxy changed
 			}
 		} else {
 			const double k =
@@ -1212,28 +1190,32 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				/* !rename && m_vp[m_pi].m_path==m_modalDialogEntryText save but with same name it's just rename
 				 * rename is used later so set rename variable
 				 */
-				bool same=m_vp[m_pi].m_path==m_modalDialogEntryText;
+				bool same = m_vp[m_pi].m_path == m_modalDialogEntryText;
 
-				if(same){
-					rename=true;
-					m_modalDialogEntryText=utf8ToLocale(getWritableFilePath(getFileInfo(m_modalDialogEntryText, FILEINFO::NAME)));
+				if (same) {
+					rename = true;
+					m_modalDialogEntryText = utf8ToLocale(
+							getWritableFilePath(
+									getFileInfo(m_modalDialogEntryText,
+											FILEINFO::NAME)));
 				}
 				if (gdk_pixbuf_save((GdkPixbuf*) pixScaled,
 						m_modalDialogEntryText.c_str(), it->type.c_str(),
 						&error,
 						NULL)) {
-					if (rename ) {
+					if (rename) {
 						g_remove(m_vp[m_pi].m_path.c_str());
 					} else {
 						m_vp.push_back(Image("", m_loadid));
 					}
-					if(same){
-						g_rename(m_modalDialogEntryText.c_str(), m_vp[m_pi].m_path.c_str());
-						m_modalDialogEntryText=m_vp[m_pi].m_path;
+					if (same) {
+						g_rename(m_modalDialogEntryText.c_str(),
+								m_vp[m_pi].m_path.c_str());
+						m_modalDialogEntryText = m_vp[m_pi].m_path;
 					}
 					auto &e = m_vp[rename ? m_pi : m_vp.size() - 1];
 					e.m_path = m_modalDialogEntryText;
-					e.m_thumbnail[0] = nullptr; //reload this image
+					e.m_status = LOAD_STATUS::NOT_LOADED; //reload this image
 					sortFiles();
 					setPictureIndex(m_modalDialogEntryText);
 
@@ -1260,7 +1242,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			if (i >= 3) {
 				flipPixbuf(m_pix, i == 3);
 			} else {
-				rotatePixbuf(m_pix, m_pw, m_ph, i+1);
+				rotatePixbuf(m_pix, m_pw, m_ph, i + 1);
 			}
 			updateModesButtonState();
 			drawImage();
@@ -1303,7 +1285,7 @@ void Frame::showSettings() {
 			w = m_options[i] = createTextCombo(v, 0);
 			gtk_widget_set_halign(w, GTK_ALIGN_START);			//not stretch
 		} else if (e == LANGUAGE::ZOOM_FACTOR) {
-			m_modalDialogFactor=m_zoomFactor;
+			m_modalDialogFactor = m_zoomFactor;
 			w = m_options[i] = gtk_entry_new();
 			addInsertDeleteEvents(w, ZOOM_FACTOR_ID);
 			addFocusEvents(w, ZOOM_FACTOR_ID);
@@ -1707,9 +1689,10 @@ int Frame::getWidthForHeight(int height) {
 	return 4 * height / 3;
 }
 
-void Frame::setIconHeightWidth(int height) {
-	m_listIconHeight = height;
-	m_listIconWidth = getWidthForHeight(height);
+void Frame::setIconHeightWidth(int delta) {
+	m_listIconIndex += delta;
+	m_listIconHeight = LIST_IMAGE_HEIGHT[m_listIconIndex];
+	m_listIconWidth = getWidthForHeight(m_listIconHeight);
 }
 
 void Frame::loadLanguage() {
@@ -1972,7 +1955,7 @@ bool Frame::isOneInstanceOnly() {
 	return m_oneInstance;
 }
 
-double Frame::getDefaultZoomFit(){
+double Frame::getDefaultZoomFit() {
 	return MIN(m_lastWidth / double(m_pw), m_lastHeight / double(m_ph));
 }
 
@@ -2099,14 +2082,6 @@ void Frame::addFocusEvents(GtkWidget *w, int n) {
 			G_CALLBACK(entry_focus_out), GP(n));
 }
 
-int Frame::stepToHeight(int step) {
-	return MIN_LIST_IMAGE_HEIGHT + LIST_IMAGE_STEP * step;
-}
-
-int Frame::heightToStep(int height) {
-	return (height - MIN_LIST_IMAGE_HEIGHT) / LIST_IMAGE_STEP;
-}
-
 void Frame::sortFiles() {
 	//g_strcmp0
 	//return strcoll (utf8ToLocale(a.m_path).c_str() , utf8ToLocale(b.m_path).c_str())<0;
@@ -2115,18 +2090,19 @@ void Frame::sortFiles() {
 	});
 }
 
-void Frame::setPictureIndex(const std::string &path){
-	auto it=std::find_if(
-			m_vp.begin(), m_vp.end(),
-	    [&path](const auto& e) { return e.m_path == path;});
-	m_pi=std::distance(m_vp.begin(), it);
+void Frame::setPictureIndex(const std::string &path) {
+	auto it = std::find_if(m_vp.begin(), m_vp.end(), [&path](const auto &e) {
+		return e.m_path == path;
+	});
+	m_pi = std::distance(m_vp.begin(), it);
 }
 
 void Frame::updateModesButtonState() {
-	if(m_mode!=MODE::LIST){
-		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_100, m_zoom!=1);
+	if (m_mode != MODE::LIST) {
+		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_100, m_zoom != 1);
 //		println ("%dx%d %dx%d",m_lastWidth, m_lastHeight , m_pw ,m_ph );
 //		println("%lf %lf z=%lf",m_zoom*m_pw,m_zoom*m_ph,m_zoom)
-		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_FIT, m_zoom!=getDefaultZoomFit());
+		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_FIT,
+				m_zoom != getDefaultZoomFit());
 	}
 }

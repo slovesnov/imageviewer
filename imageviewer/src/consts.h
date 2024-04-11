@@ -22,7 +22,6 @@
  * lunasvg from github works good but for deck1.svg from bridge project not shows all svg elements
  */
 //#define USE_EXTERNAL_SVG_LIB
-
 const std::string LNG[] = { "en", "ru" };
 const std::string LNG_LONG[] = { "english", "russian" };
 
@@ -31,10 +30,10 @@ const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_SAVING_A_FILE, LANGUAGE::SHOW_POPUP_TIPS,
 		LANGUAGE::ONE_APPLICATION_INSTANCE,
 		LANGUAGE::REMEMBER_THE_LAST_OPEN_DIRECTORY,
-		LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,LANGUAGE::RECURSIVE_DIRECTORY
+		LANGUAGE::SHOW_THE_TOOLBAR_IN_FULLSCREEN_MODE,
+		LANGUAGE::RECURSIVE_DIRECTORY
 		//zoom factor should be last insert new values before it see Frame::updateOptions()
-		, LANGUAGE::ZOOM_FACTOR
-};
+		, LANGUAGE::ZOOM_FACTOR };
 
 const int TOOLBAR_INDEX_SIZE = int(TOOLBAR_INDEX::SZ);
 
@@ -56,7 +55,7 @@ const double DEFAULT_ZOOM_FACTOR = 1.1;
 const double MAX_ZOOM_FACTOR = 2;
 const double INVALID_ZOOM_FACTOR = 3;
 //assert(INVALID_ZOOM_FACTOR<MIN_ZOOM_FACTOR_BOUND || INVALID_ZOOM_FACTOR>MAX_ZOOM_FACTOR);
-const double MIN_MANULAL_OPERATION_ELAPSE=5;//seconds max was 3.6
+const double MIN_MANULAL_OPERATION_ELAPSE = 5; //seconds max was 3.6
 
 /* w=4*h/3
  * w=192 h=3*192/4=144
@@ -64,11 +63,19 @@ const double MIN_MANULAL_OPERATION_ELAPSE=5;//seconds max was 3.6
  *
  * h=24 w=4*24/3=32
  * 1920/w=1920/32=60 images
+ *
+ * 1920/10=192 h=144
+ * 1920/15=128 h=96
+ 1920/20=96 h=72
+ 1920/30=64 h=48
+ //1920/40=48 h=36
+ //1920/50=38.4 h=28.8 h=29 w=4*29/3=38 1920/38=4*29/3
+ 1920/60=32 h=24
  */
-const int LIST_IMAGE_STEP = 20;
-const int LIST_IMAGE_STEPS = 7;
-const int MAX_LIST_IMAGE_HEIGHT = 144;
-const int MIN_LIST_IMAGE_HEIGHT = MAX_LIST_IMAGE_HEIGHT-(LIST_IMAGE_STEPS - 1) * LIST_IMAGE_STEP;//144-6*20=24
+const int LIST_IMAGE_HEIGHT[] = { 24, 48, 72, 96, 144 };
+const int LIST_IMAGE_STEPS = std::size(LIST_IMAGE_HEIGHT);
+const int MIN_LIST_IMAGE_HEIGHT = LIST_IMAGE_HEIGHT[0];
+const int MAX_LIST_IMAGE_HEIGHT = LIST_IMAGE_HEIGHT[LIST_IMAGE_STEPS - 1];
 
 static const char *ADDITIONAL_IMAGES[] = { "sort_ascending.png",
 		"sort_descending.png" };
@@ -111,18 +118,14 @@ const TOOLBAR_INDEX TOOLBAR_BUTTON_WITH_MARGIN[] = {
 const int TOOLBAR_BUTTON_MARGIN = 25;
 
 const std::string CONFIG_TAGS[] = { "version", "mode", "order",
-		"list icon height", "language", "warning before delete",
-		"delete option", "warn before save", "show popup tips",
-		"one application instance", "remember the last open directory",
-		"show the toolbar in full-screen mode", "last open directory", "keys"
-		,"recursive directory"
-		,"save rename"
-		,"zoom factor"
-};
+		"list icon step", "language", "warning before delete", "delete option",
+		"warn before save", "show popup tips", "one application instance",
+		"remember the last open directory",
+		"show the toolbar in full-screen mode", "last open directory", "keys",
+		"recursive directory", "save rename", "zoom factor" };
 
-const guint KEY[] = {
-GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,
-		INVALID_KEY
+const guint KEY[] = { GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY,
+		GDK_KEY_KP_Subtract, GDK_KEY_minus, INVALID_KEY
 
 		, '0', INVALID_KEY, INVALID_KEY, '1', INVALID_KEY, INVALID_KEY, '2',
 		INVALID_KEY, INVALID_KEY, '3', 'L', INVALID_KEY
@@ -132,16 +135,14 @@ GDK_KEY_KP_Add, GDK_KEY_equal, INVALID_KEY, GDK_KEY_KP_Subtract, GDK_KEY_minus,
 		INVALID_KEY, INVALID_KEY
 
 		, GDK_KEY_Home, GDK_KEY_KP_7, INVALID_KEY, GDK_KEY_Page_Up,
-		GDK_KEY_KP_9, INVALID_KEY,
-		GDK_KEY_Left, GDK_KEY_KP_4, INVALID_KEY, GDK_KEY_Right,
-		GDK_KEY_KP_6, INVALID_KEY,
-		GDK_KEY_Page_Down, GDK_KEY_KP_3, INVALID_KEY, GDK_KEY_End,
-		GDK_KEY_KP_1, INVALID_KEY
+		GDK_KEY_KP_9, INVALID_KEY, GDK_KEY_Left, GDK_KEY_KP_4, INVALID_KEY,
+		GDK_KEY_Right, GDK_KEY_KP_6, INVALID_KEY, GDK_KEY_Page_Down,
+		GDK_KEY_KP_3, INVALID_KEY, GDK_KEY_End, GDK_KEY_KP_1, INVALID_KEY
 
-		, 'O', INVALID_KEY, INVALID_KEY, GDK_KEY_Delete,
-		GDK_KEY_KP_Decimal, INVALID_KEY, 'S', INVALID_KEY, INVALID_KEY,
-		INVALID_KEY, INVALID_KEY, INVALID_KEY, 'F',
-		GDK_KEY_F11, GDK_KEY_Escape, GDK_KEY_F1, INVALID_KEY, INVALID_KEY //H already is used
+		, 'O', INVALID_KEY, INVALID_KEY, GDK_KEY_Delete, GDK_KEY_KP_Decimal,
+		INVALID_KEY, 'S', INVALID_KEY, INVALID_KEY, INVALID_KEY, INVALID_KEY,
+		INVALID_KEY, 'F', GDK_KEY_F11, GDK_KEY_Escape, GDK_KEY_F1, INVALID_KEY,
+		INVALID_KEY //H already is used
 
 		};
 static_assert(TOOLBAR_INDEX_SIZE*MAX_HOTKEYS==std::size(KEY));

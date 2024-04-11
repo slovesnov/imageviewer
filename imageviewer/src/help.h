@@ -32,9 +32,8 @@ GdkPixbuf* scaleFit(GdkPixbuf *src, int destW, int destH);
 #ifdef USE_EXTERNAL_SVG_LIB
 GdkPixbuf* svgToPixBuf(std::string path,int w,int h);
 #endif
-GdkPixbuf* loadWebp (std::string path);
+GdkPixbuf* loadWebp(std::string path);
 void rotatePixbuf(Pixbuf &p, int &w, int &h, int angle);
 void flipPixbuf(Pixbuf &p, bool horizontal);
-
 
 #endif /* HELP_H_ */
