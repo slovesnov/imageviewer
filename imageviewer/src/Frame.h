@@ -127,6 +127,7 @@ public:
 	void recountListParameters();
 	void updateNavigationButtonsState();
 	void updateZoomButtonsState();
+	void updateModifySaveDeleteButtonsState();
 	void setButtonState(int i, bool enable);
 	void setButtonState(TOOLBAR_INDEX i, bool enable);
 	void setMode(MODE m, bool start = false);

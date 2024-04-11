@@ -565,29 +565,21 @@ void Frame::addDirectory(const std::string &dir) {
 
 void Frame::loadImage() {
 	if (!noImage()) {
-		GError *err = NULL;
 		std::string path = m_vp[m_pi].m_path;
 		auto ext = getFileInfo(path, FILEINFO::LOWER_EXTENSION);
 		if (ext == "webp") {
 			m_pix = loadWebp(path);
-			if (!m_pix) {
-				println("Error loading", path);
-				setNoImage();
-				return;
-			}
 		} else {
-			m_pix = gdk_pixbuf_new_from_file(path.c_str(), &err);
-			if (err) {
-				println("Error : %s", err->message);
-				g_error_free(err);
-				setNoImage();
-				return;
-			}
+			m_pix = gdk_pixbuf_new_from_file(path.c_str(), NULL);
 		}
-
-		m_pw = m_pix.width();
-		m_ph = m_pix.height();
+		//can be nullptr
+		if(m_pix){
+			m_pw = m_pix.width();
+			m_ph = m_pix.height();
+		}
 		setDefaultZoom();
+		updateZoomButtonsState();//if m_pix == nullptr
+		updateModifySaveDeleteButtonsState();
 		updateNavigationButtonsState();
 	}
 
@@ -674,10 +666,23 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		}
 
 	} else {
-		cairo_rectangle(cr, 0, 0, width, height);
-		cairo_scale(cr, m_zoom, m_zoom);
-		gdk_cairo_set_source_pixbuf(cr, m_pix, -m_posh, -m_posv);
-		cairo_fill(cr);
+		if(m_pix){
+			cairo_rectangle(cr, 0, 0, width, height);
+			cairo_scale(cr, m_zoom, m_zoom);
+			gdk_cairo_set_source_pixbuf(cr, m_pix, -m_posh, -m_posv);
+			cairo_fill(cr);
+		}
+		else{
+			GdkPixbuf* p= gdk_pixbuf_new_from_file_at_size(
+					getImagePath("noimage.svg").c_str(), width, height, NULL);
+
+			cairo_rectangle(cr, 0, 0, width, height);
+			w = gdk_pixbuf_get_width(p);
+			h = gdk_pixbuf_get_height(p);
+			gdk_cairo_set_source_pixbuf(cr, p, (width-w)/2, (height-h)/2);
+			cairo_fill(cr);
+			g_object_unref(p);
+		}
 	}
 
 	/*
@@ -1596,9 +1601,18 @@ void Frame::updateZoomButtonsState() {
 		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
 				m_listIconHeight > MIN_LIST_IMAGE_HEIGHT);
 	} else {
-		setButtonState(TOOLBAR_INDEX::ZOOM_IN, true);
-		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
+		setButtonState(TOOLBAR_INDEX::ZOOM_IN, m_pix!=nullptr);
+		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,m_pix!=nullptr &&
 				m_zoom * m_ph > MIN_SCALED_IMAGE_HEIGHT);
+	}
+}
+
+void Frame::updateModifySaveDeleteButtonsState(){
+	for (auto e : IMAGE_MODIFY) {
+		setButtonState(e, m_mode != MODE::LIST && m_pix);
+	}
+	for (auto e : { TOOLBAR_INDEX::DELETE_FILE, TOOLBAR_INDEX::SAVE_FILE }) {
+		setButtonState(e, m_mode != MODE::LIST && m_pix);
 	}
 }
 
@@ -1621,12 +1635,7 @@ void Frame::setMode(MODE m, bool start) {
 			setButtonState(i + int(TOOLBAR_INDEX::MODE_ZOOM_ANY), i != int(m));
 		}
 
-		for (auto e : IMAGE_MODIFY) {
-			setButtonState(e, m_mode != MODE::LIST);
-		}
-		for (auto e : { TOOLBAR_INDEX::DELETE_FILE, TOOLBAR_INDEX::SAVE_FILE }) {
-			setButtonState(e, m_mode != MODE::LIST);
-		}
+		updateModifySaveDeleteButtonsState();
 		updateNavigationButtonsState();
 		updateZoomButtonsState();
 		setPopups();
