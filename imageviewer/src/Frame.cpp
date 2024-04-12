@@ -133,12 +133,13 @@ Frame::Frame(GtkApplication *application, std::string path) {
 	for (auto &e : m_timer) {
 		e = 0;
 	}
-	i=-1;
+	i = -1;
 	for (auto &e : m_noImage) {
 		i++;
-		j=LIST_IMAGE_HEIGHT[i];
+		j = LIST_IMAGE_HEIGHT[i];
 		e = gdk_pixbuf_new_from_file_at_size(
-				getImagePath("noimage.svg").c_str(), getWidthForHeight(j), j, NULL);
+				getImagePath("noimage.svg").c_str(), getWidthForHeight(j), j,
+				NULL);
 	}
 	//m_noImage=pixbuf("noimage.svg");
 	m_zoom = 1;
@@ -193,7 +194,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 				} else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
 					m_dir = it->second;
 				} else if (ct == ENUM_CONFIG_TAGS::ZOOM_FACTOR) {
-					if (!parseString(it->second, m_zoomFactor) || m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
+					if (!parseString(it->second, m_zoomFactor)
+							|| m_zoomFactor <= MIN_ZOOM_FACTOR_BOUND
 							|| m_zoomFactor > MAX_ZOOM_FACTOR) {
 						m_zoomFactor = DEFAULT_ZOOM_FACTOR;
 					}
@@ -432,7 +434,8 @@ void Frame::setTitle() {
 					+ SEPARATOR + getLanguageString(LANGUAGE::TOTAL) + " "
 					+ getSizeMbKbB(ts) + ", "
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
-					+ getSizeMbKbB(ts / sz);
+					+ getSizeMbKbB(ts / sz) + SEPARATOR
+					+ format("%dx%d", m_listx, m_listy);
 		} else {
 			auto &f = m_vp[m_pi];
 			//printl(m_pi,f.m_path)
@@ -573,12 +576,12 @@ void Frame::loadImage() {
 			m_pix = gdk_pixbuf_new_from_file(path.c_str(), NULL);
 		}
 		//can be nullptr
-		if(m_pix){
+		if (m_pix) {
 			m_pw = m_pix.width();
 			m_ph = m_pix.height();
 		}
 		setDefaultZoom();
-		updateZoomButtonsState();//if m_pix == nullptr
+		updateZoomButtonsState(); //if m_pix == nullptr
 		updateModifySaveDeleteButtonsState();
 		updateNavigationButtonsState();
 	}
@@ -632,31 +635,29 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 			i = l % m_listx * m_listIconWidth + m_listdx;
 			j = l / m_listx * m_listIconHeight + m_listdy;
 			auto &o = m_vp[k];
-			bool drawFileName=false;
-			if (o.m_status==LOAD_STATUS::LOADED_OK) {
+			bool drawFileName = false;
+			if (o.m_status == LOAD_STATUS::LOADED_OK) {
 				GdkPixbuf *p = o.m_thumbnail[m_listIconIndex];
 				if (p) {
 					w = gdk_pixbuf_get_width(p);
 					h = gdk_pixbuf_get_height(p);
 					copy(p, cr, i + (m_listIconWidth - w) / 2,
 							j + (m_listIconHeight - h) / 2, w, h, 0, 0);
-					drawFileName=true;
+					drawFileName = true;
 				}
-			}
-			else if(o.m_status==LOAD_STATUS::LOADED_ERROR){
-				drawFileName=true;
-				GdkPixbuf *p=(GdkPixbuf *)m_noImage[m_listIconIndex];
+			} else if (o.m_status == LOAD_STATUS::LOADED_ERROR) {
+				drawFileName = true;
+				GdkPixbuf *p = (GdkPixbuf*) m_noImage[m_listIconIndex];
 				w = gdk_pixbuf_get_width(p);
 				h = gdk_pixbuf_get_height(p);
 				copy(p, cr, i + (m_listIconWidth - w) / 2,
 						j + (m_listIconHeight - h) / 2, w, h, 0, 0);
 			}
-			if(drawFileName){
-				drawTextToCairo(cr,
-						getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
+			if (drawFileName) {
+				drawTextToCairo(cr, getFileInfo(o.m_path, FILEINFO::SHORT_NAME),
 						m_filenameFontHeight, filenameFontBold, i, j + 1,
-						m_listIconWidth, m_listIconHeight, true, 2,
-						WHITE_COLOR, true);
+						m_listIconWidth, m_listIconHeight, true, 2, WHITE_COLOR,
+						true);
 
 				//				drawTextToCairo(cr, forma(l),
 				//						m_filenameFontHeight*8, filenameFontBold, i, j + 1,
@@ -666,20 +667,20 @@ void Frame::draw(cairo_t *cr, GtkWidget *widget) {
 		}
 
 	} else {
-		if(m_pix){
+		if (m_pix) {
 			cairo_rectangle(cr, 0, 0, width, height);
 			cairo_scale(cr, m_zoom, m_zoom);
 			gdk_cairo_set_source_pixbuf(cr, m_pix, -m_posh, -m_posv);
 			cairo_fill(cr);
-		}
-		else{
-			GdkPixbuf* p= gdk_pixbuf_new_from_file_at_size(
+		} else {
+			GdkPixbuf *p = gdk_pixbuf_new_from_file_at_size(
 					getImagePath("noimage.svg").c_str(), width, height, NULL);
 
 			cairo_rectangle(cr, 0, 0, width, height);
 			w = gdk_pixbuf_get_width(p);
 			h = gdk_pixbuf_get_height(p);
-			gdk_cairo_set_source_pixbuf(cr, p, (width-w)/2, (height-h)/2);
+			gdk_cairo_set_source_pixbuf(cr, p, (width - w) / 2,
+					(height - h) / 2);
 			cairo_fill(cr);
 			g_object_unref(p);
 		}
@@ -921,10 +922,10 @@ void Frame::thumbnailThread(int n) {
 		}
 		auto &o = m_vp[v];
 		//m_listIconIndex can changed during thread running so load every time
-		int i, j = m_listIconIndex,k,h;
+		int i, j = m_listIconIndex, k, h;
 		std::string ext;
 
-		if (o.m_status==LOAD_STATUS::NOT_LOADED) {
+		if (o.m_status == LOAD_STATUS::NOT_LOADED) {
 //			printl("proceed t"+std::to_string(n),v)
 			//load pixbuf from path
 			ext = getFileInfo(o.m_path, FILEINFO::LOWER_EXTENSION);
@@ -933,16 +934,18 @@ void Frame::thumbnailThread(int n) {
 			} else {
 				p = o.m_path;
 			}
-			o.m_status=p?LOAD_STATUS::LOADED_OK:LOAD_STATUS::LOADED_ERROR;
-			if(p){
-	//			set scaled images, current scale at first
-				for(k=0;k<2;k++){
+			o.m_status = p ? LOAD_STATUS::LOADED_OK : LOAD_STATUS::LOADED_ERROR;
+			if (p) {
+				//			set scaled images, current scale at first
+				for (k = 0; k < 2; k++) {
 					for (i = 0; i < LIST_IMAGE_STEPS; i++) {
-						if( (k==0 && i==j) || (k==1 && i!=j) ){
+						if ((k == 0 && i == j) || (k == 1 && i != j)) {
 							h = LIST_IMAGE_HEIGHT[i];
-							o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
-							if(!k){
-								gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+							o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h),
+									h);
+							if (!k) {
+								gdk_threads_add_idle(set_show_thumbnail_thread,
+										GP(v));
 							}
 						}
 					}
@@ -982,13 +985,13 @@ void Frame::mousePress(GdkEventButton *event) {
 				if (left) { // left button check click on image
 					int cx = event->x;
 					int cy = event->y;
-					int i=((cx - m_listdx) / m_listIconWidth
+					int i = ((cx - m_listdx) / m_listIconWidth
 							+ (cy - m_listdy) / m_listIconHeight * m_listx)
-							* (m_ascendingOrder ? 1 : -1)
-							+ m_listTopLeftIndex;
+							* (m_ascendingOrder ? 1 : -1) + m_listTopLeftIndex;
 
 					if (cx >= m_listdx && cx < m_lastWidth - m_listdx
-							&& cy >= m_listdy && cy < m_lastHeight - m_listdy && m_vp[i].m_status==LOAD_STATUS::LOADED_OK) {
+							&& cy >= m_listdy && cy < m_lastHeight - m_listdy
+							&& m_vp[i].m_status == LOAD_STATUS::LOADED_OK) {
 						m_pi = i;
 						setMode(m_lastNonListMode);
 						loadImage();
@@ -1601,13 +1604,13 @@ void Frame::updateZoomButtonsState() {
 		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
 				m_listIconHeight > MIN_LIST_IMAGE_HEIGHT);
 	} else {
-		setButtonState(TOOLBAR_INDEX::ZOOM_IN, m_pix!=nullptr);
-		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,m_pix!=nullptr &&
-				m_zoom * m_ph > MIN_SCALED_IMAGE_HEIGHT);
+		setButtonState(TOOLBAR_INDEX::ZOOM_IN, m_pix != nullptr);
+		setButtonState(TOOLBAR_INDEX::ZOOM_OUT,
+				m_pix != nullptr && m_zoom * m_ph > MIN_SCALED_IMAGE_HEIGHT);
 	}
 }
 
-void Frame::updateModifySaveDeleteButtonsState(){
+void Frame::updateModifySaveDeleteButtonsState() {
 	for (auto e : IMAGE_MODIFY) {
 		setButtonState(e, m_mode != MODE::LIST && m_pix);
 	}
