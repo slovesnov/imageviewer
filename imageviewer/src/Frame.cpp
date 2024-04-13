@@ -1096,6 +1096,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				getListMinMaxIndex(min, max);
 				i = m_listTopLeftIndex;
 				adjust(m_listTopLeftIndex, min, max);
+				printl(m_listTopLeftIndex, min, max)
 				if (i == m_listTopLeftIndex) {
 					redraw(); //with title m_listxy changed
 				}
@@ -1674,21 +1675,12 @@ void Frame::setNavigationButtonsState(bool c1, bool c2) {
 }
 
 void Frame::getListMinMaxIndex(int &min, int &max) {
-	int j, sz = size();
-//	printl(m_ascendingOrder,sz,m_listxy)
+	int sz = size();
 	if (m_ascendingOrder) {
-		j = sz;
-//		if (sz % m_listx != 0) {
-//			j += m_listx - sz % m_listx;
-//		}
 		min = 0;
-		max = j - m_listxy;
+		max = MAX(sz - m_listxy,0);
 	} else {
-		j = 0;
-//		if (sz % m_listx != 0) {
-//			j -= m_listx - sz % m_listx;
-//		}
-		min = j + m_listxy - 1;
+		min = sz <= m_listxy ? 0 : m_listxy - 1;
 		max = sz - 1;
 	}
 }
