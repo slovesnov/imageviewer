@@ -435,7 +435,7 @@ void Frame::setTitle() {
 					+ getSizeMbKbB(ts) + ", "
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz) + SEPARATOR
-					+ format("%dx%d", m_listx, m_listy);
+					+ format("%dx%d", MIN(sz,m_listx), sz<m_listxy?sz/m_listx+bool(sz%m_listx): m_listy);
 		} else {
 			auto &f = m_vp[m_pi];
 			//printl(m_pi,f.m_path)
@@ -778,7 +778,9 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 		}
 	} else {
 		if (m_mode == MODE::LIST) {
-			scrollList(dy * LIST_MULTIPLIER);
+			if (dy != 0) {
+				scrollList(dy* m_listx);
+			}
 		} else if (dx || dy) {
 			setPosRedraw(dx * WHEEL_MULTIPLIER, dy * WHEEL_MULTIPLIER);
 		}
@@ -1030,10 +1032,10 @@ void Frame::scrollList(int v) {
 			return;
 		}
 		getListMinMaxIndex(min, max);
-		if (v == GOTO_BEGIN) {
-			i = m_ascendingOrder ? min : max;
-		} else if (v == GOTO_END) {
-			i = m_ascendingOrder ? max : min;
+		const int a[] = { GOTO_BEGIN, GOTO_END };
+		j = INDEX_OF(v, a);
+		if (j != -1) {
+			i = m_ascendingOrder != j ? min : max;
 		} else {
 			i = m_listTopLeftIndex + v * (m_ascendingOrder ? 1 : -1) * m_listx;
 		}
@@ -1090,7 +1092,16 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				setIconHeightWidth(t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1);
 				recountListParameters();
 				m_filenameFontHeight = 0; //to recount font
-				redraw(); //with title m_listxy changed
+				int min,max;
+				getListMinMaxIndex(min, max);
+				i = m_listTopLeftIndex;
+				adjust(m_listTopLeftIndex, min, max);
+				if (i == m_listTopLeftIndex) {
+					redraw(); //with title m_listxy changed
+				}
+				else{
+					listTopLeftIndexChanged();
+				}
 			}
 		} else {
 			const double k =
@@ -1664,18 +1675,19 @@ void Frame::setNavigationButtonsState(bool c1, bool c2) {
 
 void Frame::getListMinMaxIndex(int &min, int &max) {
 	int j, sz = size();
+//	printl(m_ascendingOrder,sz,m_listxy)
 	if (m_ascendingOrder) {
 		j = sz;
-		if (sz % m_listx != 0) {
-			j += m_listx - sz % m_listx;
-		}
+//		if (sz % m_listx != 0) {
+//			j += m_listx - sz % m_listx;
+//		}
 		min = 0;
 		max = j - m_listxy;
 	} else {
 		j = 0;
-		if (sz % m_listx != 0) {
-			j -= m_listx - sz % m_listx;
-		}
+//		if (sz % m_listx != 0) {
+//			j -= m_listx - sz % m_listx;
+//		}
 		min = j + m_listxy - 1;
 		max = sz - 1;
 	}

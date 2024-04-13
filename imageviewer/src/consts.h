@@ -41,7 +41,7 @@ const gchar OPEN_FILE_SIGNAL_NAME[] = "imageviewer_open_file";
 
 const bool DEFAULT_ONE_INSTANCE = true; //if oneInstance=true then not open new imageviewer window if click on image
 const int WHEEL_MULTIPLIER = 80;
-const int LIST_MULTIPLIER = 50;
+//const int LIST_MULTIPLIER = 20;
 const int SCROLL_DELAY_MILLISECONDS = 500;
 const double IMAGE_VIEWER_VERSION = 1.0;
 const int MAX_HOTKEYS = 3;
