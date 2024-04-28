@@ -1230,10 +1230,10 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 
 				if (same) {
 					rename = true;
-					m_modalDialogEntryText = utf8ToLocale(
-							getWritableFilePath(
-									getFileInfo(m_modalDialogEntryText,
-											FILEINFO::NAME)));
+					//localed fixed 28apr
+					m_modalDialogEntryText = getWritableFilePath(
+							getFileInfo(m_modalDialogEntryText,
+									FILEINFO::NAME));
 				}
 				if (gdk_pixbuf_save((GdkPixbuf*) pixScaled,
 						m_modalDialogEntryText.c_str(), it->type.c_str(),
