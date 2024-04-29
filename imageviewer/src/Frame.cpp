@@ -1230,7 +1230,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 
 				if (same) {
 					rename = true;
-					//localed fixed 28apr
+					//utf8 fixed 28apr
 					m_modalDialogEntryText = getWritableFilePath(
 							getFileInfo(m_modalDialogEntryText,
 									FILEINFO::NAME));
