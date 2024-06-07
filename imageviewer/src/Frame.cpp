@@ -1739,7 +1739,7 @@ void Frame::loadLanguage() {
 std::string Frame::getTitleVersion() {
 	return getLanguageString(LANGUAGE::IMAGE_VIEWER) + " "
 			+ getLanguageString(LANGUAGE::VERSION)
-			+ format(" %.1lf", IMAGE_VIEWER_VERSION);
+			+ format(" %.2lf", IMAGE_VIEWER_VERSION);
 }
 
 std::string const& Frame::getLanguageString(LANGUAGE l, int add) {
