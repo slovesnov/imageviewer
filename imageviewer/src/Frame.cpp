@@ -485,6 +485,12 @@ void Frame::setTitle() {
 			}
 			g_match_info_free(match_info);
 			g_regex_unref(regex);
+			//t="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX";
+			//t=std::to_string(t.length())+t;
+			if(t.length()>256){
+				t=replaceAll(t, SEPARATOR, " ");
+			}
+			//printl(t.length())
 		}
 	}
 
