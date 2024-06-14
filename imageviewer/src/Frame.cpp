@@ -1522,7 +1522,8 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(m_window));
 
-	bool sd = oneOf(o, DIALOG::DELETE, DIALOG::SAVE);
+	bool save=o==DIALOG::SAVE;
+	bool sd = save || o==DIALOG::DELETE;
 	auto s =
 			o == DIALOG::ERROR || sd ?
 					getLanguageString(
@@ -1550,6 +1551,12 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 			}
 			g_signal_connect(b2, "clicked", G_CALLBACK(options_button_clicked),
 					GP(e));
+			gtk_container_add(GTK_CONTAINER(b1), b2);
+		}
+
+		if(save && m_pw*m_zoom!=m_pw){
+			s=" "+getLanguageString(LANGUAGE::SAVE_WARINIG);
+			b2=gtk_label_new(s.c_str());
 			gtk_container_add(GTK_CONTAINER(b1), b2);
 		}
 
