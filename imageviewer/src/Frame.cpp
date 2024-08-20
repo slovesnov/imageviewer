@@ -453,7 +453,7 @@ void Frame::setTitle() {
 			//std::string n = "IMG_21000229_130015-20230530_130015.jpg";
 			GMatchInfo *match_info;
 			GRegex *regex = g_regex_new(
-					"(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2})(\\d{2})",
+					"(\\d{4})(\\d{2})(\\d{2})_?(\\d{2})(\\d{2})(\\d{2})",
 					GRegexCompileFlags(G_REGEX_RAW | G_REGEX_CASELESS),
 					GRegexMatchFlags(0), NULL);
 			int d[6];
