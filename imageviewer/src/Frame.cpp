@@ -435,7 +435,10 @@ void Frame::setTitle() {
 					+ getSizeMbKbB(ts) + ", "
 					+ getLanguageString(LANGUAGE::AVERAGE) + " "
 					+ getSizeMbKbB(ts / sz) + SEPARATOR
-					+ format("%dx%d", MIN(sz,m_listx), sz<m_listxy?sz/m_listx+bool(sz%m_listx): m_listy);
+					+ format("%dx%d", MIN(sz, m_listx),
+							sz < m_listxy ?
+									sz / m_listx + bool(sz % m_listx) :
+									m_listy);
 		} else {
 			auto &f = m_vp[m_pi];
 			//printl(m_pi,f.m_path)
@@ -487,8 +490,8 @@ void Frame::setTitle() {
 			g_regex_unref(regex);
 			//t="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX";
 			//t=std::to_string(t.length())+t;
-			if(t.length()>256){
-				t=replaceAll(t, SEPARATOR, " ");
+			if (t.length() > 256) {
+				t = replaceAll(t, SEPARATOR, " ");
 			}
 			//printl(t.length())
 		}
@@ -785,7 +788,7 @@ void Frame::scrollEvent(GdkEventScroll *event) {
 	} else {
 		if (m_mode == MODE::LIST) {
 			if (dy != 0) {
-				scrollList(dy* m_listx);
+				scrollList(dy * m_listx);
 			}
 		} else if (dx || dy) {
 			setPosRedraw(dx * WHEEL_MULTIPLIER, dy * WHEEL_MULTIPLIER);
@@ -1098,15 +1101,14 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 				setIconHeightWidth(t == TOOLBAR_INDEX::ZOOM_IN ? 1 : -1);
 				recountListParameters();
 				m_filenameFontHeight = 0; //to recount font
-				int min,max;
+				int min, max;
 				getListMinMaxIndex(min, max);
 				i = m_listTopLeftIndex;
 				adjust(m_listTopLeftIndex, min, max);
 				printl(m_listTopLeftIndex, min, max)
 				if (i == m_listTopLeftIndex) {
 					redraw(); //with title m_listxy changed
-				}
-				else{
+				} else {
 					listTopLeftIndexChanged();
 				}
 			}
@@ -1266,6 +1268,8 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					stopThreads();
 					startThreads();
 
+					//reload image because size is changed fixed 24sept2024
+					loadImage();
 					setTitle();
 				} else {
 					showDialog(DIALOG::ERROR,
@@ -1522,8 +1526,8 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 	gtk_window_set_modal(GTK_WINDOW(d), TRUE);
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(m_window));
 
-	bool save=o==DIALOG::SAVE;
-	bool sd = save || o==DIALOG::DELETE;
+	bool save = o == DIALOG::SAVE;
+	bool sd = save || o == DIALOG::DELETE;
 	auto s =
 			o == DIALOG::ERROR || sd ?
 					getLanguageString(
@@ -1553,10 +1557,9 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 					GP(e));
 			gtk_container_add(GTK_CONTAINER(b1), b2);
 		}
-
-		if(save && m_pw*m_zoom!=m_pw){
-			s=" "+getLanguageString(LANGUAGE::SAVE_WARINIG);
-			b2=gtk_label_new(s.c_str());
+		if (save && m_pw * m_zoom != m_pw) {
+			s = " " + getLanguageString(LANGUAGE::SAVE_WARINIG);
+			b2 = gtk_label_new(s.c_str());
 			gtk_container_add(GTK_CONTAINER(b1), b2);
 		}
 
@@ -1691,7 +1694,7 @@ void Frame::getListMinMaxIndex(int &min, int &max) {
 	int sz = size();
 	if (m_ascendingOrder) {
 		min = 0;
-		max = MAX(sz - m_listxy,0);
+		max = MAX(sz - m_listxy, 0);
 	} else {
 		min = sz <= m_listxy ? 0 : m_listxy - 1;
 		max = sz - 1;
