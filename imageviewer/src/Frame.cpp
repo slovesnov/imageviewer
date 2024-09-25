@@ -12,6 +12,7 @@
 #include "Frame.h"
 #include "help.h"
 #include <glib/gstdio.h>//g_remove
+#include <filesystem>
 Frame *frame;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
@@ -75,8 +76,8 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
 	frame->buttonClicked(GP2INT(data));
 }
 
-static void options_button_clicked(GtkWidget *widget, LANGUAGE data) {
-	frame->optionsButtonClicked(data);
+static void dialog_button_clicked(GtkWidget *widget, LANGUAGE data) {
+	frame->dialogButtonClicked(data);
 }
 
 static void open_files(GtkWidget*, const char *data) {
@@ -1243,6 +1244,16 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 							getFileInfo(m_modalDialogEntryText,
 									FILEINFO::NAME));
 				}
+				else{//TODO
+					if(std::filesystem::exists(m_modalDialogEntryText)){
+						VImage::iterator it =getPathIterator(m_modalDialogEntryText);
+						printl(it!=m_vp.end())
+						if(showDialog(DIALOG::YES_NO, getLanguageString(LANGUAGE::FILE_EXISTS_WARNING))!=GTK_RESPONSE_YES){
+							return;
+						}
+						return;
+					}
+				}
 				if (gdk_pixbuf_save((GdkPixbuf*) pixScaled,
 						m_modalDialogEntryText.c_str(), it->type.c_str(),
 						&error,
@@ -1456,10 +1467,10 @@ void Frame::showSettings() {
 	showModalDialog(m_notebook, DIALOG::SETTINGS);
 }
 
-void Frame::showDialog(DIALOG d, std::string s) {
+gint Frame::showDialog(DIALOG d, std::string s) {
 	auto l = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(l), s.c_str());
-	showModalDialog(l, d);
+	return showModalDialog(l, d);
 }
 
 gint Frame::showDeleteDialog() {
@@ -1543,7 +1554,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 		gtk_container_add(GTK_CONTAINER(b), w);
 		b1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
 		std::vector<LANGUAGE> v;
-		if (sd) {
+		if (sd || o==DIALOG::YES_NO) {
 			v = { LANGUAGE::YES, LANGUAGE::NO };
 		} else {
 			v = { LANGUAGE::OK, LANGUAGE::RESET, LANGUAGE::CANCEL };
@@ -1553,7 +1564,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 			if (oneOf(e, LANGUAGE::YES, LANGUAGE::OK)) {
 				m_showModalDialogButtonOK = b2;
 			}
-			g_signal_connect(b2, "clicked", G_CALLBACK(options_button_clicked),
+			g_signal_connect(b2, "clicked", G_CALLBACK(dialog_button_clicked),
 					GP(e));
 			gtk_container_add(GTK_CONTAINER(b1), b2);
 		}
@@ -1779,10 +1790,10 @@ GtkWidget* Frame::createTextCombo(VString const &v, int active) {
 	return w;
 }
 
-void Frame::optionsButtonClicked(LANGUAGE l) {
+void Frame::dialogButtonClicked(LANGUAGE l) {
 	int i;
 
-	if (oneOf(m_modalDialogIndex, DIALOG::DELETE, DIALOG::SAVE)) {
+	if (oneOf(m_modalDialogIndex, DIALOG::DELETE, DIALOG::SAVE,DIALOG::YES_NO)) {
 		if (m_modalDialogIndex == DIALOG::SAVE) {
 			m_modalDialogEntryText = gtk_entry_get_text(
 					GTK_ENTRY(m_modalDialogEntry));
@@ -2137,11 +2148,14 @@ void Frame::sortFiles() {
 	});
 }
 
-void Frame::setPictureIndex(const std::string &path) {
-	auto it = std::find_if(m_vp.begin(), m_vp.end(), [&path](const auto &e) {
+VImage::iterator Frame::getPathIterator(const std::string &path){
+	return std::find_if(m_vp.begin(), m_vp.end(), [&path](const auto &e) {
 		return e.m_path == path;
 	});
-	m_pi = std::distance(m_vp.begin(), it);
+}
+
+void Frame::setPictureIndex(const std::string &path) {
+	m_pi = std::distance(m_vp.begin(), getPathIterator(path));
 }
 
 void Frame::updateModesButtonState() {

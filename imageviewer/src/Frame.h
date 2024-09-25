@@ -117,8 +117,8 @@ public:
 
 	void buttonClicked(TOOLBAR_INDEX t);
 	void buttonClicked(int t);
-	void optionsButtonClicked(LANGUAGE l);
-	void showDialog(DIALOG d, std::string s);
+	void dialogButtonClicked(LANGUAGE l);
+	gint showDialog(DIALOG d, std::string s);
 	void showSettings();
 	gint showDeleteDialog();
 	gint showSaveDialog(bool error = false);
@@ -172,6 +172,7 @@ public:
 	static void addInsertDeleteEvents(GtkWidget *w, int n);
 	static void addFocusEvents(GtkWidget *w, int n);
 	void sortFiles();
+	VImage::iterator getPathIterator(const std::string &path);
 	void setPictureIndex(const std::string &path);
 	void updateModesButtonState();
 };

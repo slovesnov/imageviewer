@@ -69,6 +69,7 @@ To delete a hotkey, click on the corresponding input field and then\nclick on an
 show the toolbar in full-screen mode
 key already in use
 Warning. The image size has changed.
+The file already exists, rewrite it?
 zoom in
 zoom out
 image size any
