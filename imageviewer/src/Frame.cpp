@@ -1274,7 +1274,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 						setPictureIndex(m_modalDialogEntryText);
 					}
 					auto &e = m_vp[rename || fileInList ? m_pi : m_vp.size() - 1];
-//					printl(e.m_path,m_modalDialogEntryText,rename || fileInList)
 					e.setPathClear(m_modalDialogEntryText);
 					sortFiles();
 					setPictureIndex(m_modalDialogEntryText);
