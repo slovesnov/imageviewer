@@ -1256,10 +1256,12 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					m_zoom = 1;
 					load(m_modalDialogEntryText);
 				} else {
+					bool added = false;
 					if (rename) {
 						remove(m_vp[m_pi].m_path);
 					} else {
-						if(!fileInList){
+						if (!fileInList) {
+							added = true;
 							m_vp.push_back(Image("", m_loadid));
 						}
 					}
@@ -1268,10 +1270,11 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 								m_vp[m_pi].m_path.c_str());
 						m_modalDialogEntryText = m_vp[m_pi].m_path;
 					}
-					if(fileInList){
+					if (fileInList) {
+						//set m_pi
 						setPictureIndex(m_modalDialogEntryText);
 					}
-					auto &e = m_vp[rename || fileInList ? m_pi : m_vp.size() - 1];
+					auto &e = m_vp[added ? m_vp.size() - 1 : m_pi];
 					e.setPathClear(m_modalDialogEntryText);
 					sortFiles();
 					setPictureIndex(m_modalDialogEntryText);
