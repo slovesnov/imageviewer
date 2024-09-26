@@ -1262,7 +1262,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 						remove(m_vp[m_pi].m_path);
 					} else {
 						if(!fileInList){
-							printi
 							m_vp.push_back(Image("", m_loadid));
 						}
 					}
