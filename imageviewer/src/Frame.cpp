@@ -1253,8 +1253,6 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 					if (rename) {
 						remove(m_vp[m_pi].m_path);
 					}
-					stopThreads();
-					startThreads();
 					m_zoom = 1;
 					load(m_modalDialogEntryText);
 				} else {
