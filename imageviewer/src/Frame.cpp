@@ -1188,15 +1188,11 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 			m_lastManualOperationTime = clock();
 			//not need full reload
 
-			//before g_remove change totalFileSize
+			//before remove change totalFileSize
 			auto &a = m_vp[m_pi];
 			m_totalFileSize -= a.m_size;
 
-			if (m_deleteOption) {
-				g_remove(a.m_path.c_str());
-			} else {
-				deleteFileToRecycleBin(a.m_path);
-			}
+			remove(a.m_path);
 			m_vp.erase(m_vp.begin() + m_pi);
 			int sz = size();
 			if (sz == 0) {
@@ -1214,79 +1210,89 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 	if (t == TOOLBAR_INDEX::SAVE_FILE) { //m_mode==MODE::LIST can be called from keyboard
 		if (m_mode != MODE::LIST
 				&& (!m_warnBeforeSave || showSaveDialog() == GTK_RESPONSE_YES)) {
-			bool b = false;
 			s = m_warnBeforeSave ? m_modalDialogEntryText : m_vp[m_pi].m_path;
-			int rename = m_warnBeforeSave ? m_saveRename : 0;
-//			printl(s)
+			int rename = m_saveRename;
 			auto it = supportedIterator(s, true);
 			if (it == m_supported.end()) { //user click save non writable file m_warnBeforeSave=false
-				if (showSaveDialog(true) == GTK_RESPONSE_YES) {
-					it = supportedIterator(m_modalDialogEntryText, true);
-					rename = m_saveRename;
-					b = it != m_supported.end();
+				if (showSaveDialog(true) != GTK_RESPONSE_YES) {
+					return;
 				}
-			} else {
-				b = true;
+				it = supportedIterator(m_modalDialogEntryText, true);
+				if (it == m_supported.end()) {
+					return;
+				}
 			}
-			if (b) {
-				GError *error = NULL;
-				Pixbuf pixScaled = gdk_pixbuf_scale_simple(m_pix, m_zoom * m_pw,
-						m_zoom * m_ph, GDK_INTERP_BILINEAR);
-				/* !rename && m_vp[m_pi].m_path==m_modalDialogEntryText save but with same name it's just rename
-				 * rename is used later so set rename variable
-				 */
-				bool same = m_vp[m_pi].m_path == m_modalDialogEntryText;
+			bool fileInList = getPathIterator(m_modalDialogEntryText)
+					!= m_vp.end();
+			bool dirChanged = m_dir
+					!= getFileInfo(m_modalDialogEntryText, FILEINFO::DIRECTORY);
+			bool fileExists = std::filesystem::exists(m_modalDialogEntryText);
+			bool sameFile = m_vp[m_pi].m_path == m_modalDialogEntryText;
+			if (!sameFile && fileExists) {
+				if (showDialog(DIALOG::YES_NO,
+						getLanguageString(LANGUAGE::FILE_EXISTS_WARNING))
+						!= GTK_RESPONSE_YES) {
+					return;
+				}
+			}
 
-				if (same) {
-					rename = true;
-					//utf8 fixed 28apr
-					m_modalDialogEntryText = getWritableFilePath(
-							getFileInfo(m_modalDialogEntryText,
-									FILEINFO::NAME));
-				}
-				else{//TODO
-					if(std::filesystem::exists(m_modalDialogEntryText)){
-						VImage::iterator it =getPathIterator(m_modalDialogEntryText);
-						printl(it!=m_vp.end())
-						if(showDialog(DIALOG::YES_NO, getLanguageString(LANGUAGE::FILE_EXISTS_WARNING))!=GTK_RESPONSE_YES){
-							return;
-						}
-						return;
-					}
-				}
-				if (gdk_pixbuf_save((GdkPixbuf*) pixScaled,
-						m_modalDialogEntryText.c_str(), it->type.c_str(),
-						&error,
-						NULL)) {
+			GError *error = NULL;
+			Pixbuf pixScaled = gdk_pixbuf_scale_simple(m_pix, m_zoom * m_pw,
+					m_zoom * m_ph, GDK_INTERP_BILINEAR);
+			if (sameFile) {
+				//setPictureIndex(m_modalDialogEntryText);
+				//make temporary file copy
+				m_modalDialogEntryText = getWritableFilePath(
+						getFileInfo(m_modalDialogEntryText, FILEINFO::NAME));
+			}
+//			printl(m_modalDialogEntryText)
+			if (gdk_pixbuf_save((GdkPixbuf*) pixScaled,
+					m_modalDialogEntryText.c_str(), it->type.c_str(), &error,
+					NULL)) {
+				if (dirChanged) {
 					if (rename) {
-						g_remove(m_vp[m_pi].m_path.c_str());
-					} else {
-						m_vp.push_back(Image("", m_loadid));
+						remove(m_vp[m_pi].m_path);
 					}
-					if (same) {
+					stopThreads();
+					startThreads();
+					m_zoom = 1;
+					load(m_modalDialogEntryText);
+				} else {
+					if (rename) {
+						remove(m_vp[m_pi].m_path);
+					} else {
+						if(!fileInList){
+							printi
+							m_vp.push_back(Image("", m_loadid));
+						}
+					}
+					if (sameFile) {
 						g_rename(m_modalDialogEntryText.c_str(),
 								m_vp[m_pi].m_path.c_str());
 						m_modalDialogEntryText = m_vp[m_pi].m_path;
 					}
-					auto &e = m_vp[rename ? m_pi : m_vp.size() - 1];
+					if(fileInList){
+						setPictureIndex(m_modalDialogEntryText);
+					}
+					auto &e = m_vp[rename || fileInList ? m_pi : m_vp.size() - 1];
+//					printl(e.m_path,m_modalDialogEntryText,rename || fileInList)
 					e.setPathClear(m_modalDialogEntryText);
 					sortFiles();
 					setPictureIndex(m_modalDialogEntryText);
-
-					//printl(rename ? m_pi : m_vp.size() - 1,std::distance(m_vp.begin(), it))
 
 					m_lastManualOperationTime = clock(); //disable monitoring call
 					stopThreads();
 					startThreads();
 
-					//reload image because size is changed fixed 24sept2024
+					//reload image because size is changed
+					m_zoom = 1;
 					loadImage();
 					setTitle();
-				} else {
-					showDialog(DIALOG::ERROR,
-							std::to_string(error->code) + " " + error->message);
-					g_error_free(error);
 				}
+			} else {
+				showDialog(DIALOG::ERROR,
+						std::to_string(error->code) + " " + error->message);
+				g_error_free(error);
 			}
 		}
 		return;
@@ -2165,5 +2171,13 @@ void Frame::updateModesButtonState() {
 //		println("%lf %lf z=%lf",m_zoom*m_pw,m_zoom*m_ph,m_zoom)
 		setButtonState(TOOLBAR_INDEX::MODE_ZOOM_FIT,
 				m_zoom != getDefaultZoomFit());
+	}
+}
+
+void Frame::remove(const std::string &path) {
+	if (m_deleteOption) {
+		g_remove(path.c_str());
+	} else {
+		deleteFileToRecycleBin(path);
 	}
 }

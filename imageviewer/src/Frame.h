@@ -175,6 +175,7 @@ public:
 	VImage::iterator getPathIterator(const std::string &path);
 	void setPictureIndex(const std::string &path);
 	void updateModesButtonState();
+	void remove(const std::string &path);
 };
 
 #endif /* FRAME_H_ */
