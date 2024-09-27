@@ -43,7 +43,7 @@ const bool DEFAULT_ONE_INSTANCE = true; //if oneInstance=true then not open new 
 const int WHEEL_MULTIPLIER = 80;
 //const int LIST_MULTIPLIER = 20;
 const int SCROLL_DELAY_MILLISECONDS = 500;
-const double IMAGE_VIEWER_VERSION = 1.01;
+const double IMAGE_VIEWER_VERSION = 1.02;
 const int MAX_HOTKEYS = 3;
 const guint INVALID_KEY = 0;
 const int ZOOM_FACTOR_ID = -1;
