@@ -3,7 +3,7 @@
 #define GTKPATH "C:\soft\msys64\mingw64\"
 #define SITE "http://slovesnov.users.sf.net/"
 #define APPNAME "imageviewer"
-#define VERSION "1.01"
+#define VERSION "1.02"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
