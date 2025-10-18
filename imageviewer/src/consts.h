@@ -5,7 +5,7 @@
  *      Author: alexey slovesnov
  * copyright(c/c++): 2014-doomsday
  *           E-mail: slovesnov@yandex.ru
- *         homepage: slovesnov.users.sourceforge.net
+ *         homepage: slovesnov.rf.gd
  */
 
 #ifndef CONSTS_H_
@@ -24,6 +24,9 @@
 //#define USE_EXTERNAL_SVG_LIB
 const std::string LNG[] = { "en", "ru" };
 const std::string LNG_LONG[] = { "english", "russian" };
+const std::string GITHUB = "https://github.com/slovesnov/imageviewer";
+const std::string HOMEPAGE = "https://slovesnov.rf.gd?imageviewer";
+const char EMAIL[] = "slovesnov@yandex.ru";
 
 const LANGUAGE OPTIONS[] = { LANGUAGE::LANGUAGE,
 		LANGUAGE::WARN_BEFORE_DELETING_A_FILE, LANGUAGE::REMOVE_FILE_OPTION,
@@ -43,7 +46,7 @@ const bool DEFAULT_ONE_INSTANCE = true; //if oneInstance=true then not open new 
 const int WHEEL_MULTIPLIER = 80;
 //const int LIST_MULTIPLIER = 20;
 const int SCROLL_DELAY_MILLISECONDS = 500;
-const double IMAGE_VIEWER_VERSION = 1.02;
+const double IMAGE_VIEWER_VERSION = 1.03;
 const int MAX_HOTKEYS = 3;
 const guint INVALID_KEY = 0;
 const int ZOOM_FACTOR_ID = -1;

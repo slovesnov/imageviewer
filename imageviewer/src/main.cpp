@@ -5,7 +5,7 @@
  *           Author: aleksey slovesnov
  * Copyright(c/c++): 2014-doomsday
  *           E-mail: slovesnov@yandex.ru
- *         Homepage: slovesnov.users.sourceforge.net
+ *         Homepage: slovesnov.rf.gd
  */
 
 /*

@@ -5,7 +5,7 @@
  *      Author: alexey slovesnov
  * copyright(c/c++): 2014-doomsday
  *           E-mail: slovesnov@yandex.ru
- *         homepage: slovesnov.users.sourceforge.net
+ *         homepage: slovesnov.rf.gd
  */
 
 #ifndef ENUMS_H_
@@ -33,11 +33,10 @@ enum class LANGUAGE {
 	WRITABLE_FORMATS,
 	WRITABLE_EXTENSIONS, //should goes after WRITABLE_FORMATS
 	HOMEPAGE,
-	HOMEPAGE1,
+	SOURCE_CODE,
 	AUTHOR,
 	AUTHOR1,
 	EMAIL,
-	EMAIL1,
 	REMEMBER_THE_LAST_OPEN_DIRECTORY,
 	VERSION,
 	YES,
@@ -146,7 +145,7 @@ enum class MODE {
 };
 
 enum class DIALOG {
-	HELP, SETTINGS, DELETE, SAVE, ERROR,YES_NO
+	HELP, SETTINGS, DELETE, SAVE, ERROR, YES_NO
 };
 
 enum class TIMER {

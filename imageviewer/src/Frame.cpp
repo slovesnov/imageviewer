@@ -5,7 +5,7 @@
  *      Author: alexey slovesnov
  * copyright(c/c++): 2014-doomsday
  *           E-mail: slovesnov@yandex.ru
- *         homepage: slovesnov.users.sourceforge.net
+ *         homepage: slovesnov.rf.gd
  */
 
 #include <cmath>
@@ -1421,26 +1421,28 @@ void Frame::showSettings() {
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
 	i = -1;
-	for (auto e : { LANGUAGE::HOMEPAGE, LANGUAGE::AUTHOR, LANGUAGE::EMAIL,
-			LANGUAGE::READABLE_FORMATS, LANGUAGE::READABLE_EXTENSIONS,
-			LANGUAGE::WRITABLE_FORMATS, LANGUAGE::WRITABLE_EXTENSIONS }) {
+	for (auto e : { LANGUAGE::HOMEPAGE, LANGUAGE::SOURCE_CODE, LANGUAGE::AUTHOR,
+			LANGUAGE::EMAIL, LANGUAGE::READABLE_FORMATS,
+			LANGUAGE::READABLE_EXTENSIONS, LANGUAGE::WRITABLE_FORMATS,
+			LANGUAGE::WRITABLE_EXTENSIONS }) {
 		i++;
 		w = gtk_label_new(getLanguageStringC(e));
 		gtk_widget_set_halign(w, GTK_ALIGN_START);
 		gtk_grid_attach(GTK_GRID(grid), w, 0, i, 1, 1);
 
-		if (e == LANGUAGE::HOMEPAGE) {
-			s = getLanguageString(e, 1);
+		if (oneOf(e, LANGUAGE::HOMEPAGE, LANGUAGE::SOURCE_CODE)) {
 			w = gtk_label_new(NULL);
-			markup = g_markup_printf_escaped("<a href=\"%s,%s\">\%s,%s</a>",
-					s.c_str(), LNG_LONG[m_languageIndex].c_str(), s.c_str(),
-					LNG_LONG[m_languageIndex].c_str());
+			s = e == LANGUAGE::HOMEPAGE ?
+					HOMEPAGE + ',' + LNG[m_languageIndex] : GITHUB;
+			markup = g_markup_printf_escaped("<a href=\"%s\">%s</a>", s.c_str(),
+					s.c_str());
 			gtk_label_set_markup(GTK_LABEL(w), markup);
 			g_free(markup);
 			g_signal_connect(w, "activate-link", G_CALLBACK(label_clicked),
-					gpointer(s.c_str()));
+					gpointer(NULL));
 		} else if (oneOf(e, LANGUAGE::AUTHOR, LANGUAGE::EMAIL)) {
-			w = gtk_label_new(getLanguageStringC(e, 1));
+			w = gtk_label_new(
+					e == LANGUAGE::AUTHOR ? getLanguageStringC(e, 1) : EMAIL);
 		} else {
 			b = oneOf(e, LANGUAGE::WRITABLE_FORMATS,
 					LANGUAGE::WRITABLE_EXTENSIONS);
@@ -1559,7 +1561,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
 		gtk_container_add(GTK_CONTAINER(b), w);
 		b1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
 		std::vector<LANGUAGE> v;
-		if (sd || o==DIALOG::YES_NO) {
+		if (sd || o == DIALOG::YES_NO) {
 			v = { LANGUAGE::YES, LANGUAGE::NO };
 		} else {
 			v = { LANGUAGE::OK, LANGUAGE::RESET, LANGUAGE::CANCEL };
@@ -1798,7 +1800,8 @@ GtkWidget* Frame::createTextCombo(VString const &v, int active) {
 void Frame::dialogButtonClicked(LANGUAGE l) {
 	int i;
 
-	if (oneOf(m_modalDialogIndex, DIALOG::DELETE, DIALOG::SAVE,DIALOG::YES_NO)) {
+	if (oneOf(m_modalDialogIndex, DIALOG::DELETE, DIALOG::SAVE,
+			DIALOG::YES_NO)) {
 		if (m_modalDialogIndex == DIALOG::SAVE) {
 			m_modalDialogEntryText = gtk_entry_get_text(
 					GTK_ENTRY(m_modalDialogEntry));
@@ -2153,7 +2156,7 @@ void Frame::sortFiles() {
 	});
 }
 
-VImage::iterator Frame::getPathIterator(const std::string &path){
+VImage::iterator Frame::getPathIterator(const std::string &path) {
 	return std::find_if(m_vp.begin(), m_vp.end(), [&path](const auto &e) {
 		return e.m_path == path;
 	});
