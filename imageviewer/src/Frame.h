@@ -176,6 +176,7 @@ public:
 	void setPictureIndex(const std::string &path);
 	void updateModesButtonState();
 	void remove(const std::string &path);
+	void toggleFullScreen();
 };
 
 #endif /* FRAME_H_ */

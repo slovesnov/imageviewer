@@ -990,7 +990,9 @@ void Frame::stopThreads() {
 
 void Frame::mousePress(GdkEventButton *event) {
 	//middle button is three fingers tap (in windows10 settings)
-	if (event->type == GDK_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
+	if (event->type == GDK_DOUBLE_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
+		toggleFullScreen();
+	} else if (event->type == GDK_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
 		const bool left = event->button == 1;
 		if (left || event->button == 2) { //left/middle mouse button
 			if (m_mode == MODE::LIST) {
@@ -1075,17 +1077,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
 		showSettings();
 		return;
 	} else if (t == TOOLBAR_INDEX::FULLSCREEN) {
-		if (isFullScreen()) {
-			if (!m_showToolbarFullscreen) {
-				gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
-			}
-			gtk_window_unfullscreen(GTK_WINDOW(m_window));
-		} else {
-			if (!m_showToolbarFullscreen) {
-				gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
-			}
-			gtk_window_fullscreen(GTK_WINDOW(m_window));
-		}
+		toggleFullScreen();
 		return;
 	}
 
@@ -2181,5 +2173,19 @@ void Frame::remove(const std::string &path) {
 		g_remove(path.c_str());
 	} else {
 		deleteFileToRecycleBin(path);
+	}
+}
+
+void Frame::toggleFullScreen() {
+	if (isFullScreen()) {
+		if (!m_showToolbarFullscreen) {
+			gtk_container_add(GTK_CONTAINER(m_box), m_toolbar);
+		}
+		gtk_window_unfullscreen(GTK_WINDOW(m_window));
+	} else {
+		if (!m_showToolbarFullscreen) {
+			gtk_container_remove(GTK_CONTAINER(m_box), m_toolbar);
+		}
+		gtk_window_fullscreen(GTK_WINDOW(m_window));
 	}
 }
