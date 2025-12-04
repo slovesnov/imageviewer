@@ -990,7 +990,7 @@ void Frame::stopThreads() {
 
 void Frame::mousePress(GdkEventButton *event) {
 	//middle button is three fingers tap (in windows10 settings)
-	if (event->type == GDK_DOUBLE_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
+	if (event->type == GDK_DOUBLE_BUTTON_PRESS) {
 		toggleFullScreen();
 	} else if (event->type == GDK_BUTTON_PRESS) {//ignore double clicks GDK_DOUBLE_BUTTON_PRESS
 		const bool left = event->button == 1;
