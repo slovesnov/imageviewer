@@ -1,6 +1,5 @@
-/Release/
-/imageviewer.cfg
 /help.cpp
 /help.h
 /Output/
-/.gitignore
+*.exe
+*.o
