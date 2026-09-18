@@ -15,7 +15,6 @@
 #include <glib/gstdio.h> //g_remove
 #include <set>
 
-
 Frame *frame;
 
 /* START_MODE=-1 no initial mode set, otherwise START_MODE = initial mode
@@ -175,7 +174,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
   setlocale(LC_NUMERIC,
             "C"); // dot interpret as decimal separator for format(... , scale)
-  m_pThread.resize(getNumberOfCores());
+  m_pThread.resize( g_get_num_processors());
   for (auto &p : m_pThread) {
     p = nullptr;
   }
@@ -1890,6 +1889,11 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
   std::string s;
   bool onlyFolder = false;
   const gint MY_SELECTED = 0;
+
+  //show folders first
+  GSettings *settings = g_settings_new("org.gtk.Settings.FileChooser");
+  g_settings_set_boolean(settings, "sort-directories-first", TRUE);
+  g_object_unref(settings);
 
   GtkWidget *dialog = gtk_file_chooser_dialog_new(
       getLanguageStringC(LANGUAGE::OPEN_FILE), GTK_WINDOW(parent),
