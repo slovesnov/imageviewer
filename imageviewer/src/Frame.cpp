@@ -1992,7 +1992,8 @@ std::string Frame::getExtensionString(bool writableOnly, bool onlyIndex0,
     if (!s.empty()) {
       s += i == sz / rows ? '\n' : ' ';
     }
-    pr(e.extension) s += e.extension;
+    //pr(e.extension) 
+    s += e.extension;
   }
   return s;
 }
