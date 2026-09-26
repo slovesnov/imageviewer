@@ -34,7 +34,7 @@ int Frame::m_oneInstance;
 std::vector<int> Frame::m_optionsDefalutValue;
 
 static gpointer thumbnail_thread(gpointer data) {
-  frame->thumbnailThread(GP2INT(data));
+  frame->thumbnailThread(GPOINTER_TO_INT(data));
   return NULL;
 }
 
@@ -76,7 +76,7 @@ static gboolean mouse_press(GtkWidget *widget, GdkEventButton *event,
 }
 
 static void button_clicked(GtkWidget *widget, gpointer data) {
-  frame->buttonClicked(GP2INT(data));
+  frame->buttonClicked(GPOINTER_TO_INT(data));
 }
 
 static void dialog_button_clicked(GtkWidget *widget, LANGUAGE data) {
@@ -86,7 +86,7 @@ static void dialog_button_clicked(GtkWidget *widget, LANGUAGE data) {
 static void open_files(GtkWidget *, const char *data) { frame->load(data); }
 
 static gboolean set_show_thumbnail_thread(gpointer data) {
-  frame->setShowThumbnail(GP2INT(data));
+  frame->setShowThumbnail(GPOINTER_TO_INT(data));
   return G_SOURCE_REMOVE;
 }
 
@@ -344,9 +344,9 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
     setButtonState(i, true);
 
-    g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked), GP(i));
+    g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked), GINT_TO_POINTER(i));
     gtk_box_pack_start(GTK_BOX(m_toolbar), b, FALSE, FALSE, 0);
-    if (ONE_OF(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)) {
+    if (oneOf(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)) {
       gtk_widget_set_margin_start(b, TOOLBAR_BUTTON_MARGIN);
     }
     i++;
@@ -420,7 +420,7 @@ Frame::~Frame() {
     s += forma(e);
   }
 
-  WRITE_CONFIG(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int)m_mode, m_ascendingOrder,
+  writeConfig(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int)m_mode, m_ascendingOrder,
                m_listIconIndex, m_languageIndex, m_warnBeforeDelete,
                m_deleteOption, m_warnBeforeSave, m_showPopup, m_oneInstance,
                m_rememberLastOpenDirectory, m_showToolbarFullscreen, m_dir, s,
@@ -917,7 +917,7 @@ void Frame::startThreads() {
 
   i = 0;
   for (auto &p : m_pThread) {
-    p = g_thread_new("", thumbnail_thread, GP(i++));
+    p = g_thread_new("", thumbnail_thread, GINT_TO_POINTER(i++));
   }
 }
 
@@ -971,7 +971,7 @@ void Frame::thumbnailThread(int n) {
               h = LIST_IMAGE_HEIGHT[i];
               o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
               if (!k) {
-                gdk_threads_add_idle(set_show_thumbnail_thread, GP(v));
+                gdk_threads_add_idle(set_show_thumbnail_thread, GINT_TO_POINTER(v));
               }
             }
           }
@@ -1061,7 +1061,7 @@ void Frame::scrollList(int v) {
     }
     getListMinMaxIndex(min, max);
     const int a[] = {GOTO_BEGIN, GOTO_END};
-    j = INDEX_OF(v, a);
+    j = indexOf(v, a);
     if (j != -1) {
       i = m_ascendingOrder != j ? min : max;
     } else {
@@ -1101,7 +1101,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
     return;
   }
 
-  i = INDEX_OF(t, ZOOM_INOUT);
+  i = indexOf(t, ZOOM_INOUT);
   if (i != -1) {
     if (m_mode == MODE::LIST) {
       if ((m_listIconIndex > 0 && t == TOOLBAR_INDEX::ZOOM_OUT) ||
@@ -1140,7 +1140,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
     return;
   }
 
-  i = INDEX_OF(t, TMODE);
+  i = indexOf(t, TMODE);
   if (i != -1) {
     MODE m = MODE(i);
     // can be m_mode=zoom_fit after rotate or zoom then m_mode the same but need
@@ -1156,7 +1156,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
     return;
   }
 
-  i = INDEX_OF(t, NAVIGATION);
+  i = indexOf(t, NAVIGATION);
   if (i != -1) {
     if (m_mode == MODE::LIST) {
       int a[] = {GOTO_BEGIN, -m_listy, -1, 1, m_listy, GOTO_END};
@@ -1303,7 +1303,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
     return;
   }
 
-  i = INDEX_OF(t, IMAGE_MODIFY);
+  i = indexOf(t, IMAGE_MODIFY);
   if (i != -1) {
     if (m_mode != MODE::LIST) {
       if (i >= 3) {
@@ -1382,7 +1382,7 @@ void Frame::showSettings() {
     w = gtk_button_new();
     gtk_button_set_image(GTK_BUTTON(w),
                          gtk_image_new_from_pixbuf(m_buttonPixbuf[i][1]));
-    if (ONE_OF(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN) &&
+    if (oneOf(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN) &&
         TOOLBAR_INDEX(i) != TOOLBAR_BUTTON_WITH_MARGIN[0]) {
       k = 0;
       j += 2;
@@ -1400,7 +1400,7 @@ void Frame::showSettings() {
       m = i * MAX_HOTKEYS + l;
       gtk_widget_add_events(w, GDK_KEY_PRESS_MASK);
       g_signal_connect(G_OBJECT(w), "key_press_event", G_CALLBACK(key_press),
-                       GP(m));
+                       GINT_TO_POINTER(m));
       addFocusEvents(w, m);
 
       if (m_key[m] != INVALID_KEY) {
@@ -1569,7 +1569,7 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
       if (oneOf(e, LANGUAGE::YES, LANGUAGE::OK)) {
         m_showModalDialogButtonOK = b2;
       }
-      g_signal_connect(b2, "clicked", G_CALLBACK(dialog_button_clicked), GP(e));
+      g_signal_connect(b2, "clicked", G_CALLBACK(dialog_button_clicked), GINT_TO_POINTER(e));
       gtk_container_add(GTK_CONTAINER(b1), b2);
     }
     if (save && m_pw * m_zoom != m_pw) {
@@ -1970,7 +1970,7 @@ void Frame::addTimerEvent(TIMER t) {
   stopTimer(m_timer[i]);
   //	printl("stopped");
   m_timer[i] =
-      g_timeout_add(EVENT_TIME[i], G_SOURCE_FUNC(timer_changed), GP(i));
+      g_timeout_add(EVENT_TIME[i], G_SOURCE_FUNC(timer_changed), GINT_TO_POINTER(i));
 }
 
 void Frame::stopTimer(guint &t) {
@@ -2126,16 +2126,16 @@ void Frame::focusOut(GtkWidget *w, int n) {
 
 void Frame::addInsertDeleteEvents(GtkWidget *w, int n) {
   g_signal_connect_after(G_OBJECT(w), "insert-text", G_CALLBACK(entry_insert),
-                         GP(n));
+                         GINT_TO_POINTER(n));
   g_signal_connect_after(G_OBJECT(w), "delete-text", G_CALLBACK(entry_delete),
-                         GP(n));
+                         GINT_TO_POINTER(n));
 }
 
 void Frame::addFocusEvents(GtkWidget *w, int n) {
   g_signal_connect_after(G_OBJECT(w), "focus-in-event",
-                         G_CALLBACK(entry_focus_in), GP(n));
+                         G_CALLBACK(entry_focus_in), GINT_TO_POINTER(n));
   g_signal_connect_after(G_OBJECT(w), "focus-out-event",
-                         G_CALLBACK(entry_focus_out), GP(n));
+                         G_CALLBACK(entry_focus_out), GINT_TO_POINTER(n));
 }
 
 void Frame::sortFiles() {
