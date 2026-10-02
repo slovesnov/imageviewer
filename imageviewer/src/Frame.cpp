@@ -417,7 +417,7 @@ Frame::~Frame() {
     if (i) {
       s += ' ';
     }
-    s += forma(e);
+    s += std::to_string(e);
   }
 
   writeConfig(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int)m_mode, m_ascendingOrder,
@@ -954,7 +954,6 @@ void Frame::thumbnailThread(int n) {
     std::string ext;
 
     if (o.m_status == LOAD_STATUS::NOT_LOADED) {
-      //			printl("proceed t"+std::to_string(n),v)
       // load pixbuf from path
       ext = getFileInfo(o.m_path, FILEINFO::LOWER_EXTENSION);
       if (ext == "webp") {
@@ -1114,7 +1113,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
         getListMinMaxIndex(min, max);
         i = m_listTopLeftIndex;
         adjust(m_listTopLeftIndex, min, max);
-        printl(m_listTopLeftIndex, min, max) if (i == m_listTopLeftIndex) {
+        if (i == m_listTopLeftIndex) {
           redraw(); // with title m_listxy changed
         }
         else {
@@ -1358,8 +1357,8 @@ void Frame::showSettings() {
       gtk_container_add(GTK_CONTAINER(w), gtk_label_new("k="));
       gtk_container_add(GTK_CONTAINER(w), m_options[i]);
       w1 = gtk_label_new("");
-      s = " " + forma(MIN_ZOOM_FACTOR_BOUND) + " &lt; k &#8804; " +
-          forma(MAX_ZOOM_FACTOR);
+      s = " " + std::format("{}",MIN_ZOOM_FACTOR_BOUND) + " &lt; k &#8804; " +
+          std::format("{}",MAX_ZOOM_FACTOR);
       gtk_label_set_markup(GTK_LABEL(w1), s.c_str());
       gtk_container_add(GTK_CONTAINER(w), w1);
     } else {
@@ -1869,7 +1868,7 @@ void Frame::updateOptions() {
   }
   w = m_options[i++];
   m_proceedEvents = false;
-  gtk_entry_set_text(GTK_ENTRY(w), forma(m_zoomFactor).c_str());
+  gtk_entry_set_text(GTK_ENTRY(w), std::format("{}",m_zoomFactor).c_str());
   m_proceedEvents = true;
 }
 
@@ -2114,7 +2113,7 @@ void Frame::focusOut(GtkWidget *w, int n) {
     if (m_modalDialogFactor == INVALID_ZOOM_FACTOR) {
       removeClass(w, "cerror");
       m_modalDialogFactor = m_zoomFactor;
-      gtk_entry_set_text(GTK_ENTRY(w), forma(m_zoomFactor).c_str());
+      gtk_entry_set_text(GTK_ENTRY(w), std::to_string(m_zoomFactor).c_str());
     }
     return;
   }
