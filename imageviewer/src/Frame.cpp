@@ -197,7 +197,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
       if ((it = m.find(t)) != m.end()) {
         ct = ENUM_CONFIG_TAGS(i);
         parseString(it->second, j);
-        if (ct == ENUM_CONFIG_TAGS::MODE && j >= 0 && j < SIZEI(TMODE)) {
+        if (ct == ENUM_CONFIG_TAGS::MODE && j >= 0 && j < std::ssize(TMODE)) {
           m_mode = MODE(j);
         } else if (ct == ENUM_CONFIG_TAGS::LAST_OPEN_DIRECTORY) {
           m_dir = it->second;
@@ -209,7 +209,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
           }
         } else if (ct == ENUM_CONFIG_TAGS::KEYS) {
           v = split(it->second);
-          if (v.size() == SIZE(m_key)) {
+          if (v.size() == std::size(m_key)) {
             k = -1;
             for (auto e : v) {
               k++;
@@ -225,7 +225,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
   }
         M(ENUM_CONFIG_TAGS::ORDER, 2, m_ascendingOrder)
         M(ENUM_CONFIG_TAGS::LIST_ICON_INDEX, LIST_IMAGE_STEPS, m_listIconIndex)
-        M(ENUM_CONFIG_TAGS::LANGUAGE, SIZEI(LNG), m_languageIndex)
+        M(ENUM_CONFIG_TAGS::LANGUAGE, std::ssize(LNG), m_languageIndex)
         M(ENUM_CONFIG_TAGS::ASK_BEFORE_DELETE, 2, m_warnBeforeDelete)
         M(ENUM_CONFIG_TAGS::DELETE_OPTION, 2, m_deleteOption)
         M(ENUM_CONFIG_TAGS::ASK_BEFORE_SAVE, 2, m_warnBeforeSave)
@@ -486,7 +486,7 @@ void Frame::setTitle() {
 
       g_regex_match(regex, n.c_str(), G_REGEX_MATCH_DEFAULT, &match_info);
       while (g_match_info_matches(match_info)) {
-        for (i = 0; i < SIZEI(d); i++) {
+        for (i = 0; i < std::ssize(d); i++) {
           gchar *word = g_match_info_fetch(match_info, i + 1);
           d[i] = atoi(word);
           g_free(word);
@@ -1416,7 +1416,7 @@ void Frame::showSettings() {
   s = getLanguageStringMultiline(LANGUAGE::HELP_TAB2);
   w = gtk_label_new(s.c_str());
   gtk_widget_set_halign(w, GTK_ALIGN_START);
-  gtk_grid_attach(GTK_GRID(grid), w, 0, k, SIZE(TOOLBAR_BUTTON_WITH_MARGIN) * 2,
+  gtk_grid_attach(GTK_GRID(grid), w, 0, k, std::size(TOOLBAR_BUTTON_WITH_MARGIN) * 2,
                   1);
 
   tab[2] = grid = gtk_grid_new();
@@ -1676,7 +1676,7 @@ void Frame::setMode(MODE m, bool start) {
       m_lastNonListMode = m;
     }
     int i;
-    for (i = 0; i < SIZEI(TMODE); i++) {
+    for (i = 0; i < std::ssize(TMODE); i++) {
       setButtonState(i + int(TOOLBAR_INDEX::MODE_ZOOM_ANY), i != int(m));
     }
 
@@ -2042,7 +2042,7 @@ GtkWidget *Frame::createLanguageCombo() {
   GtkTreeStore *store;
   guint i;
   store = gtk_tree_store_new(2, GDK_TYPE_PIXBUF, G_TYPE_STRING);
-  for (i = 0; i < SIZE(LNG); i++) {
+  for (i = 0; i < std::size(LNG); i++) {
     pb = pixbuf((LNG[i] + ".gif").c_str());
     gtk_tree_store_append(store, &iter, NULL);
     gtk_tree_store_set(store, &iter, COL::PIXBUF, pb, COL::TEXT,

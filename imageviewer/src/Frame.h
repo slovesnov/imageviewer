@@ -29,7 +29,7 @@ struct FileSupported {
 class Frame {
 public:
 	GtkWidget *m_window, *m_area, *m_box, *m_toolbar,
-			*m_button[TOOLBAR_INDEX_SIZE], *m_options[SIZE(OPTIONS)], *m_modal;
+			*m_button[TOOLBAR_INDEX_SIZE], *m_options[std::size(OPTIONS)], *m_modal;
 
 	int m_lastWidth, m_lastHeight;
 	Pixbuf m_pix;
