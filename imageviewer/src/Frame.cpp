@@ -174,7 +174,7 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
   setlocale(LC_NUMERIC,
             "C"); // dot interpret as decimal separator for format(... , scale)
-  m_pThread.resize( g_get_num_processors());
+  m_pThread.resize(g_get_num_processors());
   for (auto &p : m_pThread) {
     p = nullptr;
   }
@@ -344,7 +344,8 @@ Frame::Frame(GtkApplication *application, std::string path) {
 
     setButtonState(i, true);
 
-    g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked), GINT_TO_POINTER(i));
+    g_signal_connect(G_OBJECT(b), "clicked", G_CALLBACK(button_clicked),
+                     GINT_TO_POINTER(i));
     gtk_box_pack_start(GTK_BOX(m_toolbar), b, FALSE, FALSE, 0);
     if (oneOf(TOOLBAR_INDEX(i), TOOLBAR_BUTTON_WITH_MARGIN)) {
       gtk_widget_set_margin_start(b, TOOLBAR_BUTTON_MARGIN);
@@ -421,10 +422,10 @@ Frame::~Frame() {
   }
 
   writeConfig(CONFIG_TAGS, IMAGE_VIEWER_VERSION, (int)m_mode, m_ascendingOrder,
-               m_listIconIndex, m_languageIndex, m_warnBeforeDelete,
-               m_deleteOption, m_warnBeforeSave, m_showPopup, m_oneInstance,
-               m_rememberLastOpenDirectory, m_showToolbarFullscreen, m_dir, s,
-               m_recursive, m_saveRename, m_zoomFactor);
+              m_listIconIndex, m_languageIndex, m_warnBeforeDelete,
+              m_deleteOption, m_warnBeforeSave, m_showPopup, m_oneInstance,
+              m_rememberLastOpenDirectory, m_showToolbarFullscreen, m_dir, s,
+              m_recursive, m_saveRename, m_zoomFactor);
   stopThreads();
   g_mutex_clear(&m_mutex);
 }
@@ -452,26 +453,29 @@ void Frame::setTitle() {
        * b=a-1+m_listxy=m_listTopLeftIndex + m_listxy if LIST_ASCENDING_ORDER=0
        * a>b & a-b+1=m_listxy => b=a+1-m_listxy=m_listTopLeftIndex +2- m_listxy
        */
-      t += format("%d-%d/%d", m_listTopLeftIndex + 1,
-                  m_ascendingOrder ? MIN(m_listTopLeftIndex + m_listxy, sz)
-                                   : MAX(m_listTopLeftIndex + 2 - m_listxy, 1),
-                  sz) +
+      t += std::format("{}-{}/{}", m_listTopLeftIndex + 1,
+                       m_ascendingOrder
+                           ? MIN(m_listTopLeftIndex + m_listxy, sz)
+                           : MAX(m_listTopLeftIndex + 2 - m_listxy, 1),
+                       sz) +
            SEPARATOR + getLanguageString(LANGUAGE::TOTAL) + " " +
            getSizeMbKbB(ts) + ", " + getLanguageString(LANGUAGE::AVERAGE) +
            " " + getSizeMbKbB(ts / sz) + SEPARATOR +
-           format("%dx%d", MIN(sz, m_listx),
-                  sz < m_listxy ? sz / m_listx + bool(sz % m_listx) : m_listy);
+           std::format("{}x{}", MIN(sz, m_listx),
+                       sz < m_listxy ? sz / m_listx + bool(sz % m_listx)
+                                     : m_listy);
     } else {
       auto &f = m_vp[m_pi];
       // printl(m_pi,f.m_path)
       const std::string n = getFileInfo(f.m_path, FILEINFO::NAME);
       t += n + SEPARATOR + getLanguageString(LANGUAGE::SIZE) +
-           format(" %dx%d ", m_pw, m_ph) + getLanguageString(LANGUAGE::SCALED) +
-           format(" %dx%d ", int(m_pw * m_zoom), int(m_ph * m_zoom)) +
+           std::format(" {}x{} ", m_pw, m_ph) +
+           getLanguageString(LANGUAGE::SCALED) +
+           std::format(" {}x{} ", int(m_pw * m_zoom), int(m_ph * m_zoom)) +
            getSizeMbKbB(f.m_size) + SEPARATOR +
            getLanguageString(LANGUAGE::ZOOM) + " " +
            std::to_string(int(m_zoom * 100)) + "%" + SEPARATOR +
-           format("%d/%d", m_pi + 1, size());
+           std::format("{}/{}", m_pi + 1, size());
       // get date if it's possible
 
       // std::string n = "IMG_21000229_130015-20230530_130015.jpg";
@@ -499,7 +503,8 @@ void Frame::setTitle() {
                getLanguageString(LANGUAGE::JAN, d[1] - 1) +
                std::to_string(d[0]);
           for (i = 0; i < 3; i++) {
-            t += (i ? ':' : ' ') + format("%02d", d[i + 3]);
+            t += (i ? ':' : ' ') + std::format("{:02}", d[i + 3]);
+            ;
           }
           break;
         }
@@ -970,7 +975,8 @@ void Frame::thumbnailThread(int n) {
               h = LIST_IMAGE_HEIGHT[i];
               o.m_thumbnail[i] = scaleFit(p, getWidthForHeight(h), h);
               if (!k) {
-                gdk_threads_add_idle(set_show_thumbnail_thread, GINT_TO_POINTER(v));
+                gdk_threads_add_idle(set_show_thumbnail_thread,
+                                     GINT_TO_POINTER(v));
               }
             }
           }
@@ -1115,8 +1121,7 @@ void Frame::buttonClicked(TOOLBAR_INDEX t) {
         adjust(m_listTopLeftIndex, min, max);
         if (i == m_listTopLeftIndex) {
           redraw(); // with title m_listxy changed
-        }
-        else {
+        } else {
           listTopLeftIndexChanged();
         }
       }
@@ -1357,8 +1362,8 @@ void Frame::showSettings() {
       gtk_container_add(GTK_CONTAINER(w), gtk_label_new("k="));
       gtk_container_add(GTK_CONTAINER(w), m_options[i]);
       w1 = gtk_label_new("");
-      s = " " + std::format("{}",MIN_ZOOM_FACTOR_BOUND) + " &lt; k &#8804; " +
-          std::format("{}",MAX_ZOOM_FACTOR);
+      s = " " + std::format("{}", MIN_ZOOM_FACTOR_BOUND) + " &lt; k &#8804; " +
+          std::format("{}", MAX_ZOOM_FACTOR);
       gtk_label_set_markup(GTK_LABEL(w1), s.c_str());
       gtk_container_add(GTK_CONTAINER(w), w1);
     } else {
@@ -1416,8 +1421,8 @@ void Frame::showSettings() {
   s = getLanguageStringMultiline(LANGUAGE::HELP_TAB2);
   w = gtk_label_new(s.c_str());
   gtk_widget_set_halign(w, GTK_ALIGN_START);
-  gtk_grid_attach(GTK_GRID(grid), w, 0, k, std::size(TOOLBAR_BUTTON_WITH_MARGIN) * 2,
-                  1);
+  gtk_grid_attach(GTK_GRID(grid), w, 0, k,
+                  std::size(TOOLBAR_BUTTON_WITH_MARGIN) * 2, 1);
 
   tab[2] = grid = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
@@ -1568,7 +1573,8 @@ gint Frame::showModalDialog(GtkWidget *w, DIALOG o) {
       if (oneOf(e, LANGUAGE::YES, LANGUAGE::OK)) {
         m_showModalDialogButtonOK = b2;
       }
-      g_signal_connect(b2, "clicked", G_CALLBACK(dialog_button_clicked), GINT_TO_POINTER(e));
+      g_signal_connect(b2, "clicked", G_CALLBACK(dialog_button_clicked),
+                       GINT_TO_POINTER(e));
       gtk_container_add(GTK_CONTAINER(b1), b2);
     }
     if (save && m_pw * m_zoom != m_pw) {
@@ -1868,7 +1874,7 @@ void Frame::updateOptions() {
   }
   w = m_options[i++];
   m_proceedEvents = false;
-  gtk_entry_set_text(GTK_ENTRY(w), std::format("{}",m_zoomFactor).c_str());
+  gtk_entry_set_text(GTK_ENTRY(w), std::format("{}", m_zoomFactor).c_str());
   m_proceedEvents = true;
 }
 
@@ -1889,7 +1895,7 @@ std::string Frame::filechooser(GtkWidget *parent, const std::string &dir) {
   bool onlyFolder = false;
   const gint MY_SELECTED = 0;
 
-  //show folders first
+  // show folders first
   GSettings *settings = g_settings_new("org.gtk.Settings.FileChooser");
   g_settings_set_boolean(settings, "sort-directories-first", TRUE);
   g_object_unref(settings);
@@ -1930,7 +1936,7 @@ std::string Frame::getSizeMbKbB(double v) {
   for (j = 0; j < 2 && v >= 1024; j++) {
     v /= 1024;
   }
-  s = format("%.2lf", v);
+  s = std::format("{:.2f}", v);
   for (i = s.size() - 1; i > 0 && strchr("0.", s[i]); i--)
     ;
   return s.substr(0, i + 1) + getLanguageString(LANGUAGE::BYTES, j);
@@ -1968,8 +1974,8 @@ void Frame::addTimerEvent(TIMER t) {
   int i = int(t);
   stopTimer(m_timer[i]);
   //	printl("stopped");
-  m_timer[i] =
-      g_timeout_add(EVENT_TIME[i], G_SOURCE_FUNC(timer_changed), GINT_TO_POINTER(i));
+  m_timer[i] = g_timeout_add(EVENT_TIME[i], G_SOURCE_FUNC(timer_changed),
+                             GINT_TO_POINTER(i));
 }
 
 void Frame::stopTimer(guint &t) {
@@ -1991,7 +1997,7 @@ std::string Frame::getExtensionString(bool writableOnly, bool onlyIndex0,
     if (!s.empty()) {
       s += i == sz / rows ? '\n' : ' ';
     }
-    //pr(e.extension) 
+    // pr(e.extension)
     s += e.extension;
   }
   return s;
